@@ -13,6 +13,7 @@ import '../raw_models/building_data.dart';
 import '../raw_models/character.dart';
 import '../raw_models/favor_table.dart';
 import '../raw_models/gamedata_const.dart';
+import '../raw_models/handbook_info.dart';
 import '../raw_models/handbook_team.dart';
 import '../raw_models/item_table.dart';
 import '../raw_models/range_table.dart';
@@ -241,6 +242,7 @@ NormalizedRegion _normalize(
     favor: raw.favor,
     items: raw.items,
     handbook: raw.handbook,
+    handbookInfo: raw.handbookInfo,
   );
 
   return NormalizedRegion.fromSnapshot(
@@ -271,6 +273,7 @@ OperatorSummary _summary(OperatorDetail detail) {
     groups: detail.groups,
     baTags: detail.baTags,
     thumbnailHue: detail.thumbnailHue,
+    releaseOrder: detail.releaseOrder,
   );
 }
 
@@ -303,6 +306,7 @@ class _RawTables {
     required this.building,
     required this.battleEquip,
     required this.favor,
+    required this.handbookInfo,
   });
 
   factory _RawTables.decode(DownloadedTables downloaded) {
@@ -334,6 +338,9 @@ class _RawTables {
         table(ArknightsDataSource.battleEquipTableFile),
       ),
       favor: RawFavorTable.fromJson(table(ArknightsDataSource.favorTableFile)),
+      handbookInfo: RawHandbookInfoTable.fromJson(
+        table(ArknightsDataSource.handbookInfoTableFile),
+      ),
     );
   }
 
@@ -350,4 +357,5 @@ class _RawTables {
   final RawBuildingData building;
   final RawBattleEquipTable battleEquip;
   final RawFavorTable favor;
+  final RawHandbookInfoTable handbookInfo;
 }

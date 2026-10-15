@@ -164,7 +164,7 @@ void main() {
     expect(pages.requestedUris, [_manifestUri, _snapshotUri]);
     expect(fallback.calls, isEmpty);
     final snapshot = (await cache.readSnapshot(RegionCode.kr))!;
-    expect(snapshot.operators.first.name, 'Amiya');
+    expect(snapshot.operators.map((o) => o.name), ['Bravo', 'Amiya', 'Alpha']);
     expect(
       snapshot.fetchedAt,
       manifest.regions[RegionCode.kr]!.fetchedAt,

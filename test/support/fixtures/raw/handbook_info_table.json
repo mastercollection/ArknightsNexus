@@ -1,0 +1,25 @@
+{
+  "handbookDict": {
+    "char_002_amiya": {
+      "charID": "char_002_amiya",
+      "infoName": "Amiya"
+    },
+    "char_hidden": {
+      "charID": "char_hidden",
+      "infoName": "Hidden"
+    },
+    "npc_001_doctor": {
+      "charID": "npc_001_doctor",
+      "infoName": "Doctor"
+    },
+    "char_101_bravo": {
+      "charID": "char_101_bravo",
+      "infoName": "Bravo"
+    }
+  },
+  "npcDict": {},
+  "teamMissionList": {},
+  "handbookDisplayConditionList": {},
+  "handbookStageData": {},
+  "handbookStageTime": []
+}

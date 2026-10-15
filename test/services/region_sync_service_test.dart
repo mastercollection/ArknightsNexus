@@ -47,14 +47,18 @@ void main() {
         SyncPhase.writingSnapshot,
         SyncPhase.complete,
       ]);
+      // Newest release first (handbook_info_table key order).
       expect(
-        (await cache.readSnapshot(RegionCode.kr))!.operators.first.name,
-        'Amiya',
+        (await cache.readSnapshot(RegionCode.kr))!.operators.map((o) => o.name),
+        ['Bravo', 'Amiya', 'Alpha'],
       );
+      final summaryOperators =
+          (await cache.readSummary(RegionCode.kr))!.operators;
       expect(
-        (await cache.readSummary(RegionCode.kr))!.operators.first.id,
-        'char_002_amiya',
+        summaryOperators.map((o) => o.id),
+        ['char_101_bravo', 'char_002_amiya', 'char_100_alpha'],
       );
+      expect(summaryOperators.map((o) => o.releaseOrder), [4, 1, 0]);
       expect((await cache.readStatus(RegionCode.kr))!.isReady, isTrue);
       expect(await cache.readTerms(RegionCode.kr), {
         'atk': 'Attack',
@@ -170,9 +174,17 @@ void main() {
       }
       final snapshot = (await cache.readSnapshot(RegionCode.kr))!;
       expect(snapshot.schemaVersionValue, RegionSnapshot.schemaVersion);
-      expect(snapshot.operators.first.profession, 'Caster');
       expect(
-        (await cache.readSummary(RegionCode.kr))!.operators.first.baTags,
+        snapshot.operators
+            .firstWhere((o) => o.id == 'char_002_amiya')
+            .profession,
+        'Caster',
+      );
+      expect(
+        (await cache.readSummary(RegionCode.kr))!
+            .operators
+            .firstWhere((o) => o.id == 'char_002_amiya')
+            .baTags,
         ['Stun', 'Slow'],
       );
     });

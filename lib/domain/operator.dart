@@ -10,6 +10,7 @@ class OperatorSummary {
     this.groups = const [],
     this.baTags = const [],
     required this.thumbnailHue,
+    this.releaseOrder = 0,
   });
 
   final String id;
@@ -23,6 +24,13 @@ class OperatorSummary {
   final List<String> baTags;
   final int thumbnailHue;
 
+  /// Position of the operator in the region's `handbook_info_table`
+  /// `handbookDict`, counted from 1, whose key order is the order operators
+  /// were released in that region; higher is newer. 0 when the operator is
+  /// not in the handbook. The snapshot keeps operators sorted by this,
+  /// newest first.
+  final int releaseOrder;
+
   factory OperatorSummary.fromJson(Map<String, Object?> json) {
     return OperatorSummary(
       id: json['id'] as String,
@@ -35,6 +43,7 @@ class OperatorSummary {
       groups: _strings(json['groups']),
       baTags: _strings(json['baTags']),
       thumbnailHue: _int(json['thumbnailHue']),
+      releaseOrder: _optionalInt(json['releaseOrder']),
     );
   }
 
@@ -50,6 +59,7 @@ class OperatorSummary {
       'groups': groups,
       'baTags': baTags,
       'thumbnailHue': thumbnailHue,
+      'releaseOrder': releaseOrder,
     };
   }
 }
@@ -67,6 +77,7 @@ class OperatorDetail {
     this.groups = const [],
     this.baTags = const [],
     required this.thumbnailHue,
+    this.releaseOrder = 0,
     required this.quote,
     this.tags = const [],
     this.traits = const [],
@@ -95,6 +106,10 @@ class OperatorDetail {
   final List<String> groups;
   final List<String> baTags;
   final int thumbnailHue;
+
+  /// Release position; see [OperatorSummary.releaseOrder].
+  final int releaseOrder;
+
   final String quote;
   final List<String> tags;
   final List<OperatorTrait> traits;
@@ -124,6 +139,7 @@ class OperatorDetail {
       groups: _strings(json['groups']),
       baTags: _strings(json['baTags']),
       thumbnailHue: _int(json['thumbnailHue']),
+      releaseOrder: _optionalInt(json['releaseOrder']),
       quote: json['quote'] as String,
       tags: _strings(json['tags']),
       traits:
@@ -175,6 +191,7 @@ class OperatorDetail {
       'groups': groups,
       'baTags': baTags,
       'thumbnailHue': thumbnailHue,
+      'releaseOrder': releaseOrder,
       'quote': quote,
       'tags': tags,
       'traits': traits.map((entry) => entry.toJson()).toList(),
@@ -903,5 +920,7 @@ Map<String, List<OperatorCost>>? _costMap(Object? value) {
 }
 
 int _int(Object? value) => (value as num).toInt();
+
+int _optionalInt(Object? value) => (value as num?)?.toInt() ?? 0;
 
 double _double(Object? value) => (value as num).toDouble();

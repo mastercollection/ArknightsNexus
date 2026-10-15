@@ -115,6 +115,7 @@ void main() {
         groups: const ['Rhodes Island'],
         baTags: const ['DPS'],
         thumbnailHue: 210,
+        releaseOrder: 12,
         quote: 'Leader',
         tags: const ['Ranged'],
         traits: const [
@@ -271,6 +272,7 @@ void main() {
       final decoded = OperatorDetail.fromJson(detail.toJson());
 
       expect(decoded.id, 'char_002_amiya');
+      expect(decoded.releaseOrder, 12);
       expect(
         decoded.skills.single.levels.single.blackboard.single.valueStr,
         '10%',
@@ -313,6 +315,7 @@ void main() {
             groups: ['Rhodes Island'],
             baTags: ['DPS'],
             thumbnailHue: 210,
+            releaseOrder: 7,
           ),
         ],
       );
@@ -346,8 +349,29 @@ void main() {
         RegionSummarySnapshot.fromJson(summaryJson).operators.single.name,
         'Amiya',
       );
+      expect(
+        RegionSummarySnapshot.fromJson(summaryJson)
+            .operators
+            .single
+            .releaseOrder,
+        7,
+      );
       expect(RegionSyncStatus.fromJson(status.toJson()).isReady, isTrue);
       expect(SyncResult.fromJson(result.toJson()).status, 'success');
+    });
+
+    test('reads a missing release order as 0 (not in the handbook)', () {
+      final json = const OperatorSummary(
+        id: 'char_002_amiya',
+        name: 'Amiya',
+        rarity: 5,
+        profession: 'CASTER',
+        branch: 'Core Caster',
+        thumbnailHue: 210,
+        releaseOrder: 3,
+      ).toJson()
+        ..remove('releaseOrder');
+      expect(OperatorSummary.fromJson(json).releaseOrder, 0);
     });
   });
 }

@@ -7,6 +7,7 @@ import 'package:arknight_nexus/raw_models/battle_equip.dart';
 import 'package:arknight_nexus/raw_models/character.dart';
 import 'package:arknight_nexus/raw_models/favor_table.dart';
 import 'package:arknight_nexus/raw_models/gamedata_const.dart';
+import 'package:arknight_nexus/raw_models/handbook_info.dart';
 import 'package:arknight_nexus/raw_models/handbook_team.dart';
 import 'package:arknight_nexus/raw_models/item_table.dart';
 import 'package:arknight_nexus/raw_models/range_table.dart';
@@ -23,17 +24,55 @@ void main() {
 
   setUpAll(() async {
     operators = await _normalizeFixtures();
-    amiya = operators.first;
+    amiya = operators.firstWhere((operator) => operator.id == 'char_002_amiya');
   });
+
+  OperatorDetail byId(String id) =>
+      operators.firstWhere((operator) => operator.id == id);
 
   group('OperatorNormalizer', () {
     test(
-        'skips tokens, traps and unobtainable operators; sorts by rarity desc '
-        'then name', () {
+        'skips tokens, traps and unobtainable operators; sorts newest '
+        'release first, operators missing from the handbook last', () {
+      // Handbook order (oldest first): amiya, hidden (unobtainable), an NPC,
+      // bravo. Alpha is not in the handbook.
       expect(
         operators.map((operator) => operator.id),
+        ['char_101_bravo', 'char_002_amiya', 'char_100_alpha'],
+      );
+      expect(
+        operators.map((operator) => operator.releaseOrder),
+        [4, 1, 0],
+      );
+    });
+
+    test('orders operators missing from the handbook by rarity desc then name',
+        () async {
+      final unordered = await _normalizeFixtures(
+        handbookInfo: const RawHandbookInfoTable(),
+      );
+      expect(
+        unordered.map((operator) => operator.id),
         ['char_002_amiya', 'char_100_alpha', 'char_101_bravo'],
       );
+      expect(
+        unordered.map((operator) => operator.releaseOrder),
+        everyElement(0),
+      );
+    });
+
+    test('reads the handbook key order and nothing else', () async {
+      final table = RawHandbookInfoTable.fromJson(
+        await _fixture('handbook_info_table.json'),
+      );
+      expect(table.charIds, [
+        'char_002_amiya',
+        'char_hidden',
+        'npc_001_doctor',
+        'char_101_bravo',
+      ]);
+      expect(table.releaseOrder()['char_101_bravo'], 4);
+      expect(RawHandbookInfoTable.fromJson(const {}).charIds, isEmpty);
     });
 
     test('normalizes identity fields like Rust', () {
@@ -54,7 +93,7 @@ void main() {
       expect(amiya.tags, ['DPS', 'Support']);
       expect(amiya.baTags, ['Stun', 'Slow']);
 
-      final alpha = operators[1];
+      final alpha = byId('char_100_alpha');
       expect(alpha.codename, 'Alpha');
       expect(alpha.profession, 'Guard');
       expect(alpha.branch, 'Unknown');
@@ -63,7 +102,7 @@ void main() {
       expect(alpha.archetypeDescription, '');
       expect(alpha.baTags, isEmpty);
 
-      final bravo = operators[2];
+      final bravo = byId('char_101_bravo');
       expect(bravo.codename, 'Bravo');
       expect(bravo.profession, 'Vanguard');
       expect(bravo.branch, 'Pioneer Unknown');
@@ -416,7 +455,9 @@ Map<String, Object?> _stat({
   };
 }
 
-Future<List<OperatorDetail>> _normalizeFixtures() async {
+Future<List<OperatorDetail>> _normalizeFixtures({
+  RawHandbookInfoTable? handbookInfo,
+}) async {
   return const OperatorNormalizer().normalize(
     region: RegionCode.kr,
     characters:
@@ -433,6 +474,10 @@ Future<List<OperatorDetail>> _normalizeFixtures() async {
     handbook: RawHandbookTeamTable.fromJson(
       await _fixture('handbook_team_table.json'),
     ),
+    handbookInfo: handbookInfo ??
+        RawHandbookInfoTable.fromJson(
+          await _fixture('handbook_info_table.json'),
+        ),
   );
 }
 

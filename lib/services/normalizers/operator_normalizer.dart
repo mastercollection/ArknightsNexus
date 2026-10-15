@@ -6,6 +6,7 @@ import '../../raw_models/battle_equip.dart';
 import '../../raw_models/character.dart';
 import '../../raw_models/favor_table.dart';
 import '../../raw_models/gamedata_const.dart';
+import '../../raw_models/handbook_info.dart';
 import '../../raw_models/handbook_team.dart';
 import '../../raw_models/item_table.dart';
 import '../../raw_models/range_table.dart';
@@ -30,7 +31,9 @@ class OperatorNormalizer {
     required RawFavorTable favor,
     required RawItemTable items,
     required RawHandbookTeamTable handbook,
+    required RawHandbookInfoTable handbookInfo,
   }) {
+    final releaseOrder = handbookInfo.releaseOrder();
     final context = _Context(
       skills: skills.skills,
       constants: constants,
@@ -45,13 +48,24 @@ class OperatorNormalizer {
 
     final result = <OperatorDetail>[];
     for (final entry in characters.characters.entries) {
-      final operator = _operator(entry.key, entry.value, context);
+      final operator = _operator(
+        entry.key,
+        entry.value,
+        context,
+        releaseOrder: releaseOrder[entry.key] ?? 0,
+      );
       if (operator != null) {
         result.add(operator);
       }
     }
 
+    // Newest release first; operators missing from the handbook have
+    // release order 0 and so come last, ordered by rarity then name.
     result.sort((left, right) {
+      final release = right.releaseOrder.compareTo(left.releaseOrder);
+      if (release != 0) {
+        return release;
+      }
       final rarity = right.rarity.compareTo(left.rarity);
       if (rarity != 0) {
         return rarity;
@@ -64,8 +78,9 @@ class OperatorNormalizer {
   OperatorDetail? _operator(
     String id,
     RawCharacterEntry character,
-    _Context context,
-  ) {
+    _Context context, {
+    required int releaseOrder,
+  }) {
     if (character.isNotObtainable ||
         character.profession == 'TOKEN' ||
         character.profession == 'TRAP') {
@@ -198,6 +213,7 @@ class OperatorNormalizer {
       groups: groups,
       baTags: baTags,
       thumbnailHue: generateHue(id),
+      releaseOrder: releaseOrder,
       quote: character.itemDesc ?? character.description ?? '',
       tags: tags,
       traits: traits,

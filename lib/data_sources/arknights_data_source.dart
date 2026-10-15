@@ -15,6 +15,7 @@ class ArknightsDataSource {
     buildingDataFile,
     battleEquipTableFile,
     favorTableFile,
+    handbookInfoTableFile,
   ];
 
   static const characterTableFile = 'character_table.json';
@@ -28,4 +29,7 @@ class ArknightsDataSource {
   static const buildingDataFile = 'building_data.json';
   static const battleEquipTableFile = 'battle_equip_table.json';
   static const favorTableFile = 'favor_table.json';
+
+  /// Only the key order of its `handbookDict` is used: the release order.
+  static const handbookInfoTableFile = 'handbook_info_table.json';
 }
