@@ -313,12 +313,14 @@ class _SearchBlock extends ConsumerWidget {
               children: [
                 field,
                 const SizedBox(height: 8),
-                _TonalButton(
+                RdButton(
                   key: const Key('home-search-button'),
                   label: query.isEmpty
                       ? i18n.t('home.search.action')
                       : i18n.t('rd.home.searchWithQuery', {'query': query}),
                   onPressed: onSubmit,
+                  variant: RdButtonVariant.tonal,
+                  expand: true,
                 ),
                 const SizedBox(height: 8),
                 hint,
@@ -366,47 +368,6 @@ class _EnterKey extends StatelessWidget {
         child: Text(
           'Enter',
           style: RdText.mono(fontSize: 11, color: RdColors.muted),
-        ),
-      ),
-    );
-  }
-}
-
-/// Full-width accent-tinted button of the phone layouts.
-class _TonalButton extends StatelessWidget {
-  const _TonalButton({required this.label, required this.onPressed, super.key});
-
-  final String label;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      child: Material(
-        color: RdColors.tonalFill,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(RdRadii.control),
-          side: const BorderSide(color: RdColors.tonalBorder),
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(RdRadii.control),
-          onTap: onPressed,
-          child: Container(
-            height: 44,
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: RdColors.text,
-              ),
-            ),
-          ),
         ),
       ),
     );

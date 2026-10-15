@@ -418,13 +418,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ],
           ),
         ),
-        _SettingsActionButton(
+        RdButton(
           key: const Key('sync-region-button'),
-          compact: compact,
           label: _isSyncing
               ? i18n.t('rd.settings.syncBusy')
               : i18n.t('home.settings.syncAction'),
           onPressed: _isLoading ? null : _handleSettingsSync,
+          variant: RdButtonVariant.tonal,
+          height: compact ? 48 : 44,
+          expand: true,
+          maxLines: 3,
         ),
       ],
     );
@@ -435,17 +438,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     const fileName = 'user_data.json';
     final split = description.indexOf(fileName);
     final style = _descriptionStyle(compact);
-    final exportButton = _SettingsActionButton(
+    final exportButton = RdButton(
       key: const Key('export-user-data-button'),
-      compact: compact,
       label: i18n.t('home.settings.userDataExport'),
       onPressed: _userDataBusy ? null : _handleExportUserData,
+      variant: RdButtonVariant.tonal,
+      height: compact ? 48 : 44,
+      expand: true,
+      maxLines: 3,
     );
-    final importButton = _SettingsActionButton(
+    final importButton = RdButton(
       key: const Key('import-user-data-button'),
-      compact: compact,
       label: i18n.t('home.settings.userDataImport'),
       onPressed: _userDataBusy ? null : _handleImportUserData,
+      variant: RdButtonVariant.tonal,
+      height: compact ? 48 : 44,
+      expand: true,
+      maxLines: 3,
     );
     return _SettingsCard(
       compact: compact,
@@ -543,9 +552,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ],
         ),
-        _SettingsActionButton(
+        RdButton(
           key: const Key('diagnostics-logs-button'),
-          compact: compact,
           label: _diagnosticsBusy
               ? i18n.t('rd.settings.diagnosticsBusy')
               : _isAndroidPlatform
@@ -554,6 +562,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           onPressed: _diagnosticsBusy || _logDir == null
               ? null
               : _handleOpenDiagnosticsLogDir,
+          variant: RdButtonVariant.tonal,
+          height: compact ? 48 : 44,
+          expand: true,
+          maxLines: 3,
         ),
       ],
     );
@@ -745,57 +757,6 @@ class _SettingsCard extends StatelessWidget {
             child,
           ],
         ],
-      ),
-    );
-  }
-}
-
-/// Accent-tinted action button of the settings cards (44px on PC, 48px on
-/// phones); greyed out while disabled.
-class _SettingsActionButton extends StatelessWidget {
-  const _SettingsActionButton({
-    required this.compact,
-    required this.label,
-    required this.onPressed,
-    super.key,
-  });
-
-  final bool compact;
-  final String label;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onPressed != null;
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      child: Material(
-        color: enabled ? RdColors.tonalFill : RdColors.white3,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(RdRadii.control),
-          side: BorderSide(
-            color: enabled ? RdColors.tonalBorder : RdColors.white8,
-          ),
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(RdRadii.control),
-          onTap: onPressed,
-          child: Container(
-            constraints: BoxConstraints(minHeight: compact ? 48 : 44),
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: enabled ? RdColors.text : RdColors.placeholder,
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

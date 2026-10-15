@@ -892,10 +892,11 @@ class _RouteCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          PlanLinkButton(
+          RdButton(
             label: actionLabel,
-            height: compact ? 44 : 38,
             onPressed: onOpen,
+            variant: RdButtonVariant.tonal,
+            height: compact ? 44 : 38,
           ),
         ],
       ),

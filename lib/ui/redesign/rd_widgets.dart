@@ -125,10 +125,12 @@ class RdIconButton extends StatelessWidget {
   }
 }
 
-enum RdButtonVariant { primary, secondary, ghost, danger }
+enum RdButtonVariant { primary, secondary, ghost, danger, tonal }
 
 /// Text button of the redesign. [primary] is the accent-filled call to
-/// action, [secondary] the inner-card button, [ghost] an outlined one.
+/// action, [secondary] the inner-card button, [ghost] an outlined one and
+/// [tonal] the accent-tinted button of the phone layouts and settings cards
+/// (greyed out instead of faded while disabled).
 class RdButton extends StatelessWidget {
   const RdButton({
     required this.label,
@@ -138,6 +140,7 @@ class RdButton extends StatelessWidget {
     this.height = 44,
     this.expand = false,
     this.busy = false,
+    this.maxLines = 1,
     super.key,
   });
 
@@ -145,8 +148,11 @@ class RdButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final RdButtonVariant variant;
   final IconData? icon;
+
+  /// Minimum height; a label on several lines ([maxLines]) grows the button.
   final double height;
   final bool expand;
+  final int maxLines;
 
   /// Shows a small spinner in place of [icon] and disables the button.
   final bool busy;
@@ -176,7 +182,12 @@ class RdButton extends StatelessWidget {
           const Color(0xFFFFC2C2),
           const Color(0x4DFF8A8A),
         ),
+      RdButtonVariant.tonal => enabled || busy
+          ? (RdColors.tonalFill, RdColors.text, RdColors.tonalBorder)
+          : (RdColors.white3, RdColors.placeholder, RdColors.white8),
     };
+    final bold =
+        variant == RdButtonVariant.primary || variant == RdButtonVariant.tonal;
     final leading = busy
         ? SizedBox(
             width: 14,
@@ -190,39 +201,42 @@ class RdButton extends StatelessWidget {
             ? null
             : Icon(icon, size: 16, color: foreground);
     return Opacity(
-      opacity: enabled || busy ? 1 : 0.5,
-      child: Material(
-        color: background,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(RdRadii.control),
-          side: border == null ? BorderSide.none : BorderSide(color: border),
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(RdRadii.control),
-          onTap: enabled ? onPressed : null,
-          child: Container(
-            height: height,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (leading != null) ...[leading, const SizedBox(width: 8)],
-                Flexible(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: variant == RdButtonVariant.primary
-                          ? FontWeight.w700
-                          : FontWeight.w500,
-                      color: foreground,
+      opacity: enabled || busy || variant == RdButtonVariant.tonal ? 1 : 0.5,
+      child: Semantics(
+        button: true,
+        enabled: enabled,
+        child: Material(
+          color: background,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(RdRadii.control),
+            side: border == null ? BorderSide.none : BorderSide(color: border),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(RdRadii.control),
+            onTap: enabled ? onPressed : null,
+            child: Container(
+              constraints: BoxConstraints(minHeight: height),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: Row(
+                mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (leading != null) ...[leading, const SizedBox(width: 8)],
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: maxLines,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+                        color: foreground,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

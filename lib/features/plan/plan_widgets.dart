@@ -214,53 +214,14 @@ class PlanErrorPanel extends StatelessWidget {
             ),
             if (onRetry != null && retryLabel != null) ...[
               const SizedBox(height: 10),
-              PlanLinkButton(label: retryLabel!, onPressed: onRetry),
+              RdButton(
+                label: retryLabel!,
+                onPressed: onRetry,
+                variant: RdButtonVariant.tonal,
+                height: _isCompact(context) ? 44 : 40,
+              ),
             ],
           ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Outlined accent button of the canvas (retry, open detail).
-class PlanLinkButton extends StatelessWidget {
-  const PlanLinkButton({
-    required this.label,
-    required this.onPressed,
-    this.height,
-    super.key,
-  });
-
-  final String label;
-  final VoidCallback? onPressed;
-  final double? height;
-
-  @override
-  Widget build(BuildContext context) {
-    final resolvedHeight = height ?? (_isCompact(context) ? 44.0 : 40.0);
-    return Material(
-      color: RdColors.linkFill,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(RdRadii.control),
-        side: const BorderSide(color: RdColors.linkBorder),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(RdRadii.control),
-        onTap: onPressed,
-        child: Container(
-          height: resolvedHeight,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            maxLines: 1,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: RdColors.linkText,
-            ),
-          ),
         ),
       ),
     );
