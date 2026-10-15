@@ -23,18 +23,11 @@ abstract interface class PlanCostService {
 
   UserPlanOperator? getPlanByOperatorId(UserPlan plan, String operatorId);
 
-  PlanCostBreakdown calculatePlanCosts(
-    OperatorDetail detail,
-    UserPlanOperator plan,
-  );
-
   PlanCostBreakdown calculatePlanCostsWithItems(
     OperatorDetail detail,
     UserPlanOperator plan,
     Map<String, ItemEntry> itemsById,
   );
-
-  PlanAggregateBreakdown aggregatePlanCosts(List<PlanCostEntry> entries);
 
   PlanAggregateBreakdown aggregatePlanCostsWithItems(
     List<PlanCostEntry> entries,
@@ -120,14 +113,6 @@ class DartPlanCostService implements PlanCostService {
       }
     }
     return null;
-  }
-
-  @override
-  PlanCostBreakdown calculatePlanCosts(
-    OperatorDetail detail,
-    UserPlanOperator plan,
-  ) {
-    return calculatePlanCostsWithItems(detail, plan, const {});
   }
 
   @override
@@ -239,11 +224,6 @@ class DartPlanCostService implements PlanCostService {
       materials: _sortedMaterials(materialMap),
       errors: errors,
     );
-  }
-
-  @override
-  PlanAggregateBreakdown aggregatePlanCosts(List<PlanCostEntry> entries) {
-    return aggregatePlanCostsWithItems(entries, const {});
   }
 
   @override

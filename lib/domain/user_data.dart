@@ -63,23 +63,6 @@ class UserPlan {
 
   final List<String> selectedOperatorIds;
   final List<UserPlanOperator> operators;
-
-  factory UserPlan.fromJson(Map<String, Object?> json) {
-    return UserPlan(
-      selectedOperatorIds: _strings(json['selectedOperatorIds']),
-      operators: _list(
-        json['operators'],
-        (value) => UserPlanOperator.fromJson(_map(value)),
-      ),
-    );
-  }
-
-  Map<String, Object?> toJson() {
-    return {
-      'selectedOperatorIds': selectedOperatorIds,
-      'operators': operators.map((entry) => entry.toJson()).toList(),
-    };
-  }
 }
 
 class UserPlanOperator {

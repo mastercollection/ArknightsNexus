@@ -22,7 +22,6 @@ import '../raw_models/uniequip.dart';
 import 'normalizers/building_formula_normalizer.dart';
 import 'normalizers/item_normalizer.dart';
 import 'normalizers/operator_normalizer.dart';
-import 'normalizers/term_normalizer.dart';
 
 /// Fetches a region's raw upstream tables and normalizes them into a
 /// [RegionSnapshot], without touching any cache.
@@ -36,18 +35,15 @@ class RegionSource {
     ItemNormalizer itemNormalizer = const ItemNormalizer(),
     BuildingFormulaNormalizer buildingFormulaNormalizer =
         const BuildingFormulaNormalizer(),
-    TermNormalizer termNormalizer = const TermNormalizer(),
     OperatorNormalizer operatorNormalizer = const OperatorNormalizer(),
   })  : _httpClient = httpClient,
         _itemNormalizer = itemNormalizer,
         _buildingFormulaNormalizer = buildingFormulaNormalizer,
-        _termNormalizer = termNormalizer,
         _operatorNormalizer = operatorNormalizer;
 
   final NexusHttpClient _httpClient;
   final ItemNormalizer _itemNormalizer;
   final BuildingFormulaNormalizer _buildingFormulaNormalizer;
-  final TermNormalizer _termNormalizer;
   final OperatorNormalizer _operatorNormalizer;
 
   Future<DataVersion> fetchDataVersion(RegionCode region) async {
@@ -103,7 +99,6 @@ class RegionSource {
         normalizers: _Normalizers(
           item: _itemNormalizer,
           buildingFormula: _buildingFormulaNormalizer,
-          term: _termNormalizer,
           operator: _operatorNormalizer,
         ),
       ),
@@ -202,13 +197,11 @@ class _Normalizers {
   const _Normalizers({
     required this.item,
     required this.buildingFormula,
-    required this.term,
     required this.operator,
   });
 
   final ItemNormalizer item;
   final BuildingFormulaNormalizer buildingFormula;
-  final TermNormalizer term;
   final OperatorNormalizer operator;
 }
 
@@ -236,7 +229,7 @@ NormalizedRegion _normalize(
     raw.building,
     stageCodes: stageCodes,
   );
-  final terms = normalizers.term.normalize(raw.constants);
+  final terms = raw.constants.termDescriptions();
   final operators = normalizers.operator.normalize(
     region: region,
     characters: raw.characters,

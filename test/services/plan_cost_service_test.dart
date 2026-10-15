@@ -75,7 +75,7 @@ void main() {
     });
 
     test('returns validation errors for reversed ranges', () {
-      final result = service.calculatePlanCosts(
+      final result = service.calculatePlanCostsWithItems(
         _operatorDetail(),
         const UserPlanOperator(
           operatorId: 'char_001_test',
@@ -104,6 +104,7 @@ void main() {
             ],
           ),
         ),
+        const {},
       );
 
       expect(result.valid, isFalse);

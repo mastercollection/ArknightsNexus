@@ -3,11 +3,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../data_sources/image_source.dart';
 import '../widgets/cached_image.dart';
-import 'nexus_controls.dart';
 import 'nexus_tokens.dart';
 
-const operatorSilhouetteAsset = 'assets/icons/operator-silhouette.svg';
-const appIconAsset = 'assets/icons/app/nexus-beacon.svg';
+const _operatorSilhouetteAsset = 'assets/icons/operator-silhouette.svg';
 
 /// Skeleton shown while a remote image resolves: silhouette over a soft
 /// radial glow (the `el-skeleton` template used by the Vue components).
@@ -35,7 +33,7 @@ class _SilhouetteSkeleton extends StatelessWidget {
             child: Opacity(
               opacity: 0.94,
               child: SvgPicture.asset(
-                operatorSilhouetteAsset,
+                _operatorSilhouetteAsset,
                 width: iconSize,
                 height: iconSize,
               ),
@@ -235,31 +233,51 @@ class ItemIcon extends StatelessWidget {
   }
 }
 
-/// Loading tile used by the operator grid while data loads.
-class PortraitPulse extends StatelessWidget {
-  const PortraitPulse({this.size = 84, super.key});
+/// `animate-pulse` placeholder bar/box.
+class NexusPulse extends StatefulWidget {
+  const NexusPulse({
+    this.width,
+    this.height = 16,
+    this.radius = NexusRadii.pill,
+    this.color = const Color(0x14FFFFFF),
+    super.key,
+  });
 
-  final double size;
+  final double? width;
+  final double height;
+  final double radius;
+  final Color color;
+
+  @override
+  State<NexusPulse> createState() => _NexusPulseState();
+}
+
+class _NexusPulseState extends State<NexusPulse>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1000),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: const Color(0xEB0A0F1E),
-        // A <div>: `border border-line` is not rendered (no CSS reset).
-        borderRadius: BorderRadius.circular(24),
-        gradient: const RadialGradient(
-          center: Alignment.topCenter,
-          radius: 1.1,
-          colors: [Color(0x1F5EB6FF), Color(0x005EB6FF)],
-          stops: [0, 0.64],
-        ),
+    return FadeTransition(
+      opacity: Tween<double>(begin: 1, end: 0.5).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
       ),
-      child: const Center(
-        child: NexusPulse(width: 48, height: 48, radius: 20),
+      child: Container(
+        width: widget.width,
+        height: widget.height,
+        decoration: BoxDecoration(
+          color: widget.color,
+          borderRadius: BorderRadius.circular(widget.radius),
+        ),
       ),
     );
   }

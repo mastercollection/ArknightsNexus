@@ -6,7 +6,6 @@ import '../repositories/region_cache_repository.dart';
 import 'normalizers/building_formula_normalizer.dart';
 import 'normalizers/item_normalizer.dart';
 import 'normalizers/operator_normalizer.dart';
-import 'normalizers/term_normalizer.dart';
 import 'region_source.dart';
 
 abstract interface class RegionSyncService {
@@ -29,14 +28,12 @@ class DartRegionSyncService implements RegionSyncService {
     ItemNormalizer itemNormalizer = const ItemNormalizer(),
     BuildingFormulaNormalizer buildingFormulaNormalizer =
         const BuildingFormulaNormalizer(),
-    TermNormalizer termNormalizer = const TermNormalizer(),
     OperatorNormalizer operatorNormalizer = const OperatorNormalizer(),
   })  : _cache = cache,
         _source = RegionSource(
           httpClient: httpClient,
           itemNormalizer: itemNormalizer,
           buildingFormulaNormalizer: buildingFormulaNormalizer,
-          termNormalizer: termNormalizer,
           operatorNormalizer: operatorNormalizer,
         );
 

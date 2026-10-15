@@ -10,9 +10,6 @@ class _RecordingImageCacheService implements ImageCacheService {
   final requests = <ImageRequest>[];
 
   @override
-  bool isValidImageId(String imageId) => true;
-
-  @override
   Future<ResolvedImage> resolve(ImageRequest request) async {
     requests.add(request);
     return const ResolvedImage.missing();
@@ -20,9 +17,6 @@ class _RecordingImageCacheService implements ImageCacheService {
 
   @override
   Future<void> prefetch(List<ImageRequest> requests) async {}
-
-  @override
-  Future<void> clearCache() async {}
 }
 
 Future<void> _pump(WidgetTester tester, ImageCacheService service) async {

@@ -322,7 +322,7 @@ void main() {
     final statuses = await service.syncRegion(RegionCode.kr).toList();
 
     expect(fallback.calls, ['sync kr']);
-    expect(statuses.last.message, 'fallback');
+    expect(statuses.last.remoteVersion, 'fallback');
     expect(await cache.readSnapshot(RegionCode.kr), isNull);
   });
 
@@ -330,7 +330,7 @@ void main() {
     final statuses = await service.syncRegion(RegionCode.kr).toList();
 
     expect(fallback.calls, ['sync kr']);
-    expect(statuses.last.message, 'fallback');
+    expect(statuses.last.remoteVersion, 'fallback');
   });
 }
 
@@ -362,7 +362,7 @@ class _RecordingFallback implements RegionSyncService {
     yield SyncStatus(
       region: region,
       phase: SyncPhase.complete,
-      message: 'fallback',
+      remoteVersion: 'fallback',
     );
   }
 

@@ -1,13 +1,11 @@
 import '../data_sources/region_code.dart';
 
 enum SyncPhase {
-  idle,
   checkingVersion,
   downloading,
   normalizing,
   writingSnapshot,
   complete,
-  failed,
 }
 
 class SyncStatus {
@@ -15,21 +13,11 @@ class SyncStatus {
     required this.region,
     required this.phase,
     this.remoteVersion,
-    this.localVersion,
-    this.message,
   });
 
   final RegionCode region;
   final SyncPhase phase;
   final String? remoteVersion;
-  final String? localVersion;
-  final String? message;
-
-  bool get isBusy =>
-      phase == SyncPhase.checkingVersion ||
-      phase == SyncPhase.downloading ||
-      phase == SyncPhase.normalizing ||
-      phase == SyncPhase.writingSnapshot;
 }
 
 class RegionSyncStatus {
