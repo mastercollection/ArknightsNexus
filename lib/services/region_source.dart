@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:isolate';
 
+import '../core/concurrency/background.dart';
 import '../core/http/http_client.dart';
 import '../data_sources/arknights_data_source.dart';
 import '../data_sources/data_version.dart';
@@ -205,10 +205,10 @@ class _Normalizers {
   final OperatorNormalizer operator;
 }
 
-// Top-level so the closure handed to `Isolate.run` captures only the job,
+// Top-level so the closure handed to [runInBackground] captures only the job,
 // not the source and its HTTP client.
 Future<NormalizedRegion> _runNormalizeJob(_NormalizeJob job) =>
-    Isolate.run(() => _decodeAndNormalize(job));
+    runInBackground(() => _decodeAndNormalize(job));
 
 NormalizedRegion _decodeAndNormalize(_NormalizeJob job) {
   final raw = _RawTables.decode(job.downloaded);

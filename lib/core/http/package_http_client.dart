@@ -10,8 +10,12 @@ class PackageHttpClient implements NexusHttpClient {
       : _client = client ?? http.Client(),
         _ownsClient = client == null;
 
-  /// Same user agent as the Tauri backend's reqwest client.
-  static const _headers = {'user-agent': 'ArknightsNexus/0.1.0'};
+  /// Same user agent as the Tauri backend's reqwest client. Browsers send
+  /// their own and would turn the header into a CORS preflight, so the web
+  /// build (the same check as Flutter's `kIsWeb`) sends none.
+  static const _headers = bool.fromEnvironment('dart.library.js_util')
+      ? <String, String>{}
+      : {'user-agent': 'ArknightsNexus/0.1.0'};
 
   final http.Client _client;
   final bool _ownsClient;
