@@ -97,7 +97,10 @@ class PlanMaterialsGrid extends ConsumerWidget {
                         tiers[index] > 0
                             ? 'T${tiers[index]}'
                             : i18n.t('planPage.summary.miscTier'),
-                        style: planMono(13, color: RdColors.stateTitle),
+                        style: RdText.mono(
+                          fontSize: 13,
+                          color: RdColors.stateTitle,
+                        ),
                       ),
                     ),
                     if (canExpandRecipes && index == 0)

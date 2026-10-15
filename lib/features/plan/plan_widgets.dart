@@ -61,10 +61,6 @@ String? rdMasteryAsset(int level) =>
 
 bool _isCompact(BuildContext context) => context.rdLayout == RdLayout.compact;
 
-/// Monospace text style of the canvas (`JetBrains Mono`).
-TextStyle planMono(double size, {Color color = RdColors.text}) =>
-    RdText.mono(fontSize: size, color: color);
-
 /// Page body of a plan screen: the header stays pinned above the scrolling
 /// content on phones and scrolls with it on wider layouts, as the canvas
 /// draws it. [overlay] (the autosave error toast) floats above everything.
@@ -461,7 +457,7 @@ class PlanResourceCard extends StatelessWidget {
         Text(
           value,
           textAlign: TextAlign.center,
-          style: planMono(compact ? 17 : 19),
+          style: RdText.mono(fontSize: compact ? 17 : 19),
         ),
         if (shortageLabel != null) ...[
           const SizedBox(height: 4),
@@ -527,7 +523,10 @@ class PlanFarmingRow extends StatelessWidget {
                 if (code != null)
                   TextSpan(
                     text: code,
-                    style: planMono(fontSize, color: RdColors.secondary),
+                    style: RdText.mono(
+                      fontSize: fontSize,
+                      color: RdColors.secondary,
+                    ),
                   ),
               ],
             ),
@@ -838,13 +837,16 @@ class PlanSkillLevelPicker extends StatelessWidget {
             height: height,
             child: Center(
               child: mastery == null
-                  ? Text('$level', style: planMono(13, color: text))
+                  ? Text(
+                      '$level',
+                      style: RdText.mono(fontSize: 13, color: text),
+                    )
                   : Padding(
                       padding: const EdgeInsets.all(2),
                       child: RdMasteryIcon(
                         level,
                         size: 24,
-                        fallbackStyle: planMono(12, color: text),
+                        fallbackStyle: RdText.mono(fontSize: 12, color: text),
                       ),
                     ),
             ),
@@ -873,14 +875,14 @@ class PlanSkillLevelBadge extends StatelessWidget {
     if (rdMasteryAsset(level) == null) {
       return Text(
         planSkillLevelLabel(level),
-        style: planMono(fontSize, color: RdColors.secondary),
+        style: RdText.mono(fontSize: fontSize, color: RdColors.secondary),
       );
     }
     return RdMasteryIcon(
       level,
       size: fontSize + 8,
       semanticLabel: masteryLabel(level - 7),
-      fallbackStyle: planMono(fontSize, color: RdColors.gold),
+      fallbackStyle: RdText.mono(fontSize: fontSize, color: RdColors.gold),
     );
   }
 }
@@ -946,7 +948,8 @@ class PlanLevelStepper extends StatelessWidget {
           child: Text(
             '/ $upper',
             maxLines: 1,
-            style: planMono(compact ? 11 : 12, color: RdColors.muted),
+            style:
+                RdText.mono(fontSize: compact ? 11 : 12, color: RdColors.muted),
           ),
         ),
       ],

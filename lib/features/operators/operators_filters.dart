@@ -5,9 +5,6 @@ import '../../i18n/nexus_i18n.dart';
 import '../../ui/redesign/rd_widgets.dart';
 import 'operators_list_controller.dart';
 
-const _chipOnBorder = RdColors.chipOnBorder;
-const _chipOnFill = RdColors.chipOnFill;
-
 /// Rounded-rect toggle button of the filter lists (`aria-pressed`).
 class _OptionButton extends StatelessWidget {
   const _OptionButton({
@@ -38,7 +35,7 @@ class _OptionButton extends StatelessWidget {
                 const Color(0x801C3560),
                 const Color(0xFFE0EFFF),
               )
-            : (_chipOnBorder, _chipOnFill, RdColors.text)
+            : (RdColors.chipOnBorder, RdColors.chipOnFill, RdColors.text)
         : (RdColors.line3, background, RdColors.secondary);
     return Semantics(
       button: true,

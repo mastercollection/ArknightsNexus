@@ -817,7 +817,10 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
                   ),
                   child: Text(
                     typeLabel,
-                    style: planMono(11, color: const Color(0xFFCDEEFF)),
+                    style: RdText.mono(
+                      fontSize: 11,
+                      color: const Color(0xFFCDEEFF),
+                    ),
                   ),
                 ),
               ],

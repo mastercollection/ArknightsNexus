@@ -641,17 +641,7 @@ class _SettingsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Semantics(
-            header: true,
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: compact ? 16 : 17,
-                fontWeight: FontWeight.w700,
-                color: RdColors.text,
-              ),
-            ),
-          ),
+          RdHeading(title, fontSize: compact ? 16 : 17),
           if (description != null) ...[
             const SizedBox(height: 4),
             description!,

@@ -844,7 +844,7 @@ class _CountCard extends StatelessWidget {
     final valueText = Text(
       value,
       key: const Key('plan-summary-count'),
-      style: planMono(compact ? 24 : 26),
+      style: RdText.mono(fontSize: compact ? 24 : 26),
     );
     return RdCard(
       radius: RdRadii.tile,
@@ -914,8 +914,8 @@ class _RouteCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   routeLabel,
-                  style: planMono(
-                    compact ? 11 : 12,
+                  style: RdText.mono(
+                    fontSize: compact ? 11 : 12,
                     color: RdColors.secondary2,
                   ),
                 ),
