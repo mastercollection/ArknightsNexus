@@ -14,14 +14,12 @@ import '../../domain/operator.dart';
 import '../../domain/user_data.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../services/user_data_service.dart';
-import '../../ui/nexus_media.dart';
 import '../../ui/redesign/rd_widgets.dart';
 import 'plan_auto_persist.dart';
 import 'plan_materials_grid.dart';
 import 'plan_widgets.dart';
+import 'plan_totals.dart';
 
-const _expItemId = '5001';
-const _lmdItemId = '4001';
 const _autosaveDelay = Duration(milliseconds: 400);
 const _toastDuration = Duration(seconds: 3);
 
@@ -319,11 +317,17 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
 
     final Widget body;
     if (_errorMessage.isNotEmpty) {
-      body = PlanErrorPanel(
+      body = RdStatePanel(
+        kind: RdStateKind.error,
+        layout: RdStateLayout.left,
         title: i18n.t('planPage.detail.errorTitle'),
-        message: _errorMessage,
-        retryLabel: i18n.t('planPage.actions.retry'),
-        onRetry: _loadDetailPage,
+        detail: _errorMessage,
+        action: RdButton(
+          label: i18n.t('planPage.actions.retry'),
+          onPressed: _loadDetailPage,
+          variant: RdButtonVariant.tonal,
+          height: context.rdLayout == RdLayout.compact ? 44 : 40,
+        ),
       );
     } else if (!ready) {
       body = _DetailSkeleton(label: i18n.t('rd.plan.loading'));
@@ -410,23 +414,29 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
     UserPlanOperatorState withElite(UserPlanOperatorState state, int elite) {
       // watch(() => localPlan.*.elite): clamp the level to the new cap.
       final cap = costService.getEliteLevelCap(operator, elite);
-      return _copyState(state, elite: elite, level: math.min(state.level, cap));
+      return state.copyWith(elite: elite, level: math.min(state.level, cap));
     }
 
     Widget elitePicker({required bool target}) {
       final side = target ? 'target' : 'current';
-      return PlanSegmentedPicker<int>(
+      return RdSegmented<int>(
         key: Key('plan-$side-elite'),
-        options: const [0, 1, 2],
+        segments: [
+          for (final elite in const [0, 1, 2])
+            RdSegment(
+              elite,
+              'E$elite',
+              leading: RdEliteIcon(elite, excludeSemantics: true),
+              key: Key('plan-$side-elite-$elite'),
+            ),
+        ],
         selected: target ? plan.target.elite : plan.current.elite,
-        labelOf: (elite) => 'E$elite',
-        leadingOf: (elite) => PlanEliteIcon(elite: elite),
-        segmentKeyOf: (elite) => Key('plan-$side-elite-$elite'),
+        height: compact ? 44 : 40,
         semanticLabel: '${target ? targetTitle : currentTitle} $eliteLabel',
         onChanged: (elite) => _updatePlan(
           (plan) => target
-              ? _copyPlan(plan, target: withElite(plan.target, elite))
-              : _copyPlan(plan, current: withElite(plan.current, elite)),
+              ? plan.copyWith(target: withElite(plan.target, elite))
+              : plan.copyWith(current: withElite(plan.current, elite)),
         ),
       );
     }
@@ -443,11 +453,8 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
         increaseLabel: i18n.t('rd.plan.levelIncrease', {'side': sideTitle}),
         onChanged: (level) => _updatePlan(
           (plan) => target
-              ? _copyPlan(plan, target: _copyState(plan.target, level: level))
-              : _copyPlan(
-                  plan,
-                  current: _copyState(plan.current, level: level),
-                ),
+              ? plan.copyWith(target: plan.target.copyWith(level: level))
+              : plan.copyWith(current: plan.current.copyWith(level: level)),
         ),
       );
     }
@@ -513,16 +520,17 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
       );
     }
 
-    return PlanCard(
+    return RdCard.tile(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              OperatorPortrait(
+              RdPortrait(
                 charId: operator.id,
                 name: operator.name,
-                dimension: compact ? 60 : 72,
+                size: compact ? 60 : 72,
+                radius: 24,
               ),
               SizedBox(width: compact ? 12 : 14),
               Expanded(
@@ -557,14 +565,15 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
             ],
           ),
           SizedBox(height: compact ? 12 : 14),
-          PlanInset(
+          RdInset(
             padding: EdgeInsets.all(compact ? 12 : 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                PlanHeading(
-                  title: i18n.t('planPage.detail.stateTitle'),
+                RdHeading(
+                  i18n.t('planPage.detail.stateTitle'),
                   description: i18n.t('planPage.detail.stateDescription'),
+                  descriptionStyle: RdText.caption,
                 ),
                 SizedBox(height: compact ? 10 : 12),
                 comparison,
@@ -599,29 +608,27 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
         masteryLabel: masteryLabel,
         onChanged: (level) => _updatePlan((plan) {
           final source = target ? plan.target : plan.current;
-          final next = _copyState(
-            source,
-            skillLevels: _replaceIntAt(source.skillLevels, index, level),
-          );
+          final next = source.withSkillLevel(index, level);
           return target
-              ? _copyPlan(plan, target: next)
-              : _copyPlan(plan, current: next);
+              ? plan.copyWith(target: next)
+              : plan.copyWith(current: next);
         }),
       );
     }
 
-    return PlanCard(
+    return RdCard.tile(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          PlanHeading(
-            title: i18n.t('planPage.detail.skillsTitle'),
+          RdHeading(
+            i18n.t('planPage.detail.skillsTitle'),
             description: '${i18n.t('planPage.detail.skillsDescription')} '
                 '${i18n.t('planPage.detail.skillLevelHint')}',
+            descriptionStyle: RdText.caption,
           ),
           for (var index = 0; index < operator.skills.length; index++) ...[
             SizedBox(height: compact ? 10 : 12),
-            PlanInset(
+            RdInset(
               padding: EdgeInsets.all(compact ? 12 : 14),
               radius: compact ? RdRadii.inner : 16,
               child: Column(
@@ -699,13 +706,14 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
     UserPlanOperator plan,
     bool compact,
   ) {
-    return PlanCard(
+    return RdCard.tile(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          PlanHeading(
-            title: i18n.t('planPage.detail.modulesTitle'),
+          RdHeading(
+            i18n.t('planPage.detail.modulesTitle'),
             description: i18n.t('planPage.detail.modulesDescription'),
+            descriptionStyle: RdText.caption,
           ),
           for (final module in _visibleModules(operator)) ...[
             SizedBox(height: compact ? 10 : 12),
@@ -722,7 +730,7 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
     UserPlanOperator plan,
     bool compact,
   ) {
-    final maxStage = _moduleMaxStage(module);
+    final maxStage = module.maxStage;
     final stages = [for (var stage = 0; stage <= maxStage; stage++) stage];
     final locked = i18n.t('planPage.detail.moduleLocked');
     final icon = _moduleTypeIcons[module.uniEquipId];
@@ -733,45 +741,38 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
 
     Widget picker({required bool target}) {
       final side = target ? 'target' : 'current';
-      return PlanSegmentedPicker<int>(
+      return RdSegmented<int>(
         key: Key('plan-$side-module-$id'),
-        options: stages,
+        segments: [
+          for (final stage in stages)
+            RdSegment(
+              stage,
+              stage == 0 ? locked : 'Stage $stage',
+              key: Key('plan-$side-module-$id-$stage'),
+            ),
+        ],
         selected: target
-            ? _findModule(plan.target.modules, id)?.targetStage
-            : _findModule(plan.current.modules, id)?.currentStage,
-        labelOf: (stage) => stage == 0 ? locked : 'Stage $stage',
-        segmentKeyOf: (stage) => Key('plan-$side-module-$id-$stage'),
+            ? plan.target.module(id)?.targetStage
+            : plan.current.module(id)?.currentStage,
+        height: compact ? 44 : 40,
         semanticLabel:
             '${module.uniEquipName} ${target ? targetLabel : currentLabel}',
         onChanged: (stage) => _updatePlan(
           (plan) => target
-              ? _copyPlan(
-                  plan,
-                  target: _copyState(
-                    plan.target,
-                    modules: _replaceModuleStage(
-                      plan.target.modules,
-                      id,
-                      targetStage: stage,
-                    ),
-                  ),
+              ? plan.copyWith(
+                  target: plan.target.withModuleStage(id, targetStage: stage),
                 )
-              : _copyPlan(
-                  plan,
-                  current: _copyState(
-                    plan.current,
-                    modules: _replaceModuleStage(
-                      plan.current.modules,
-                      id,
-                      currentStage: stage,
-                    ),
+              : plan.copyWith(
+                  current: plan.current.withModuleStage(
+                    id,
+                    currentStage: stage,
                   ),
                 ),
         ),
       );
     }
 
-    return PlanInset(
+    return RdInset(
       padding: EdgeInsets.all(compact ? 12 : 14),
       radius: compact ? RdRadii.inner : 16,
       child: Column(
@@ -787,7 +788,7 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xD9071224),
                     borderRadius: BorderRadius.circular(RdRadii.control),
-                    border: Border.all(color: const Color(0x14FFFFFF)),
+                    border: Border.all(color: RdColors.white8),
                   ),
                   child: Image.file(icon, fit: BoxFit.contain),
                 ),
@@ -816,7 +817,10 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
                   ),
                   child: Text(
                     typeLabel,
-                    style: planMono(11, color: const Color(0xFFCDEEFF)),
+                    style: RdText.mono(
+                      fontSize: 11,
+                      color: const Color(0xFFCDEEFF),
+                    ),
                   ),
                 ),
               ],
@@ -855,30 +859,34 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
     UserPlanOperator plan,
     bool compact,
   ) {
-    final costService = ref.read(planCostServiceProvider);
-    final breakdown =
-        costService.calculatePlanCostsWithItems(operator, plan, _itemsById);
-    final farming = costService.estimatePlanFarming(breakdown);
-    final showExp = farming.exp > 0;
-    final showLmd = farming.lmd > 0;
+    final totals = PlanTotals.single(
+      ref.read(planCostServiceProvider),
+      operator,
+      plan,
+      _itemsById,
+    );
+    final breakdown = totals.breakdown;
+    final farming = totals.farming;
+    final showExp = totals.showExp;
+    final showLmd = totals.showLmd;
     final showOverview = showExp || showLmd;
-    final lmdItemId = farming.lmdItem?.id ?? _lmdItemId;
-    final lmdShortage =
-        planShortage(farming.lmd, _itemsById[lmdItemId]?.ownedCount);
+    final lmdItemId = totals.lmdId;
+    final lmdShortage = totals.lmdShortage;
     final expLabel = i18n.t('planPage.summary.expLabel');
     final lmdLabel = i18n.t('planPage.summary.lmdLabel');
 
-    final result = PlanCard(
+    final result = RdCard.tile(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          PlanHeading(
-            title: i18n.t('planPage.detail.summaryTitle'),
+          RdHeading(
+            i18n.t('planPage.detail.summaryTitle'),
             description: i18n.t('planPage.detail.summaryDescription'),
+            descriptionStyle: RdText.caption,
           ),
           if (showOverview) ...[
             SizedBox(height: compact ? 10 : 12),
-            PlanGrid(
+            RdAutoGrid(
               columns: 2,
               gap: compact ? 8 : 10,
               children: [
@@ -886,15 +894,15 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
                   PlanResourceCard(
                     inset: true,
                     label: expLabel,
-                    itemId: _expItemId,
-                    iconId: _itemsById[_expItemId]?.iconId,
-                    itemName: _itemsById[_expItemId]?.name ?? expLabel,
+                    itemId: expItemId,
+                    iconId: _itemsById[expItemId]?.iconId,
+                    itemName: _itemsById[expItemId]?.name ?? expLabel,
                     value: formatPlanNumber(farming.exp),
                     tint: PlanColors.expTint,
                     linkLabel: i18n.t('rd.plan.itemDetail', {
-                      'name': _itemsById[_expItemId]?.name ?? expLabel,
+                      'name': _itemsById[expItemId]?.name ?? expLabel,
                     }),
-                    onOpenItem: () => context.push('/items/$_expItemId'),
+                    onOpenItem: () => context.push('/items/$expItemId'),
                   ),
                 if (showLmd)
                   PlanResourceCard(
@@ -918,7 +926,7 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
               ],
             ),
             SizedBox(height: compact ? 10 : 12),
-            PlanInset(
+            RdInset(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -978,9 +986,10 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
       ),
     );
 
-    final heading = PlanHeading(
-      title: i18n.t('planPage.summary.materialsTitle'),
+    final heading = RdHeading(
+      i18n.t('planPage.summary.materialsTitle'),
       description: i18n.t('planPage.summary.materialsDescription'),
+      descriptionStyle: RdText.caption,
     );
     final grid = PlanMaterialsGrid(
       materials: breakdown.materials,
@@ -998,7 +1007,7 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [heading, const SizedBox(height: 10), grid],
           )
-        : PlanCard(
+        : RdCard.tile(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [heading, const SizedBox(height: 14), grid],
@@ -1172,17 +1181,17 @@ class _DetailSkeleton extends StatelessWidget {
     return Semantics(
       label: label,
       container: true,
-      child: const PlanCard(
-        child: PlanPulse(
+      child: const RdCard.tile(
+        child: RdPulse(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              PlanSkeletonBlock(height: 20, widthFactor: 0.32),
+              RdSkeleton(height: 20, widthFactor: 0.32),
               SizedBox(height: 14),
-              PlanSkeletonBlock(
+              RdSkeleton(
                 height: 180,
                 radius: 16,
-                color: Color(0x0DFFFFFF),
+                color: RdColors.white5,
               ),
             ],
           ),
@@ -1207,77 +1216,5 @@ String _buildTrackedPlanSignature(UserPlanOperator? plan) {
   ].join('|');
 }
 
-int _moduleMaxStage(OperatorModule module) {
-  var maxStage = 0;
-  for (final phase in module.battlePhases) {
-    maxStage = math.max(maxStage, phase.equipLevel);
-  }
-  return maxStage;
-}
-
 List<OperatorModule> _visibleModules(OperatorDetail detail) =>
-    detail.modules.where((module) => _moduleMaxStage(module) > 0).toList();
-
-UserPlanModule? _findModule(List<UserPlanModule> modules, String moduleId) {
-  for (final module in modules) {
-    if (module.moduleId == moduleId) {
-      return module;
-    }
-  }
-  return null;
-}
-
-UserPlanOperator _copyPlan(
-  UserPlanOperator plan, {
-  UserPlanOperatorState? current,
-  UserPlanOperatorState? target,
-}) {
-  return UserPlanOperator(
-    operatorId: plan.operatorId,
-    current: current ?? plan.current,
-    target: target ?? plan.target,
-  );
-}
-
-UserPlanOperatorState _copyState(
-  UserPlanOperatorState state, {
-  int? elite,
-  int? level,
-  List<int>? skillLevels,
-  List<UserPlanModule>? modules,
-}) {
-  return UserPlanOperatorState(
-    elite: elite ?? state.elite,
-    level: level ?? state.level,
-    skillLevels: skillLevels ?? state.skillLevels,
-    modules: modules ?? state.modules,
-  );
-}
-
-List<int> _replaceIntAt(List<int> values, int index, int value) {
-  final next = List<int>.of(values);
-  while (next.length <= index) {
-    next.add(1);
-  }
-  next[index] = value;
-  return next;
-}
-
-List<UserPlanModule> _replaceModuleStage(
-  List<UserPlanModule> modules,
-  String moduleId, {
-  int? currentStage,
-  int? targetStage,
-}) {
-  return [
-    for (final module in modules)
-      if (module.moduleId == moduleId)
-        UserPlanModule(
-          moduleId: module.moduleId,
-          currentStage: currentStage ?? module.currentStage,
-          targetStage: targetStage ?? module.targetStage,
-        )
-      else
-        module,
-  ];
-}
+    detail.modules.where((module) => module.maxStage > 0).toList();

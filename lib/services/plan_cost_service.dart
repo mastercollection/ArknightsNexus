@@ -3,7 +3,6 @@ import '../domain/item.dart';
 import '../domain/operator.dart';
 import '../domain/user_data.dart';
 
-const _lmdItemId = '4001';
 const _ls6ExpPerRun = 10000;
 const _ce6LmdPerRun = 10000;
 const _supplyStageSanity = 36;
@@ -150,7 +149,7 @@ class DartPlanCostService implements PlanCostService {
         _appendVirtualItemMaterial(
           materialMap,
           itemsById,
-          _lmdItemId,
+          lmdItemId,
           (goldTable.elementAtOrNull(level - 1) ?? 0).toDouble(),
         );
       }
@@ -162,7 +161,7 @@ class DartPlanCostService implements PlanCostService {
       _appendVirtualItemMaterial(
         materialMap,
         itemsById,
-        _lmdItemId,
+        lmdItemId,
         (detail.eliteEvolveGoldCosts.elementAtOrNull(elite) ?? 0).toDouble(),
       );
       for (final cost in detail.eliteEvolveCosts.elementAtOrNull(elite) ??
@@ -267,7 +266,7 @@ class DartPlanCostService implements PlanCostService {
   @override
   PlanFarmingEstimate estimatePlanFarming(PlanCostBreakdown breakdown) {
     final lmdItem = breakdown.materials
-        .where((material) => material.id == _lmdItemId)
+        .where((material) => material.id == lmdItemId)
         .firstOrNull;
     final lmd = lmdItem?.count ?? 0;
     final expRuns = (breakdown.exp / _ls6ExpPerRun).ceil();
@@ -579,7 +578,7 @@ class DartPlanCostService implements PlanCostService {
     if (goldCost > 0) {
       _appendExpandedCost(
         expanded,
-        const FormulaCost(id: _lmdItemId, count: 0, type: 'MATERIAL'),
+        const FormulaCost(id: lmdItemId, count: 0, type: 'MATERIAL'),
         requiredCrafts,
         workshopFormulaByItemId,
         manufactFormulaByItemId,
@@ -843,13 +842,8 @@ int _compareState(UserPlanOperatorState left, UserPlanOperatorState right) {
   return left.level - right.level;
 }
 
-int _getMaxModuleStage(OperatorModule module) {
-  final maxBattlePhase = module.battlePhases.fold<int>(
-    0,
-    (max, phase) => phase.equipLevel > max ? phase.equipLevel : max,
-  );
-  return _clamp(maxBattlePhase, 0, _maxModuleStage);
-}
+int _getMaxModuleStage(OperatorModule module) =>
+    _clamp(module.maxStage, 0, _maxModuleStage);
 
 List<int> _buildDefaultSkillLevels(int skillCount) {
   return List.filled(skillCount > 3 ? skillCount : 3, 1);

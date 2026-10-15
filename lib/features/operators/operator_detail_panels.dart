@@ -19,7 +19,7 @@ String _eliteLabel(NexusI18n i18n, int elite) =>
     '${i18n.t('operatorDetail.labels.elite')} $elite';
 
 Widget? _eliteLeading(int elite) {
-  return eliteIconAsset(elite) == null ? null : EliteIcon(elite, height: 20);
+  return rdEliteAsset(elite) == null ? null : RdEliteIcon(elite, size: 20);
 }
 
 // ---------------------------------------------------------------------------
@@ -60,14 +60,14 @@ class OperatorStatsPanel extends StatelessWidget {
       spacing: 8,
       children: [
         Text(i18n.t('operatorDetail.labels.elite'), style: fieldLabel),
-        OpSegmented<int>(
+        RdSegmented<int>(
           key: const ValueKey('stats-elite'),
           semanticLabel: i18n.t('operatorDetail.labels.elite'),
           height: compact ? 44 : 40,
-          value: elite,
+          selected: elite,
           segments: [
             for (var i = 0; i < operator.eliteCaps.length; i++)
-              OpSegment(i, _eliteLabel(i18n, i), leading: _eliteLeading(i)),
+              RdSegment(i, _eliteLabel(i18n, i), leading: _eliteLeading(i)),
           ],
           onChanged: onEliteChanged,
         ),
@@ -131,8 +131,9 @@ class OperatorStatsPanel extends StatelessWidget {
             );
           },
         ),
-        OpAutoGrid(
+        RdAutoGrid(
           minTileWidth: compact ? 120 : 140,
+          gap: 10,
           children: [
             for (final card in cards)
               Container(
@@ -142,7 +143,7 @@ class OperatorStatsPanel extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: opPanelFill,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0x14FFFFFF)),
+                  border: Border.all(color: RdColors.white8),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -205,30 +206,33 @@ class OperatorAbilitiesPanel extends StatelessWidget {
       spacing: 14,
       children: [
         if (operator.eliteCaps.isNotEmpty)
-          OpSegmented<int>(
+          RdSegmented<int>(
             key: const ValueKey('abilities-elite'),
             semanticLabel: i18n.t('operatorDetail.labels.elite'),
             height: compact ? 44 : 40,
-            value: eliteTab,
+            selected: eliteTab,
             segments: [
               for (var i = 0; i < operator.eliteCaps.length; i++)
-                OpSegment(i, 'E$i', leading: _eliteLeading(i)),
+                RdSegment(i, 'E$i', leading: _eliteLeading(i)),
             ],
             onChanged: onEliteTabChanged,
           ),
         if (range != null)
-          DetailInset(
+          RdInset.section(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: 10,
               children: [
                 DetailHeaderWrap(
                   children: [
-                    OpHeading(i18n.t('operatorDetail.labels.attackRange')),
+                    RdHeading(
+                      i18n.t('operatorDetail.labels.attackRange'),
+                      color: RdColors.heading,
+                    ),
                     DetailChip(
                       children: [
-                        if (eliteIconAsset(eliteTab) != null)
-                          EliteIcon(eliteTab)
+                        if (rdEliteAsset(eliteTab) != null)
+                          RdEliteIcon(eliteTab)
                         else
                           Text(
                             i18n.t(
@@ -244,12 +248,13 @@ class OperatorAbilitiesPanel extends StatelessWidget {
               ],
             ),
           ),
-        OpHeading(
+        RdHeading(
           i18n.t('operatorDetail.labels.trait'),
           description: i18n.t('operatorDetail.descriptions.trait'),
+          color: RdColors.heading,
         ),
         for (final trait in traits)
-          DetailInset(
+          RdInset.section(
             key: ValueKey('trait-${trait.key}'),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -285,9 +290,10 @@ class OperatorAbilitiesPanel extends StatelessWidget {
         if (operator.talents.isNotEmpty) ...[
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: OpHeading(
+            child: RdHeading(
               i18n.t('operatorDetail.labels.talent'),
               description: i18n.t('operatorDetail.descriptions.talent'),
+              color: RdColors.heading,
             ),
           ),
           if (talents.isNotEmpty)
@@ -321,7 +327,7 @@ class _TalentCardView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DetailInset(
+    return RdInset.section(
       key: ValueKey('talent-${talent.key}'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -383,7 +389,7 @@ class OperatorPotentialsPanel extends StatelessWidget {
             key: ValueKey('potential-${potential.key}'),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0x08FFFFFF),
+              color: RdColors.white3,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -410,7 +416,7 @@ class OperatorPotentialsPanel extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 14,
                       height: 1.5,
-                      color: detailBodyColor,
+                      color: RdColors.body,
                     ),
                   ),
                 ),
@@ -522,11 +528,11 @@ class OperatorSkillsPanel extends StatelessWidget {
 
   /// Mastery icon for levels 8-10, else the level text.
   Widget _levelChip(int level, {required bool selectedText}) {
-    final asset = skillLevelIconAsset(level);
+    final asset = rdMasteryAsset(level);
     return DetailChip(
       children: [
         if (asset != null)
-          MasteryIcon(level, semanticLabel: _masteryLabel(level - 7))
+          RdMasteryIcon(level, semanticLabel: _masteryLabel(level - 7))
         else
           Text(
             selectedText
@@ -575,8 +581,8 @@ class OperatorSkillsPanel extends StatelessWidget {
                 caution: true,
                 children: [
                   Text(i18n.t('operatorDetail.labels.unlockCondition')),
-                  if (eliteIconAsset(skill.unlockElite) != null)
-                    EliteIcon(skill.unlockElite, height: 18),
+                  if (rdEliteAsset(skill.unlockElite) != null)
+                    RdEliteIcon(skill.unlockElite, size: 18),
                   Text(
                     i18n.t(
                       'operatorDetail.labels.conditionLevel',
@@ -608,15 +614,16 @@ class OperatorSkillsPanel extends StatelessWidget {
           ),
         ],
       ),
-      DetailInset(
+      RdInset.section(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: 10,
           children: [
-            OpHeading(
+            RdHeading(
               i18n.t('operatorDetail.labels.displayLevel'),
               description:
                   i18n.t('operatorDetail.descriptions.skillDisplayLevel'),
+              color: RdColors.heading,
             ),
             OpRangeControl(
               key: const ValueKey('skill-level'),
@@ -628,8 +635,8 @@ class OperatorSkillsPanel extends StatelessWidget {
               semanticLabel: i18n.t('rd.operators.detail.skillLevel'),
               decreaseTooltip: i18n.t('rd.operators.detail.skillLevelDown'),
               increaseTooltip: i18n.t('rd.operators.detail.skillLevelUp'),
-              readout: skillLevelIconAsset(shownLevel) != null
-                  ? MasteryIcon(
+              readout: rdMasteryAsset(shownLevel) != null
+                  ? RdMasteryIcon(
                       shownLevel,
                       size: 26,
                       semanticLabel: _masteryLabel(shownLevel - 7),
@@ -639,18 +646,19 @@ class OperatorSkillsPanel extends StatelessWidget {
           ],
         ),
       ),
-      DetailInset(
+      RdInset.section(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: 12,
           children: [
-            OpHeading(
+            RdHeading(
               i18n.t('operatorDetail.labels.levelComparison'),
               description:
                   i18n.t('operatorDetail.descriptions.skillLevelComparison'),
+              color: RdColors.heading,
             ),
             if (range != null)
-              DetailInset(
+              RdInset.section(
                 radius: 18,
                 padding: const EdgeInsets.all(14),
                 child: Column(
@@ -659,9 +667,10 @@ class OperatorSkillsPanel extends StatelessWidget {
                   children: [
                     DetailHeaderWrap(
                       children: [
-                        OpHeading(
+                        RdHeading(
                           i18n.t('operatorDetail.labels.skillRange'),
                           fontSize: 14,
+                          color: RdColors.heading,
                         ),
                         if (levelInfo != null)
                           _levelChip(levelInfo.level, selectedText: false),

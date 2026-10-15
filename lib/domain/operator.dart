@@ -659,6 +659,12 @@ class OperatorModule {
   final String? specialEquipDesc;
   final List<OperatorModuleBattlePhase> battlePhases;
 
+  /// Highest stage among [battlePhases]; 0 when the module has none.
+  int get maxStage => battlePhases.fold(
+        0,
+        (max, phase) => phase.equipLevel > max ? phase.equipLevel : max,
+      );
+
   factory OperatorModule.fromJson(Map<String, Object?> json) {
     return OperatorModule(
       uniEquipId: json['uniEquipId'] as String,

@@ -13,8 +13,6 @@ import '../../ui/nexus_ui.dart'
     show ItemIcon, NexusMessageType, showNexusMessage;
 import '../../ui/redesign/rd_widgets.dart';
 import 'item_format.dart';
-import 'item_overlays.dart';
-import 'item_widgets.dart';
 import 'owned_count_editor.dart';
 
 /// Port of `src/pages/items.vue`, laid out after the redesign canvas
@@ -244,39 +242,49 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
 
     _savingItemIds.addListener(onSavingChanged);
     try {
-      await showItemsDialog<void>(
+      await showRdSheet<void>(
         context: context,
-        title: item.name.isEmpty ? i18n.t('itemsPage.topBar.title') : item.name,
-        closeLabel: i18n.t('rd.items.close'),
+        barrierLabel: i18n.t('common.close'),
         maxWidth: 420,
-        closeLocked: locked,
-        compactHeader: OwnedCountEditorHeader(
-          item: item,
-          currentCountLabel: i18n.t('itemsPage.editor.currentCount'),
+        enableDrag: false,
+        builder: (_) => RdSheetFrame(
+          title:
+              item.name.isEmpty ? i18n.t('itemsPage.topBar.title') : item.name,
+          closeLabel: i18n.t('common.close'),
+          header: context.rdLayout == RdLayout.compact
+              ? OwnedCountEditorHeader(
+                  item: item,
+                  currentCountLabel: i18n.t('itemsPage.editor.currentCount'),
+                )
+              : null,
+          closeLocked: locked,
+          onCloseRequest: () async {
+            if (_isSaving(item.itemId)) {
+              closeQueued = true;
+              return false;
+            }
+            await _editorKey.currentState?.commit();
+            if (_isSaving(item.itemId)) {
+              closeQueued = true;
+              return false;
+            }
+            return true;
+          },
+          sheetMaxHeightFactor: 0.92,
+          child: Builder(
+            builder: (context) {
+              dialogContext = context;
+              return OwnedCountEditor(
+                key: _editorKey,
+                item: item,
+                currentCountLabel: i18n.t('itemsPage.editor.currentCount'),
+                savingItemIds: _savingItemIds,
+                showItemHeader: context.rdLayout != RdLayout.compact,
+                onCommit: (value) => _updateOwnedCount(item.itemId, value),
+              );
+            },
+          ),
         ),
-        onCloseRequest: () async {
-          if (_isSaving(item.itemId)) {
-            closeQueued = true;
-            return false;
-          }
-          await _editorKey.currentState?.commit();
-          if (_isSaving(item.itemId)) {
-            closeQueued = true;
-            return false;
-          }
-          return true;
-        },
-        builder: (context) {
-          dialogContext = context;
-          return OwnedCountEditor(
-            key: _editorKey,
-            item: item,
-            currentCountLabel: i18n.t('itemsPage.editor.currentCount'),
-            savingItemIds: _savingItemIds,
-            showItemHeader: context.rdLayout != RdLayout.compact,
-            onCommit: (value) => _updateOwnedCount(item.itemId, value),
-          );
-        },
       );
     } finally {
       _savingItemIds.removeListener(onSavingChanged);
@@ -287,51 +295,62 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
   Future<void> _openImportDialog() async {
     final i18n = ref.read(i18nProvider);
     final importing = ValueNotifier<bool>(false);
-    await showItemsDialog<void>(
+    await showRdSheet<void>(
       context: context,
-      title: i18n.t('itemsPage.importDialog.title'),
-      closeLabel: i18n.t('rd.items.close'),
+      barrierLabel: i18n.t('common.close'),
       maxWidth: 560,
-      closeLocked: importing,
-      onCloseRequest: () async => !importing.value,
-      builder: (dialogContext) => _ItemCountImportForm(
-        importing: importing,
-        onCancel: () {
-          if (!importing.value) {
-            Navigator.of(dialogContext).pop();
-          }
-        },
-        onSubmit: (payload) async {
-          if (importing.value) {
-            return;
-          }
-          importing.value = true;
-          try {
-            final importedCount = await ref
-                .read(userDataServiceProvider)
-                .importUserItemCounts(payload);
-            await _loadItems();
-            if (dialogContext.mounted) {
-              Navigator.of(dialogContext).pop();
-            }
-            if (mounted) {
-              showNexusMessage(
-                context,
-                ref.read(i18nProvider).t(
-                  'itemsPage.messages.importSuccess',
-                  {'count': importedCount},
-                ),
-                type: NexusMessageType.success,
-              );
-            }
-          } catch (error) {
-            if (mounted) {
-              showNexusMessage(context, '$error', type: NexusMessageType.error);
-            }
-          } finally {
-            importing.value = false;
-          }
-        },
+      enableDrag: false,
+      builder: (_) => RdSheetFrame(
+        title: i18n.t('itemsPage.importDialog.title'),
+        closeLabel: i18n.t('common.close'),
+        closeLocked: importing,
+        onCloseRequest: () async => !importing.value,
+        sheetMaxHeightFactor: 0.92,
+        child: Builder(
+          builder: (dialogContext) => _ItemCountImportForm(
+            importing: importing,
+            onCancel: () {
+              if (!importing.value) {
+                Navigator.of(dialogContext).pop();
+              }
+            },
+            onSubmit: (payload) async {
+              if (importing.value) {
+                return;
+              }
+              importing.value = true;
+              try {
+                final importedCount = await ref
+                    .read(userDataServiceProvider)
+                    .importUserItemCounts(payload);
+                await _loadItems();
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop();
+                }
+                if (mounted) {
+                  showNexusMessage(
+                    context,
+                    ref.read(i18nProvider).t(
+                      'itemsPage.messages.importSuccess',
+                      {'count': importedCount},
+                    ),
+                    type: NexusMessageType.success,
+                  );
+                }
+              } catch (error) {
+                if (mounted) {
+                  showNexusMessage(
+                    context,
+                    '$error',
+                    type: NexusMessageType.error,
+                  );
+                }
+              } finally {
+                importing.value = false;
+              }
+            },
+          ),
+        ),
       ),
     );
     importing.dispose();
@@ -367,7 +386,7 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
       title: i18n.t('itemsPage.topBar.title'),
       subtitle: i18n.t('itemsPage.topBar.description'),
       onBack: _back,
-      backTooltip: i18n.t('rd.items.back'),
+      backTooltip: i18n.t('common.back'),
       actions: [importButton],
       bottom: compact ? search : null,
     );
@@ -409,10 +428,11 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
   Widget _buildContent(NexusI18n i18n, bool compact) {
     if (_errorMessage.isNotEmpty) {
       return SliverToBoxAdapter(
-        child: ItemsStatePanel(
+        child: RdStatePanel(
+          kind: RdStateKind.error,
+          layout: RdStateLayout.left,
           title: i18n.t('itemsPage.states.error'),
           message: _errorMessage,
-          alert: true,
         ),
       );
     }
@@ -426,7 +446,11 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
     }
     if (_filteredItems.isEmpty) {
       return SliverToBoxAdapter(
-        child: ItemsStatePanel(title: i18n.t('itemsPage.states.empty')),
+        child: RdStatePanel(
+          kind: RdStateKind.empty,
+          layout: RdStateLayout.left,
+          title: i18n.t('itemsPage.states.empty'),
+        ),
       );
     }
     return SliverLayoutBuilder(
@@ -509,8 +533,7 @@ int _columnsFor(double width, bool compact) {
   if (compact) {
     return 3;
   }
-  final columns = ((width + 14) / (150 + 14)).floor();
-  return columns < 1 ? 1 : columns;
+  return rdAutoColumns(width, 150, gap: 14);
 }
 
 class _ItemCard extends StatelessWidget {
@@ -713,7 +736,7 @@ class _LoadMoreFooter extends StatelessWidget {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(RdRadii.inner),
-        border: Border.all(color: const Color(0x24FFFFFF)),
+        border: Border.all(color: RdColors.white14),
       ),
       child: compact
           ? Column(
@@ -744,7 +767,7 @@ class _LoadingGrid extends StatelessWidget {
       builder: (context, constraints) {
         final columns = _columnsFor(constraints.maxWidth, compact);
         final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
-        return ItemsPulse(
+        return RdPulse(
           child: Wrap(
             spacing: gap,
             runSpacing: gap,
@@ -752,30 +775,30 @@ class _LoadingGrid extends StatelessWidget {
               for (var i = 0; i < 18; i++)
                 SizedBox(
                   width: width,
-                  child: ItemsSurface(
+                  child: RdCard.tile(
                     padding: EdgeInsets.all(compact ? 10 : 12),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Center(
-                          child: ItemsSkeletonBox(
+                          child: RdSkeleton(
                             width: compact ? 64 : 72,
                             height: compact ? 64 : 72,
                             radius: compact ? 16 : 18,
-                            color: const Color(0x0FFFFFFF),
+                            color: RdColors.soft,
                           ),
                         ),
                         SizedBox(height: compact ? 8 : 10),
-                        ItemsSkeletonBox(
+                        RdSkeleton(
                           height: compact ? 14 : 16,
-                          color: const Color(0x14FFFFFF),
+                          color: RdColors.white8,
                         ),
                         SizedBox(height: compact ? 8 : 10),
-                        ItemsSkeletonBox(
+                        RdSkeleton(
                           height: compact ? 10 : 12,
                           widthFactor: 0.7,
-                          color: const Color(0x0DFFFFFF),
+                          color: RdColors.white5,
                         ),
                       ],
                     ),
@@ -863,15 +886,15 @@ class _ItemCountImportFormState extends ConsumerState<_ItemCountImportForm> {
                     ),
                     border: OutlineInputBorder(
                       borderRadius: radius,
-                      borderSide: const BorderSide(color: Color(0x24FFFFFF)),
+                      borderSide: const BorderSide(color: RdColors.white14),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: radius,
-                      borderSide: const BorderSide(color: Color(0x24FFFFFF)),
+                      borderSide: const BorderSide(color: RdColors.white14),
                     ),
                     disabledBorder: OutlineInputBorder(
                       borderRadius: radius,
-                      borderSide: const BorderSide(color: Color(0x24FFFFFF)),
+                      borderSide: const BorderSide(color: RdColors.white14),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: radius,
@@ -908,7 +931,7 @@ class _ItemCountImportFormState extends ConsumerState<_ItemCountImportForm> {
                     i18n.t('rd.items.importing'),
                     style: const TextStyle(
                       fontSize: 13,
-                      color: Color(0xFFA9C8FF),
+                      color: RdColors.link,
                     ),
                   ),
                 ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../ui/nexus_ui.dart' show showNexusMessageBox;
 import '../../ui/redesign/rd_widgets.dart';
 
 /// `ElMessageBox.confirm` in the canvas style (`DesktopSettings.dc.html`
@@ -13,12 +12,14 @@ Future<bool> showSettingsConfirm({
   required String confirmText,
   required String cancelText,
 }) async {
-  final result = await showNexusMessageBox<bool>(
+  final result = await showRdSheet<bool>(
     context: context,
+    mode: RdSheetMode.dialog,
+    maxWidth: 460,
     builder: (dialogContext) => _SettingsDialog(
       badge: '!',
       badgeColor: RdColors.gold,
-      badgeFill: const Color(0x24FFCF70),
+      badgeFill: RdColors.goldFill,
       title: title,
       body: Text(
         message,
@@ -46,8 +47,10 @@ Future<void> showSettingsAlert({
   required String confirmText,
   String? detail,
 }) {
-  return showNexusMessageBox<void>(
+  return showRdSheet<void>(
     context: context,
+    mode: RdSheetMode.dialog,
+    maxWidth: 460,
     builder: (dialogContext) => _SettingsDialog(
       badge: 'i',
       badgeColor: RdColors.cyan,
@@ -148,71 +151,30 @@ class _SettingsDialog extends StatelessWidget {
       );
     }
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 460),
-          child: Material(
-            color: RdColors.inner2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(RdRadii.card),
-              side: const BorderSide(color: Color(0x1AFFFFFF)),
-            ),
-            child: Semantics(
-              scopesRoute: true,
-              namesRoute: true,
-              explicitChildNodes: true,
-              label: title,
-              child: Padding(
-                padding: EdgeInsets.all(compact ? 20 : 22),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 28,
-                          height: 28,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: badgeFill,
-                          ),
-                          child: ExcludeSemantics(
-                            child: Text(
-                              badge,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w800,
-                                color: badgeColor,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            title,
-                            style: const TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w700,
-                              color: RdColors.text,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    Flexible(child: SingleChildScrollView(child: body)),
-                    const SizedBox(height: 14),
-                    actions,
-                  ],
-                ),
-              ),
-            ),
+    return RdSheetFrame(
+      title: title,
+      titleLeading: Container(
+        width: 28,
+        height: 28,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(shape: BoxShape.circle, color: badgeFill),
+        child: ExcludeSemantics(
+          child: Text(
+            badge,
+            style: TextStyle(fontWeight: FontWeight.w800, color: badgeColor),
           ),
         ),
+      ),
+      dialogPadding: EdgeInsets.all(compact ? 20 : 22),
+      scrollable: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Flexible(child: SingleChildScrollView(child: body)),
+          const SizedBox(height: 14),
+          actions,
+        ],
       ),
     );
   }

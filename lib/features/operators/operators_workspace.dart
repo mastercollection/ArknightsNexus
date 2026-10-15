@@ -162,14 +162,14 @@ class _ActiveChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: muted ? const Color(0x0DFFFFFF) : const Color(0x12FFFFFF),
+        color: muted ? RdColors.white5 : RdColors.line2,
         borderRadius: BorderRadius.circular(RdRadii.pill),
       ),
       child: Text(
         label,
         style: TextStyle(
           fontSize: 13,
-          color: muted ? RdColors.muted : const Color(0xFFE6ECF8),
+          color: muted ? RdColors.muted : RdColors.body,
         ),
       ),
     );

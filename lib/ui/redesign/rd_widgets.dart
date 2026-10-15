@@ -1,33 +1,51 @@
 import 'package:flutter/material.dart';
 
+import 'rd_feedback.dart';
 import 'rd_tokens.dart';
 
+export 'rd_feedback.dart';
+export 'rd_inputs.dart';
+export 'rd_layout.dart';
+export 'rd_media.dart';
+export 'rd_sheet.dart';
 export 'rd_tokens.dart';
 
 /// Card surface (`#0c1426`, 1px line, radius 20).
 class RdCard extends StatelessWidget {
   const RdCard({
     required this.child,
-    this.padding = const EdgeInsets.all(22),
+    EdgeInsetsGeometry this.padding = const EdgeInsets.all(22),
     this.color = RdColors.card,
-    this.radius = RdRadii.card,
+    double this.radius = RdRadii.card,
     this.borderColor = RdColors.line2,
     super.key,
   });
 
+  /// Card of the list and detail pages: radius 18 (16 on phones) and, unless
+  /// [padding] is given, 18px padding (14 on phones).
+  const RdCard.tile({
+    required this.child,
+    this.padding,
+    this.color = RdColors.card,
+    this.borderColor = RdColors.line2,
+    super.key,
+  }) : radius = null;
+
   final Widget child;
-  final EdgeInsetsGeometry padding;
+  final EdgeInsetsGeometry? padding;
   final Color color;
-  final double radius;
+  final double? radius;
   final Color? borderColor;
 
   @override
   Widget build(BuildContext context) {
+    final compact = context.rdLayout == RdLayout.compact;
     return Container(
-      padding: padding,
+      padding: padding ?? EdgeInsets.all(compact ? 14 : 18),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(radius),
+        borderRadius:
+            BorderRadius.circular(radius ?? (compact ? 16 : RdRadii.tile)),
         border: borderColor == null ? null : Border.all(color: borderColor!),
       ),
       child: child,
@@ -46,6 +64,9 @@ class RdIconButton extends StatelessWidget {
     this.filled = true,
     this.active = false,
     this.spinning = false,
+    this.iconColor,
+    this.iconSize = 20,
+    this.toggled,
     super.key,
   });
 
@@ -55,6 +76,13 @@ class RdIconButton extends StatelessWidget {
   final double size;
   final bool filled;
   final bool active;
+
+  /// Overrides the icon colour while enabled (gold favorite star).
+  final Color? iconColor;
+  final double iconSize;
+
+  /// Announces a toggle button in this state (favorite on/off).
+  final bool? toggled;
 
   /// Rotates the icon (sync in progress).
   final bool spinning;
@@ -69,15 +97,13 @@ class RdIconButton extends StatelessWidget {
             : Colors.transparent;
     Widget glyph = Icon(
       icon,
-      size: 20,
+      size: iconSize,
       color: !enabled
           ? RdColors.muted
-          : active
-              ? RdColors.text
-              : RdColors.secondary,
+          : iconColor ?? (active ? RdColors.text : RdColors.secondary),
     );
     if (spinning) {
-      glyph = _Spin(child: glyph);
+      glyph = RdSpin(child: glyph);
     }
     return Tooltip(
       message: tooltip,
@@ -85,6 +111,7 @@ class RdIconButton extends StatelessWidget {
       child: Semantics(
         button: true,
         enabled: enabled,
+        toggled: toggled,
         label: tooltip,
         excludeSemantics: true,
         child: Material(
@@ -110,37 +137,12 @@ class RdIconButton extends StatelessWidget {
   }
 }
 
-class _Spin extends StatefulWidget {
-  const _Spin({required this.child});
-
-  final Widget child;
-
-  @override
-  State<_Spin> createState() => _SpinState();
-}
-
-class _SpinState extends State<_Spin> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 900),
-  )..repeat();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return RotationTransition(turns: _controller, child: widget.child);
-  }
-}
-
-enum RdButtonVariant { primary, secondary, ghost, danger }
+enum RdButtonVariant { primary, secondary, ghost, danger, tonal }
 
 /// Text button of the redesign. [primary] is the accent-filled call to
-/// action, [secondary] the inner-card button, [ghost] an outlined one.
+/// action, [secondary] the inner-card button, [ghost] an outlined one and
+/// [tonal] the accent-tinted button of the phone layouts and settings cards
+/// (greyed out instead of faded while disabled).
 class RdButton extends StatelessWidget {
   const RdButton({
     required this.label,
@@ -150,6 +152,7 @@ class RdButton extends StatelessWidget {
     this.height = 44,
     this.expand = false,
     this.busy = false,
+    this.maxLines = 1,
     super.key,
   });
 
@@ -157,8 +160,11 @@ class RdButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final RdButtonVariant variant;
   final IconData? icon;
+
+  /// Minimum height; a label on several lines ([maxLines]) grows the button.
   final double height;
   final bool expand;
+  final int maxLines;
 
   /// Shows a small spinner in place of [icon] and disables the button.
   final bool busy;
@@ -188,7 +194,12 @@ class RdButton extends StatelessWidget {
           const Color(0xFFFFC2C2),
           const Color(0x4DFF8A8A),
         ),
+      RdButtonVariant.tonal => enabled || busy
+          ? (RdColors.tonalFill, RdColors.text, RdColors.tonalBorder)
+          : (RdColors.white3, RdColors.placeholder, RdColors.white8),
     };
+    final bold =
+        variant == RdButtonVariant.primary || variant == RdButtonVariant.tonal;
     final leading = busy
         ? SizedBox(
             width: 14,
@@ -202,39 +213,42 @@ class RdButton extends StatelessWidget {
             ? null
             : Icon(icon, size: 16, color: foreground);
     return Opacity(
-      opacity: enabled || busy ? 1 : 0.5,
-      child: Material(
-        color: background,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(RdRadii.control),
-          side: border == null ? BorderSide.none : BorderSide(color: border),
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(RdRadii.control),
-          onTap: enabled ? onPressed : null,
-          child: Container(
-            height: height,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (leading != null) ...[leading, const SizedBox(width: 8)],
-                Flexible(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: variant == RdButtonVariant.primary
-                          ? FontWeight.w700
-                          : FontWeight.w500,
-                      color: foreground,
+      opacity: enabled || busy || variant == RdButtonVariant.tonal ? 1 : 0.5,
+      child: Semantics(
+        button: true,
+        enabled: enabled,
+        child: Material(
+          color: background,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(RdRadii.control),
+            side: border == null ? BorderSide.none : BorderSide(color: border),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(RdRadii.control),
+            onTap: enabled ? onPressed : null,
+            child: Container(
+              constraints: BoxConstraints(minHeight: height),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: Row(
+                mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (leading != null) ...[leading, const SizedBox(width: 8)],
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: maxLines,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+                        color: foreground,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -446,71 +460,108 @@ class _RdSearchFieldState extends State<RdSearchField> {
   }
 }
 
-/// Segmented control (track `#111a2c`, selected `rgba(92,148,220,0.9)`).
+/// One option of an [RdSegmented].
+class RdSegment<T> {
+  const RdSegment(this.value, this.label, {this.leading, this.key});
+
+  final T value;
+  final String label;
+
+  /// Icon before the label (elite icon).
+  final Widget? leading;
+
+  /// Key of the segment's semantics node (tests and automation).
+  final Key? key;
+}
+
+/// Segmented control (`radiogroup`, track `#111a2c`, equal-width segments,
+/// selected `rgba(92,148,220,0.9)`). [height] is the segment height; the
+/// track adds 4px (3px on phones) around it.
 class RdSegmented<T> extends StatelessWidget {
   const RdSegmented({
-    required this.options,
+    required this.segments,
     required this.selected,
     required this.onChanged,
-    required this.labelOf,
     this.height = 40,
-    this.expand = false,
+    this.semanticLabel,
     super.key,
   });
 
-  final List<T> options;
-  final T selected;
+  final List<RdSegment<T>> segments;
+
+  /// No segment is highlighted while this is null.
+  final T? selected;
   final ValueChanged<T>? onChanged;
-  final String Function(T) labelOf;
   final double height;
-  final bool expand;
+
+  /// Names the group for screen readers.
+  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
-    Widget segment(T option) {
-      final on = option == selected;
-      final child = Semantics(
-        selected: on,
-        button: true,
-        inMutuallyExclusiveGroup: true,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onChanged == null ? null : () => onChanged!(option),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            height: height - 6,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: on ? RdColors.segmentOn : Colors.transparent,
-              borderRadius: BorderRadius.circular(RdRadii.small - 2),
-            ),
-            child: Text(
-              labelOf(option),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: on ? FontWeight.w700 : FontWeight.w500,
-                color: on ? const Color(0xFFF3F8FF) : RdColors.secondary,
-              ),
+    final gap = context.rdLayout == RdLayout.compact ? 3.0 : 4.0;
+    return Semantics(
+      container: true,
+      label: semanticLabel,
+      child: Container(
+        padding: EdgeInsets.all(gap),
+        decoration: BoxDecoration(
+          color: RdColors.segmentTrack,
+          borderRadius: BorderRadius.circular(RdRadii.control),
+        ),
+        child: Row(
+          children: [
+            for (var i = 0; i < segments.length; i++) ...[
+              if (i > 0) SizedBox(width: gap),
+              Expanded(child: _segment(segments[i])),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _segment(RdSegment<T> segment) {
+    final on = segment.value == selected;
+    final onChanged = this.onChanged;
+    return Semantics(
+      key: segment.key,
+      button: true,
+      selected: on,
+      inMutuallyExclusiveGroup: true,
+      child: Material(
+        color: on ? RdColors.segmentOn : Colors.transparent,
+        borderRadius: BorderRadius.circular(9),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(9),
+          onTap:
+              on || onChanged == null ? null : () => onChanged(segment.value),
+          child: SizedBox(
+            height: height,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (segment.leading != null) ...[
+                  segment.leading!,
+                  if (segment.label.isNotEmpty) const SizedBox(width: 6),
+                ],
+                if (segment.label.isNotEmpty)
+                  Flexible(
+                    child: Text(
+                      segment.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: on ? FontWeight.w700 : FontWeight.w500,
+                        color: on ? RdColors.onSegment : RdColors.secondary2,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
-      );
-      return expand ? Expanded(child: child) : child;
-    }
-
-    return Container(
-      height: height,
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: RdColors.segmentTrack,
-        borderRadius: BorderRadius.circular(RdRadii.small),
-      ),
-      child: Row(
-        mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
-        children: [for (final option in options) segment(option)],
       ),
     );
   }
@@ -520,7 +571,8 @@ class RdSegmented<T> extends StatelessWidget {
 ///
 /// PC (medium/expanded): a rounded `#070c19` card inside the page padding.
 /// Compact: a full-width bar with a bottom border. [onBack] adds the 44px
-/// back button.
+/// back button; [leading] sits between it and the title (app mark, item
+/// icon).
 class RdPageHeader extends StatelessWidget {
   const RdPageHeader({
     required this.title,
@@ -528,9 +580,13 @@ class RdPageHeader extends StatelessWidget {
     this.eyebrow,
     this.onBack,
     this.backTooltip = '',
+    this.backKey,
+    this.leading,
     this.actions = const [],
     this.trailingTitle,
     this.bottom,
+    this.compactTitleStyle = RdText.mobileTitle,
+    this.subtitleMaxLines,
     super.key,
   });
 
@@ -539,7 +595,15 @@ class RdPageHeader extends StatelessWidget {
   final String? eyebrow;
   final VoidCallback? onBack;
   final String backTooltip;
+  final Key? backKey;
+  final Widget? leading;
   final List<Widget> actions;
+
+  /// Title style on phones (PC uses [RdText.pageTitle]).
+  final TextStyle compactTitleStyle;
+
+  /// Clamps the subtitle (with an ellipsis); unlimited when null.
+  final int? subtitleMaxLines;
 
   /// Small widget right after the title (e.g. a count on phones).
   final Widget? trailingTitle;
@@ -558,16 +622,21 @@ class RdPageHeader extends StatelessWidget {
           Text(eyebrow!, style: RdText.eyebrow),
           const SizedBox(height: 4),
         ],
-        Text(
-          title,
-          maxLines: compact ? 1 : 2,
-          overflow: TextOverflow.ellipsis,
-          style: compact ? RdText.mobileTitle : RdText.pageTitle,
+        Semantics(
+          header: true,
+          child: Text(
+            title,
+            maxLines: compact ? 1 : 2,
+            overflow: TextOverflow.ellipsis,
+            style: compact ? compactTitleStyle : RdText.pageTitle,
+          ),
         ),
         if (subtitle != null && subtitle!.isNotEmpty) ...[
-          const SizedBox(height: 4),
+          SizedBox(height: compact ? 2 : 4),
           Text(
             subtitle!,
+            maxLines: subtitleMaxLines,
+            overflow: subtitleMaxLines == null ? null : TextOverflow.ellipsis,
             style: compact ? RdText.small : RdText.secondary,
           ),
         ],
@@ -577,12 +646,17 @@ class RdPageHeader extends StatelessWidget {
       children: [
         if (onBack != null) ...[
           RdIconButton(
+            key: backKey,
             icon: Icons.chevron_left,
             tooltip: backTooltip,
             filled: !compact,
             onPressed: onBack,
           ),
-          SizedBox(width: compact ? 6 : 14),
+          SizedBox(width: compact ? 8 : 14),
+        ],
+        if (leading != null) ...[
+          leading!,
+          SizedBox(width: compact ? 10 : 14),
         ],
         Expanded(child: titleBlock),
         if (trailingTitle != null) ...[
@@ -618,85 +692,6 @@ class RdPageHeader extends StatelessWidget {
       ),
       child: content,
     );
-  }
-}
-
-enum RdStateKind { loading, error, empty }
-
-/// Loading / error / empty block used in place of a page's content.
-class RdStatePanel extends StatelessWidget {
-  const RdStatePanel({
-    required this.kind,
-    required this.title,
-    this.message,
-    this.action,
-    super.key,
-  });
-
-  final RdStateKind kind;
-  final String title;
-  final String? message;
-  final Widget? action;
-
-  @override
-  Widget build(BuildContext context) {
-    final panel = Container(
-      constraints: const BoxConstraints(minHeight: 192),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: RdColors.card,
-        borderRadius: BorderRadius.circular(RdRadii.card),
-        border: Border.all(
-          color: kind == RdStateKind.error
-              ? const Color(0x33FF7878)
-              : RdColors.line2,
-        ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (kind == RdStateKind.loading) ...[
-              const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.4,
-                  color: RdColors.accent,
-                  backgroundColor: Color(0x4085B6FF),
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: RdColors.text,
-              ),
-            ),
-            if (message != null && message!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                message!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 13,
-                  height: 1.6,
-                  color: RdColors.muted,
-                ),
-              ),
-            ],
-            if (action != null) ...[const SizedBox(height: 14), action!],
-          ],
-        ),
-      ),
-    );
-    return kind == RdStateKind.error
-        ? Semantics(liveRegion: true, child: panel)
-        : panel;
   }
 }
 

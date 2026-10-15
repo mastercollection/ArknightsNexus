@@ -14,12 +14,6 @@ class NexusColors {
   static const accent = Color(0xFF85B6FF);
 }
 
-class NexusRadii {
-  const NexusRadii._();
-
-  static const pill = 999.0;
-}
-
 class NexusText {
   const NexusText._();
 

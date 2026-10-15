@@ -11,11 +11,11 @@ import '../../i18n/nexus_i18n.dart';
 import '../../services/diagnostics_service.dart';
 import '../../ui/nexus_ui.dart' show NexusMessageType, showNexusMessage;
 import '../../ui/redesign/rd_widgets.dart';
-import '../home/home_region_sync.dart' show RdRegionSelect;
+import '../shared/region_select.dart';
+import '../shared/region_sync.dart';
 import 'settings_dialogs.dart';
 
 const _globeIcon = 'assets/icons/globe.svg';
-const _appIcon = 'assets/icons/app/nexus-beacon.svg';
 
 /// Port of `src/pages/settings.vue` (`layout: 'home'`), redesigned after
 /// `DesktopSettings.dc.html` / `MobileSettings.dc.html`: header with back and
@@ -34,13 +34,11 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  RegionSyncStatus? _syncStatus;
   DiagnosticsSummary? _diagnosticsSummary;
   bool _isLoading = true;
 
-  /// A manual sync is running (the loading line and refresh spinner say
-  /// "syncing" instead of "loading").
-  bool _isSyncing = false;
+  /// Error of the last manual sync or diagnostics load. Status load errors
+  /// come from [regionSyncStatusProvider].
   String _errorMessage = '';
   bool _userDataBusy = false;
   bool _diagnosticsBusy = false;
@@ -62,25 +60,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   NexusI18n get _i18n => ref.read(i18nProvider);
 
+  /// Loads the diagnostics summary; the sync status is
+  /// [regionSyncStatusProvider], shared with the home page.
   Future<void> _loadSettings() async {
     final token = ++_loadToken;
-    final region = ref.read(regionProvider);
     setState(() {
       _isLoading = true;
       _errorMessage = '';
     });
     try {
-      final results = await Future.wait<Object?>([
-        ref.read(regionSyncServiceProvider).getRegionSyncStatus(region),
-        ref.read(diagnosticsServiceProvider).getSummary(),
-      ]);
+      final summary = await ref.read(diagnosticsServiceProvider).getSummary();
       if (!mounted || token != _loadToken) {
         return;
       }
-      setState(() {
-        _syncStatus = results[0] as RegionSyncStatus?;
-        _diagnosticsSummary = results[1] as DiagnosticsSummary?;
-      });
+      setState(() => _diagnosticsSummary = summary);
     } catch (error) {
       if (mounted && token == _loadToken) {
         setState(() => _errorMessage = '$error');
@@ -92,40 +85,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  /// Runs the shared [RegionSyncController], so the home controls show the
+  /// same busy state; the refreshed status arrives through
+  /// [regionSyncStatusProvider].
   Future<void> _handleSettingsSync() async {
-    final region = ref.read(regionProvider);
-    setState(() {
-      _isLoading = true;
-      _isSyncing = true;
-      _errorMessage = '';
-    });
-    try {
-      await ref
-          .read(regionSyncServiceProvider)
-          .syncRegion(region)
-          .drain<void>();
-      ref.read(dataRevisionProvider.notifier).state++;
-      if (mounted) {
-        setState(() => _isSyncing = false);
-      }
-      await _loadSettings();
-      if (mounted) {
-        showNexusMessage(
-          context,
-          _i18n.t('home.messages.syncCompleted'),
-          type: NexusMessageType.success,
-        );
-      }
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _errorMessage = '$error';
-        _isLoading = false;
-        _isSyncing = false;
-      });
+    setState(() => _errorMessage = '');
+    final error = await ref.read(regionSyncControllerProvider.notifier).sync();
+    if (!mounted) {
+      return;
+    }
+    if (error != null) {
+      setState(() => _errorMessage = '$error');
       showNexusMessage(context, '$error', type: NexusMessageType.error);
+      return;
+    }
+    await _loadSettings();
+    if (mounted) {
+      showNexusMessage(
+        context,
+        _i18n.t('home.messages.syncCompleted'),
+        type: NexusMessageType.success,
+      );
     }
   }
 
@@ -252,34 +232,47 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       }
     });
     final compact = context.rdLayout == RdLayout.compact;
+    final syncing = ref.watch(regionSyncControllerProvider);
+    final statusAsync = ref.watch(regionSyncStatusProvider);
+    final loading = _isLoading || syncing || statusAsync.isLoading;
+    final errorMessage = _errorMessage.isNotEmpty
+        ? _errorMessage
+        : statusAsync.hasError
+            ? '${statusAsync.error}'
+            : '';
 
-    final header = _SettingsHeader(
-      compact: compact,
+    final header = RdPageHeader(
       title: i18n.t('home.settings.title'),
-      description: i18n.t('home.settings.pageDescription'),
+      subtitle: i18n.t('home.settings.pageDescription'),
+      subtitleMaxLines: compact ? 1 : 2,
+      compactTitleStyle: RdText.mobileTitle.copyWith(fontSize: 18),
+      backKey: const Key('settings-back'),
       backTooltip: i18n.t('common.back'),
       // settings.vue: `router.push('/')`.
       onBack: () => context.go('/'),
-      refresh: RdIconButton(
-        key: const Key('settings-topbar-sync'),
-        icon: Icons.refresh,
-        tooltip: i18n.t('rd.settings.refreshTooltip'),
-        spinning: _isSyncing,
-        onPressed: _isLoading ? null : _handleSettingsSync,
-      ),
+      leading: const RdAppMark(size: 28),
+      actions: [
+        RdIconButton(
+          key: const Key('settings-topbar-sync'),
+          icon: Icons.refresh,
+          tooltip: i18n.t('rd.settings.refreshTooltip'),
+          spinning: syncing,
+          onPressed: loading ? null : _handleSettingsSync,
+        ),
+      ],
     );
 
     final cards = [
       _regionCard(i18n, compact),
-      _syncCard(i18n, compact),
+      _syncCard(i18n, compact, statusAsync.valueOrNull, syncing, loading),
       _userDataCard(i18n, compact),
       _diagnosticsCard(i18n, compact),
     ];
 
     final content = <Widget>[
-      if (_isLoading) ...[
+      if (loading) ...[
         _LoadingLine(
-          label: _isSyncing
+          label: syncing
               ? i18n.t('rd.settings.syncing')
               : i18n.t('rd.settings.loading'),
         ),
@@ -291,10 +284,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           cards[i],
         ]
       else
-        _CardGrid(children: cards),
-      if (_errorMessage.isNotEmpty) ...[
+        // repeat(auto-fit, minmax(340px, 1fr)), align-items: start.
+        RdAutoGrid(
+          minTileWidth: 340,
+          gap: 16,
+          maxColumns: cards.length,
+          children: cards,
+        ),
+      if (errorMessage.isNotEmpty) ...[
         SizedBox(height: compact ? 14 : 22),
-        _ErrorBanner(message: _errorMessage, compact: compact),
+        RdNotice(
+          text: errorMessage,
+          tone: RdNoticeTone.danger,
+          showIcon: false,
+        ),
       ],
     ];
 
@@ -344,7 +347,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             vertical: compact ? 6 : 8,
           ),
           decoration: BoxDecoration(
-            color: const Color(0x08FFFFFF),
+            color: RdColors.white3,
             borderRadius: BorderRadius.circular(RdRadii.pill),
           ),
           child: Row(
@@ -379,8 +382,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _syncCard(NexusI18n i18n, bool compact) {
-    final ready = _syncStatus?.isReady == true;
+  Widget _syncCard(
+    NexusI18n i18n,
+    bool compact,
+    RegionSyncStatus? status,
+    bool syncing,
+    bool loading,
+  ) {
+    final ready = status?.isReady == true;
     return _SettingsCard(
       compact: compact,
       title: i18n.t('home.settings.syncStatusTitle'),
@@ -412,13 +421,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ],
           ),
         ),
-        _SettingsActionButton(
+        RdButton(
           key: const Key('sync-region-button'),
-          compact: compact,
-          label: _isSyncing
-              ? i18n.t('rd.settings.syncBusy')
+          label: syncing
+              ? i18n.t('common.syncing')
               : i18n.t('home.settings.syncAction'),
-          onPressed: _isLoading ? null : _handleSettingsSync,
+          onPressed: loading ? null : _handleSettingsSync,
+          variant: RdButtonVariant.tonal,
+          height: compact ? 48 : 44,
+          expand: true,
+          maxLines: 3,
         ),
       ],
     );
@@ -429,17 +441,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     const fileName = 'user_data.json';
     final split = description.indexOf(fileName);
     final style = _descriptionStyle(compact);
-    final exportButton = _SettingsActionButton(
+    final exportButton = RdButton(
       key: const Key('export-user-data-button'),
-      compact: compact,
       label: i18n.t('home.settings.userDataExport'),
       onPressed: _userDataBusy ? null : _handleExportUserData,
+      variant: RdButtonVariant.tonal,
+      height: compact ? 48 : 44,
+      expand: true,
+      maxLines: 3,
     );
-    final importButton = _SettingsActionButton(
+    final importButton = RdButton(
       key: const Key('import-user-data-button'),
-      compact: compact,
       label: i18n.t('home.settings.userDataImport'),
       onPressed: _userDataBusy ? null : _handleImportUserData,
+      variant: RdButtonVariant.tonal,
+      height: compact ? 48 : 44,
+      expand: true,
+      maxLines: 3,
     );
     return _SettingsCard(
       compact: compact,
@@ -537,9 +555,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ],
         ),
-        _SettingsActionButton(
+        RdButton(
           key: const Key('diagnostics-logs-button'),
-          compact: compact,
           label: _diagnosticsBusy
               ? i18n.t('rd.settings.diagnosticsBusy')
               : _isAndroidPlatform
@@ -548,6 +565,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           onPressed: _diagnosticsBusy || _logDir == null
               ? null
               : _handleOpenDiagnosticsLogDir,
+          variant: RdButtonVariant.tonal,
+          height: compact ? 48 : 44,
+          expand: true,
+          maxLines: 3,
         ),
       ],
     );
@@ -559,105 +580,6 @@ TextStyle _descriptionStyle(bool compact) => TextStyle(
       height: 1.6,
       color: RdColors.muted,
     );
-
-/// Settings header: back, app mark, title + description, refresh. A rounded
-/// bar inside the page on PC, a full-width bar on phones.
-class _SettingsHeader extends StatelessWidget {
-  const _SettingsHeader({
-    required this.compact,
-    required this.title,
-    required this.description,
-    required this.backTooltip,
-    required this.onBack,
-    required this.refresh,
-  });
-
-  final bool compact;
-  final String title;
-  final String description;
-  final String backTooltip;
-  final VoidCallback onBack;
-  final Widget refresh;
-
-  @override
-  Widget build(BuildContext context) {
-    final row = Row(
-      children: [
-        RdIconButton(
-          key: const Key('settings-back'),
-          icon: Icons.chevron_left,
-          tooltip: backTooltip,
-          filled: !compact,
-          onPressed: onBack,
-        ),
-        SizedBox(width: compact ? 10 : 14),
-        Container(
-          width: 28,
-          height: 28,
-          padding: const EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            color: const Color(0xFF0D1730),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0x598BD6FF)),
-          ),
-          child: ExcludeSemantics(child: SvgPicture.asset(_appIcon)),
-        ),
-        SizedBox(width: compact ? 10 : 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Semantics(
-                header: true,
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: compact
-                      ? const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: RdColors.text,
-                        )
-                      : RdText.pageTitle,
-                ),
-              ),
-              SizedBox(height: compact ? 2 : 4),
-              Text(
-                description,
-                maxLines: compact ? 1 : 2,
-                overflow: TextOverflow.ellipsis,
-                style: compact ? RdText.small : RdText.secondary,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 10),
-        refresh,
-      ],
-    );
-    if (compact) {
-      return Container(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-        decoration: const BoxDecoration(
-          color: RdColors.header,
-          border: Border(bottom: BorderSide(color: RdColors.line)),
-        ),
-        child: SafeArea(bottom: false, child: row),
-      );
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      decoration: BoxDecoration(
-        color: RdColors.header,
-        borderRadius: BorderRadius.circular(RdRadii.card),
-        border: Border.all(color: RdColors.line),
-      ),
-      child: row,
-    );
-  }
-}
 
 /// `role="status"` spinner line shown while loading or syncing.
 class _LoadingLine extends StatelessWidget {
@@ -693,51 +615,6 @@ class _LoadingLine extends StatelessWidget {
   }
 }
 
-/// `repeat(auto-fit, minmax(340px, 1fr))`, `align-items: start`.
-class _CardGrid extends StatelessWidget {
-  const _CardGrid({required this.children});
-
-  final List<Widget> children;
-
-  static const _gap = 16.0;
-  static const _minWidth = 340.0;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final columns = ((constraints.maxWidth + _gap) ~/ (_minWidth + _gap))
-            .clamp(1, children.length);
-        final rows = <Widget>[];
-        for (var start = 0; start < children.length; start += columns) {
-          if (rows.isNotEmpty) {
-            rows.add(const SizedBox(height: _gap));
-          }
-          rows.add(
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (var i = 0; i < columns; i++) ...[
-                  if (i > 0) const SizedBox(width: _gap),
-                  Expanded(
-                    child: start + i < children.length
-                        ? children[start + i]
-                        : const SizedBox.shrink(),
-                  ),
-                ],
-              ],
-            ),
-          );
-        }
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: rows,
-        );
-      },
-    );
-  }
-}
-
 class _SettingsCard extends StatelessWidget {
   const _SettingsCard({
     required this.compact,
@@ -764,17 +641,7 @@ class _SettingsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Semantics(
-            header: true,
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: compact ? 16 : 17,
-                fontWeight: FontWeight.w700,
-                color: RdColors.text,
-              ),
-            ),
-          ),
+          RdHeading(title, fontSize: compact ? 16 : 17),
           if (description != null) ...[
             const SizedBox(height: 4),
             description!,
@@ -784,90 +651,6 @@ class _SettingsCard extends StatelessWidget {
             child,
           ],
         ],
-      ),
-    );
-  }
-}
-
-/// Accent-tinted action button of the settings cards (44px on PC, 48px on
-/// phones); greyed out while disabled.
-class _SettingsActionButton extends StatelessWidget {
-  const _SettingsActionButton({
-    required this.compact,
-    required this.label,
-    required this.onPressed,
-    super.key,
-  });
-
-  final bool compact;
-  final String label;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onPressed != null;
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      child: Material(
-        color: enabled ? const Color(0x2485B6FF) : const Color(0x08FFFFFF),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(RdRadii.control),
-          side: BorderSide(
-            color: enabled ? const Color(0x6685B6FF) : const Color(0x14FFFFFF),
-          ),
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(RdRadii.control),
-          onTap: onPressed,
-          child: Container(
-            constraints: BoxConstraints(minHeight: compact ? 48 : 44),
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: enabled ? RdColors.text : RdColors.placeholder,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({required this.message, required this.compact});
-
-  final String message;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      liveRegion: true,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: compact ? 14 : 16,
-          vertical: 12,
-        ),
-        decoration: BoxDecoration(
-          color: const Color(0x14FF7878),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0x33FF7878)),
-        ),
-        child: Text(
-          message,
-          style: TextStyle(
-            fontSize: compact ? 13 : 14,
-            height: 1.5,
-            color: const Color(0xEBFFD6D6),
-          ),
-        ),
       ),
     );
   }

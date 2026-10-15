@@ -11,15 +11,12 @@ import '../../domain/user_data.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../services/operator_service.dart';
 import '../../services/plan_cost_service.dart';
-import '../../ui/nexus_media.dart';
 import '../../ui/redesign/rd_widgets.dart';
 import 'plan_auto_persist.dart';
 import 'plan_materials_grid.dart';
 import 'plan_picker.dart';
 import 'plan_widgets.dart';
-
-const _expItemId = '5001';
-const _lmdItemId = '4001';
+import 'plan_totals.dart';
 
 enum _PlanTab { operators, summary }
 
@@ -349,14 +346,13 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
       label: i18n.t('rd.plan.tabsLabel'),
       container: true,
       child: RdSegmented<_PlanTab>(
-        options: _PlanTab.values,
+        segments: [
+          RdSegment(_PlanTab.operators, i18n.t('planPage.tabs.operators')),
+          RdSegment(_PlanTab.summary, i18n.t('planPage.tabs.summary')),
+        ],
         selected: _activeTab,
         onChanged: _setTab,
-        height: 50,
-        expand: true,
-        labelOf: (tab) => tab == _PlanTab.operators
-            ? i18n.t('planPage.tabs.operators')
-            : i18n.t('planPage.tabs.summary'),
+        height: 44,
       ),
     );
 
@@ -419,11 +415,17 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
 
     final Widget body;
     if (_errorMessage.isNotEmpty) {
-      body = PlanErrorPanel(
+      body = RdStatePanel(
+        kind: RdStateKind.error,
+        layout: RdStateLayout.left,
         title: i18n.t('planPage.states.errorTitle'),
-        message: _errorMessage,
-        retryLabel: i18n.t('planPage.actions.retry'),
-        onRetry: _loadPlanOperators,
+        detail: _errorMessage,
+        action: RdButton(
+          label: i18n.t('planPage.actions.retry'),
+          onPressed: _loadPlanOperators,
+          variant: RdButtonVariant.tonal,
+          height: context.rdLayout == RdLayout.compact ? 44 : 40,
+        ),
       );
     } else if (_isLoading) {
       body = _OperatorsSkeleton(label: i18n.t('rd.plan.loading'));
@@ -457,7 +459,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     final favoriteOperators = _favoriteOperators;
     final hasSelected = selectedOperators.isNotEmpty;
 
-    PlanGrid grid(List<Widget> tiles) => PlanGrid(
+    RdAutoGrid grid(List<Widget> tiles) => RdAutoGrid(
           columns: compact ? 3 : null,
           minTileWidth: compact ? null : 132,
           gap: compact ? 10 : 12,
@@ -504,19 +506,21 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
           ),
       ]);
     } else {
-      content = PlanEmptyBox(
+      content = RdStatePanel(
+        kind: RdStateKind.empty,
+        layout: RdStateLayout.left,
+        surface: RdStateSurface.inset,
         title: i18n.t('planPage.states.emptyTitle'),
-        description: i18n.t('planPage.states.emptyDescription'),
+        message: i18n.t('planPage.states.emptyDescription'),
       );
     }
 
-    return PlanCard(
+    return RdCard.tile(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          PlanHeading(
-            large: true,
-            title: hasSelected
+          RdHeading(
+            hasSelected
                 ? i18n.t('planPage.sections.selected')
                 : i18n.t('planPage.sections.favorites'),
             description: _selectionMode
@@ -524,6 +528,10 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                 : hasSelected
                     ? i18n.t('planPage.states.selectedDescription')
                     : i18n.t('planPage.states.favoritesDescription'),
+            fontSize: compact ? 16 : 17,
+            descriptionStyle: compact
+                ? RdText.caption
+                : RdText.caption.copyWith(fontSize: 13),
           ),
           SizedBox(height: compact ? 12 : 14),
           content,
@@ -532,69 +540,95 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     );
   }
 
+  ({
+    List<OperatorDetail> details,
+    UserPlan plan,
+    Map<String, ItemEntry> items,
+    PlanTotals<PlanAggregateBreakdown>? totals,
+  })? _summaryMemo;
+
+  /// Summary totals, recomputed only when the loaded details, the plan or
+  /// the item references change (not on every rebuild of the tab).
+  PlanTotals<PlanAggregateBreakdown>? _summaryTotals() {
+    final memo = _summaryMemo;
+    if (memo != null &&
+        identical(memo.details, _summaryDetails) &&
+        identical(memo.plan, _userPlan) &&
+        identical(memo.items, _itemsById)) {
+      return memo.totals;
+    }
+    final costService = ref.read(planCostServiceProvider);
+    final entries = resolvePlanEntries(costService, _summaryDetails, _userPlan);
+    final totals = entries.isEmpty
+        ? null
+        : PlanTotals.aggregate(costService, entries, _itemsById);
+    _summaryMemo = (
+      details: _summaryDetails,
+      plan: _userPlan,
+      items: _itemsById,
+      totals: totals,
+    );
+    return totals;
+  }
+
   Widget _buildSummaryTab(NexusI18n i18n, bool compact) {
     if (_summaryErrorMessage.isNotEmpty) {
-      return PlanErrorPanel(
+      return RdStatePanel(
+        kind: RdStateKind.error,
+        layout: RdStateLayout.left,
         title: i18n.t('planPage.summary.errorTitle'),
-        message: _summaryErrorMessage,
+        detail: _summaryErrorMessage,
       );
     }
     if (_summaryLoading) {
       return _SummarySkeleton(label: i18n.t('rd.plan.loading'));
     }
 
-    final costService = ref.read(planCostServiceProvider);
-    final entries = [
-      for (final detail in _summaryDetails)
-        PlanCostEntry(
-          detail: detail,
-          plan: costService.resolvePlanOperator(
-            detail,
-            costService.getPlanByOperatorId(_userPlan, detail.id),
-          ),
-        ),
-    ];
-    if (entries.isEmpty) {
-      return PlanEmptyBox(
+    final totals = _summaryTotals();
+    if (totals == null) {
+      return RdStatePanel(
+        kind: RdStateKind.empty,
+        layout: RdStateLayout.left,
+        surface: RdStateSurface.inset,
         title: i18n.t('planPage.summary.emptyTitle'),
-        description: i18n.t('planPage.summary.emptyDescription'),
+        message: i18n.t('planPage.summary.emptyDescription'),
       );
     }
 
-    final totals = costService.aggregatePlanCostsWithItems(entries, _itemsById);
-    final farming = costService.estimatePlanFarming(totals);
-    final showExp = farming.exp > 0;
-    final showLmd = farming.lmd > 0;
+    final entries = totals.entries;
+    final breakdown = totals.breakdown;
+    final farming = totals.farming;
+    final showExp = totals.showExp;
+    final showLmd = totals.showLmd;
     final showOverview = showExp || showLmd;
-    final lmdItemId = farming.lmdItem?.id ?? _lmdItemId;
-    final lmdShortage =
-        planShortage(farming.lmd, _itemsById[lmdItemId]?.ownedCount);
+    final lmdItemId = totals.lmdId;
+    final lmdShortage = totals.lmdShortage;
     final expLabel = i18n.t('planPage.summary.expLabel');
     final lmdLabel = i18n.t('planPage.summary.lmdLabel');
     final gap = compact ? 10.0 : 14.0;
 
     final countCard = _CountCard(
       label: i18n.t('planPage.summary.operators'),
-      value: formatPlanNumber(totals.operatorCount),
+      value: formatPlanNumber(breakdown.operatorCount),
       compact: compact,
     );
 
-    final resources = PlanGrid(
+    final resources = RdAutoGrid(
       columns: 2,
       gap: compact ? 10 : 12,
       children: [
         if (showExp)
           PlanResourceCard(
             label: expLabel,
-            itemId: _expItemId,
-            iconId: _itemsById[_expItemId]?.iconId,
-            itemName: _itemsById[_expItemId]?.name ?? expLabel,
+            itemId: expItemId,
+            iconId: _itemsById[expItemId]?.iconId,
+            itemName: _itemsById[expItemId]?.name ?? expLabel,
             value: formatPlanNumber(farming.exp),
             tint: PlanColors.expTint,
             linkLabel: i18n.t('rd.plan.itemDetail', {
-              'name': _itemsById[_expItemId]?.name ?? expLabel,
+              'name': _itemsById[expItemId]?.name ?? expLabel,
             }),
-            onOpenItem: () => context.push('/items/$_expItemId'),
+            onOpenItem: () => context.push('/items/$expItemId'),
           ),
         if (showLmd)
           PlanResourceCard(
@@ -617,14 +651,15 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
       ],
     );
 
-    final farmingCard = PlanCard(
+    final farmingCard = RdCard.tile(
       padding: EdgeInsets.all(compact ? 14 : 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          PlanHeading(
-            title: i18n.t('planPage.summary.farmingTitle'),
+          RdHeading(
+            i18n.t('planPage.summary.farmingTitle'),
             description: i18n.t('planPage.summary.farmingDescription'),
+            descriptionStyle: RdText.caption,
           ),
           if (showExp) ...[
             const SizedBox(height: 10),
@@ -661,20 +696,22 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
       ),
     );
 
-    final validation = totals.errors.isEmpty
+    final validation = breakdown.errors.isEmpty
         ? null
         : PlanValidationBox(
             title: i18n.t('planPage.summary.validationTitle'),
-            messages: totals.errors,
+            messages: breakdown.errors,
           );
 
-    final materialsHeading = PlanHeading(
-      large: !compact,
-      title: i18n.t('planPage.summary.materialsTitle'),
+    final materialsHeading = RdHeading(
+      i18n.t('planPage.summary.materialsTitle'),
       description: i18n.t('planPage.summary.materialsDescription'),
+      fontSize: compact ? 15 : 17,
+      descriptionStyle:
+          compact ? RdText.caption : RdText.caption.copyWith(fontSize: 13),
     );
     final materialsGrid = PlanMaterialsGrid(
-      materials: totals.materials,
+      materials: breakdown.materials,
       emptyLabel: i18n.t('planPage.detail.noMaterials'),
       itemsById: _itemsById,
       formulas: _buildingFormulas,
@@ -750,7 +787,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
         routes,
       ]),
     );
-    final right = PlanCard(
+    final right = RdCard.tile(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [materialsHeading, const SizedBox(height: 14), materialsGrid],
@@ -807,7 +844,7 @@ class _CountCard extends StatelessWidget {
     final valueText = Text(
       value,
       key: const Key('plan-summary-count'),
-      style: planMono(compact ? 24 : 26),
+      style: RdText.mono(fontSize: compact ? 24 : 26),
     );
     return RdCard(
       radius: RdRadii.tile,
@@ -852,11 +889,11 @@ class _RouteCard extends StatelessWidget {
           : const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
         children: [
-          OperatorPortrait(
+          RdPortrait(
             charId: entry.detail.id,
             name: entry.detail.name,
-            size: PortraitSize.sm,
-            dimension: compact ? 44 : 48,
+            size: compact ? 44 : 48,
+            radius: 18,
           ),
           SizedBox(width: compact ? 10 : 12),
           Expanded(
@@ -877,8 +914,8 @@ class _RouteCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   routeLabel,
-                  style: planMono(
-                    compact ? 11 : 12,
+                  style: RdText.mono(
+                    fontSize: compact ? 11 : 12,
                     color: RdColors.secondary2,
                   ),
                 ),
@@ -886,10 +923,11 @@ class _RouteCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          PlanLinkButton(
+          RdButton(
             label: actionLabel,
-            height: compact ? 44 : 38,
             onPressed: onOpen,
+            variant: RdButtonVariant.tonal,
+            height: compact ? 44 : 38,
           ),
         ],
       ),
@@ -908,14 +946,14 @@ class _OperatorsSkeleton extends StatelessWidget {
     return Semantics(
       label: label,
       container: true,
-      child: PlanCard(
-        child: PlanPulse(
+      child: RdCard.tile(
+        child: RdPulse(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const PlanSkeletonBlock(height: 20, widthFactor: 0.36),
+              const RdSkeleton(height: 20, widthFactor: 0.36),
               const SizedBox(height: 14),
-              PlanGrid(
+              RdAutoGrid(
                 columns: compact ? 2 : null,
                 minTileWidth: compact ? null : 132,
                 gap: compact ? 10 : 12,
@@ -929,14 +967,14 @@ class _OperatorsSkeleton extends StatelessWidget {
                       ),
                       child: const Column(
                         children: [
-                          PlanSkeletonBlock(
+                          RdSkeleton(
                             width: 84,
                             height: 84,
                             radius: 24,
-                            color: Color(0x0FFFFFFF),
+                            color: RdColors.soft,
                           ),
                           SizedBox(height: 10),
-                          PlanSkeletonBlock(widthFactor: 0.72),
+                          RdSkeleton(widthFactor: 0.72),
                         ],
                       ),
                     ),
@@ -958,20 +996,20 @@ class _SummarySkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final compact = context.rdLayout == RdLayout.compact;
-    const block = PlanSkeletonBlock(
+    const block = RdSkeleton(
       height: 96,
       radius: 16,
-      color: Color(0x0DFFFFFF),
+      color: RdColors.white5,
     );
     return Semantics(
       label: label,
       container: true,
-      child: PlanCard(
-        child: PlanPulse(
+      child: RdCard.tile(
+        child: RdPulse(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const PlanSkeletonBlock(height: 20, widthFactor: 0.36),
+              const RdSkeleton(height: 20, widthFactor: 0.36),
               const SizedBox(height: 12),
               if (compact) ...[
                 block,
@@ -980,7 +1018,7 @@ class _SummarySkeleton extends StatelessWidget {
                 const SizedBox(height: 12),
                 block,
               ] else
-                const PlanGrid(
+                const RdAutoGrid(
                   columns: 3,
                   children: [block, block, block],
                 ),

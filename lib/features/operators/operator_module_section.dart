@@ -7,7 +7,6 @@ import '../../i18n/nexus_i18n.dart';
 import '../../ui/redesign/rd_widgets.dart';
 import 'operator_detail_view_model.dart';
 import 'operator_detail_widgets.dart';
-import 'operators_common.dart';
 
 /// Modules panel of the operator detail: module picker pills, the selected
 /// module card (equip icon, unlock / trust chips, stage segmented control),
@@ -129,11 +128,9 @@ BoxDecoration detailToggleDecoration({
   return BoxDecoration(
     borderRadius: BorderRadius.circular(radius),
     border: Border.all(
-      color: selected ? const Color(0x7381D6FF) : const Color(0x14FFFFFF),
+      color: selected ? const Color(0x7381D6FF) : RdColors.white8,
     ),
-    color: selected
-        ? null
-        : (hovered ? const Color(0x12FFFFFF) : const Color(0x0AFFFFFF)),
+    color: selected ? null : (hovered ? RdColors.line2 : RdColors.soft2),
     gradient: selected
         ? const LinearGradient(
             begin: Alignment.topLeft,
@@ -305,7 +302,7 @@ class _ModuleCard extends StatelessWidget {
     final rangeCell = compact ? 26.0 : 28.0;
     final typeLabel = module.typeIcon.toUpperCase();
 
-    return DetailInset(
+    return RdInset.section(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: 16,
@@ -329,7 +326,7 @@ class _ModuleCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: const Color(0xD1070A12),
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: const Color(0x14FFFFFF)),
+                  border: Border.all(color: RdColors.white8),
                 ),
                 child: equipIcon != null
                     ? Image.file(equipIcon!, fit: BoxFit.contain)
@@ -368,7 +365,7 @@ class _ModuleCard extends StatelessWidget {
                           style: cautionLabel,
                         ),
                         if (unlockElite != null)
-                          EliteIcon(unlockElite, height: 18),
+                          RdEliteIcon(unlockElite, size: 18),
                         Text('Lv.${module.unlockLevel}'),
                       ],
                     ),
@@ -393,15 +390,19 @@ class _ModuleCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: 8,
               children: [
-                _H4(i18n.t('operatorDetail.labels.moduleStage')),
-                OpSegmented<int>(
+                RdHeading(
+                  i18n.t('operatorDetail.labels.moduleStage'),
+                  fontSize: 14,
+                  color: RdColors.heading,
+                ),
+                RdSegmented<int>(
                   key: const ValueKey('module-stage'),
                   semanticLabel: i18n.t('operatorDetail.labels.moduleStage'),
                   height: compact ? 44 : 40,
-                  value: level,
+                  selected: level,
                   segments: [
                     for (final entry in module.battlePhases)
-                      OpSegment(entry.equipLevel, '${entry.equipLevel}'),
+                      RdSegment(entry.equipLevel, '${entry.equipLevel}'),
                   ],
                   onChanged: onLevelChanged,
                 ),
@@ -418,9 +419,14 @@ class _ModuleCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 spacing: 8,
                 children: [
-                  _H4(i18n.t('operatorDetail.labels.moduleStatBonus')),
-                  OpAutoGrid(
+                  RdHeading(
+                    i18n.t('operatorDetail.labels.moduleStatBonus'),
+                    fontSize: 14,
+                    color: RdColors.heading,
+                  ),
+                  RdAutoGrid(
                     minTileWidth: 110,
+                    gap: 10,
                     children: [
                       for (final bonus in statBonuses)
                         Container(
@@ -463,7 +469,11 @@ class _ModuleCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 spacing: 10,
                 children: [
-                  _H4(i18n.t('operatorDetail.labels.moduleEffects')),
+                  RdHeading(
+                    i18n.t('operatorDetail.labels.moduleEffects'),
+                    fontSize: 14,
+                    color: RdColors.heading,
+                  ),
                   for (final part in effectParts)
                     Container(
                       key: ValueKey(
@@ -519,24 +529,6 @@ class _ModuleCard extends StatelessWidget {
   }
 }
 
-class _H4 extends StatelessWidget {
-  const _H4(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w700,
-        color: Color(0xFFECF0FA),
-      ),
-    );
-  }
-}
-
 /// Trait/talent override card of a module stage.
 class ModuleCandidateCard extends StatelessWidget {
   const ModuleCandidateCard({
@@ -553,9 +545,9 @@ class ModuleCandidateCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final variants = candidate.potentialVariants;
-    return DetailInset(
+    return RdInset.section(
       key: ValueKey(candidate.key),
-      color: const Color(0x08FFFFFF),
+      color: RdColors.white3,
       radius: 16,
       padding: const EdgeInsets.all(14),
       child: Column(

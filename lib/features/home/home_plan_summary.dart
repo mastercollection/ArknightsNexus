@@ -1,9 +1,6 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../app/providers.dart';
 import '../../domain/operator.dart';
@@ -12,17 +9,12 @@ import '../../i18n/nexus_i18n.dart';
 import '../../services/item_service.dart';
 import '../../services/operator_service.dart';
 import '../../services/plan_cost_service.dart';
-import '../../ui/nexus_media.dart' show OperatorPortrait, PortraitSize;
 import '../../ui/redesign/rd_widgets.dart';
-
-const _lmdItemId = '4001';
+import '../plan/plan_totals.dart';
+import '../shared/number_format.dart';
 
 /// How many planned operators the home cards list before "+N more".
 const _plannedPreviewCount = 3;
-
-final _numberFormat = NumberFormat('#,##0', 'en_US');
-
-String _formatNumber(num value) => _numberFormat.format(value.ceil());
 
 /// One operator of the plan as the home page lists it.
 class HomePlannedOperator {
@@ -85,31 +77,20 @@ final homePlanSummaryProvider =
   final items = await itemsFuture;
   final itemsById = {for (final item in items) item.itemId: item};
 
-  final entries = [
-    for (final detail in details)
-      PlanCostEntry(
-        detail: detail,
-        plan: costService.resolvePlanOperator(
-          detail,
-          costService.getPlanByOperatorId(plan, detail.id),
-        ),
-      ),
-  ];
+  final entries = resolvePlanEntries(costService, details, plan);
   if (entries.isEmpty) {
     return const HomePlanSummary();
   }
-  final totals = costService.aggregatePlanCostsWithItems(entries, itemsById);
-  final farming = costService.estimatePlanFarming(totals);
-  final owned = itemsById[farming.lmdItem?.id ?? _lmdItemId]?.ownedCount ?? 0;
+  final totals = PlanTotals.aggregate(costService, entries, itemsById);
 
   return HomePlanSummary(
     operators: [
       for (final entry in entries)
         HomePlannedOperator(summary: byId[entry.detail.id]!, plan: entry.plan),
     ],
-    totals: totals,
-    farming: farming,
-    lmdShortage: math.max(0, farming.lmd - owned),
+    totals: totals.breakdown,
+    farming: totals.farming,
+    lmdShortage: totals.lmdShortage,
   );
 });
 
@@ -144,7 +125,7 @@ class HomePlanSummaryCard extends ConsumerWidget {
           key: const Key('home-open-plan'),
           label: compact
               ? i18n.t('rd.home.plan.openShort')
-              : i18n.t('rd.home.plan.open'),
+              : i18n.t('common.openPlan'),
           onTap: () => context.push('/plan'),
         ),
       ],
@@ -155,7 +136,9 @@ class HomePlanSummaryCard extends ConsumerWidget {
       // tests on real file services) an endless animation would keep every
       // `pumpAndSettle` on the app's start page from settling.
       loading: () => [
-        _InlineState(
+        RdStatePanel(
+          kind: RdStateKind.loading,
+          layout: RdStateLayout.inline,
           leading: const Icon(
             Icons.hourglass_empty_rounded,
             size: 16,
@@ -165,17 +148,20 @@ class HomePlanSummaryCard extends ConsumerWidget {
         ),
       ],
       error: (error, _) => [
-        _InlineState(
+        RdStatePanel(
+          kind: RdStateKind.error,
+          layout: RdStateLayout.inline,
           title: i18n.t('rd.home.plan.errorTitle'),
           message: '$error',
-          error: true,
         ),
       ],
       data: (summary) {
         if (summary.isEmpty) {
           return [
             // The header's "open plan" link is the way to add operators.
-            _InlineState(
+            RdStatePanel(
+              kind: RdStateKind.empty,
+              layout: RdStateLayout.inline,
               title: i18n.t('rd.home.plan.emptyTitle'),
               message: i18n.t('rd.home.plan.emptyDescription'),
             ),
@@ -187,15 +173,15 @@ class HomePlanSummaryCard extends ConsumerWidget {
           if (!compact)
             _Stat(
               label: i18n.t('rd.home.plan.statOperators'),
-              value: _formatNumber(totals.operatorCount),
+              value: formatWholeNumber(totals.operatorCount),
             ),
           _Stat(
             label: i18n.t('rd.home.plan.statExp'),
-            value: _formatNumber(farming.exp),
+            value: formatWholeNumber(farming.exp),
           ),
           _Stat(
             label: i18n.t('rd.home.plan.statLmd'),
-            value: _formatNumber(farming.lmd),
+            value: formatWholeNumber(farming.lmd),
           ),
         ];
         return [
@@ -211,27 +197,32 @@ class HomePlanSummaryCard extends ConsumerWidget {
             ],
           ),
           if (!totals.valid)
-            _Notice(text: i18n.t('rd.home.plan.invalid'))
+            RdNotice(
+              tone: RdNoticeTone.warn,
+              text: i18n.t('rd.home.plan.invalid'),
+            )
           else if (farming.totalSanity > 0)
-            _Notice(
-              warn: summary.lmdShortage > 0,
+            RdNotice(
+              tone: summary.lmdShortage > 0
+                  ? RdNoticeTone.warn
+                  : RdNoticeTone.info,
               text: [
                 if (summary.lmdShortage > 0)
                   i18n.t('rd.home.plan.lmdShortage', {
-                    'count': _formatNumber(summary.lmdShortage),
+                    'count': formatWholeNumber(summary.lmdShortage),
                   }),
                 if (farming.lmdStage.runs > 0)
                   i18n.t('rd.home.plan.stageRuns', {
                     'stage': farming.lmdStage.code,
-                    'count': _formatNumber(farming.lmdStage.runs),
+                    'count': formatWholeNumber(farming.lmdStage.runs),
                   }),
                 if (farming.expStage.runs > 0)
                   i18n.t('rd.home.plan.stageRuns', {
                     'stage': farming.expStage.code,
-                    'count': _formatNumber(farming.expStage.runs),
+                    'count': formatWholeNumber(farming.expStage.runs),
                   }),
                 i18n.t('rd.home.plan.sanity', {
-                  'count': _formatNumber(farming.totalSanity),
+                  'count': formatWholeNumber(farming.totalSanity),
                 }),
               ].join(' · '),
             ),
@@ -357,11 +348,11 @@ class _PlannedOperatorRow extends StatelessWidget {
             padding: const EdgeInsets.all(10),
             child: Row(
               children: [
-                OperatorPortrait(
+                RdPortrait(
                   charId: summary.id,
                   name: summary.name,
-                  size: PortraitSize.sm,
-                  dimension: compact ? 44 : 56,
+                  size: compact ? 44 : 56,
+                  radius: 18,
                 ),
                 SizedBox(width: compact ? 12 : 14),
                 Expanded(
@@ -455,100 +446,6 @@ class _StatTile extends StatelessWidget {
   }
 }
 
-/// Farming / shortage line (amber when something is short).
-class _Notice extends StatelessWidget {
-  const _Notice({required this.text, this.warn = true});
-
-  final String text;
-  final bool warn;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = warn ? RdColors.warnText : RdColors.secondary;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: warn ? RdColors.warnBg : RdColors.soft2,
-        borderRadius: BorderRadius.circular(RdRadii.inner),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            warn ? Icons.warning_amber_rounded : Icons.info_outline,
-            size: 18,
-            color: color,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(fontSize: 14, height: 1.4, color: color),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Loading / empty / error line inside the summary card. Kept to a couple of
-/// lines so the shortcuts below stay in view on short windows.
-class _InlineState extends StatelessWidget {
-  const _InlineState({
-    required this.title,
-    this.message,
-    this.leading,
-    this.error = false,
-  });
-
-  final String title;
-  final String? message;
-  final Widget? leading;
-  final bool error;
-
-  @override
-  Widget build(BuildContext context) {
-    final content = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: error ? const Color(0xEBFFD6D6) : RdColors.secondary,
-          ),
-        ),
-        if (message != null && message!.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          Text(
-            message!,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 13,
-              height: 1.5,
-              color: RdColors.muted,
-            ),
-          ),
-        ],
-      ],
-    );
-    final row = Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (leading != null) ...[
-          Padding(padding: const EdgeInsets.only(top: 3), child: leading),
-          const SizedBox(width: 10),
-        ],
-        Expanded(child: content),
-      ],
-    );
-    return error ? Semantics(liveRegion: true, child: row) : row;
-  }
-}
-
 /// Accent text link ("계획 열기 →"), 44px tall for touch.
 class _HomeLink extends StatelessWidget {
   const _HomeLink({required this.label, required this.onTap, super.key});
@@ -574,7 +471,7 @@ class _HomeLink extends StatelessWidget {
                 label,
                 style: const TextStyle(
                   fontSize: 14,
-                  color: Color(0xFFA9C8FF),
+                  color: RdColors.link,
                 ),
               ),
             ),

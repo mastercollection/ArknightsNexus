@@ -25,7 +25,7 @@ class PlanMaterialsGrid extends ConsumerWidget {
     required this.emptyLabel,
     this.formulas,
     this.itemsById = const {},
-    this.excludeItemIds = const {'4001'},
+    this.excludeItemIds = const {lmdItemId},
     this.columns,
     this.expanded = false,
     this.showShortage = false,
@@ -97,7 +97,10 @@ class PlanMaterialsGrid extends ConsumerWidget {
                         tiers[index] > 0
                             ? 'T${tiers[index]}'
                             : i18n.t('planPage.summary.miscTier'),
-                        style: planMono(13, color: PlanColors.stateTitle),
+                        style: RdText.mono(
+                          fontSize: 13,
+                          color: RdColors.stateTitle,
+                        ),
                       ),
                     ),
                     if (canExpandRecipes && index == 0)
@@ -113,7 +116,7 @@ class PlanMaterialsGrid extends ConsumerWidget {
                 ),
               ),
               SizedBox(height: compact ? 8 : 10),
-              PlanGrid(
+              RdAutoGrid(
                 columns: compact ? 2 : columns,
                 minTileWidth: compact || columns != null ? null : 124,
                 gap: compact ? 8 : (columns == null ? 10 : 8),
@@ -176,7 +179,7 @@ class _ExpandToggle extends StatelessWidget {
                   label,
                   style: const TextStyle(
                     fontSize: 12,
-                    color: PlanColors.stateTitle,
+                    color: RdColors.stateTitle,
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -204,7 +207,7 @@ class PlanRecipeSwitch extends StatelessWidget {
       width: 38,
       height: 20,
       decoration: BoxDecoration(
-        color: value ? const Color(0xE62890FF) : const Color(0x14FFFFFF),
+        color: value ? const Color(0xE62890FF) : RdColors.white8,
         borderRadius: BorderRadius.circular(RdRadii.pill),
         border: Border.all(color: const Color(0x4D7A90B8)),
       ),
@@ -324,7 +327,7 @@ class _MaterialTile extends StatelessWidget {
       );
     }
 
-    return PlanInset(
+    return RdInset(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       child: Column(
         mainAxisSize: MainAxisSize.min,

@@ -471,20 +471,20 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
       sectionLabel: i18n.t('operatorDetail.sections.${section.name}'),
       favorite: _isFavorite,
       compact: _compact,
-      backTooltip: i18n.t('rd.operators.back'),
+      backTooltip: i18n.t('common.back'),
       favoriteTooltip: i18n.t('rd.operators.detail.favorite'),
       onBack: widget.onBack,
       onToggleFavorite: _toggleFavorite,
     );
     final hero = _HeroCard(operator: operator, i18n: i18n, compact: _compact);
-    final tabs = OpSegmented<DetailSection>(
+    final tabs = RdSegmented<DetailSection>(
       key: const ValueKey('detail-tabs'),
       semanticLabel: i18n.t('rd.operators.detail.sections'),
       height: _compact ? 44 : 40,
-      value: section,
+      selected: section,
       segments: [
         for (final entry in sections)
-          OpSegment(entry, i18n.t('operatorDetail.sections.${entry.name}')),
+          RdSegment(entry, i18n.t('operatorDetail.sections.${entry.name}')),
       ],
       onChanged: (value) => setState(() => _section = value),
     );
@@ -603,7 +603,7 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
           padding: EdgeInsets.fromLTRB(side, 10, side, 12),
           decoration: const BoxDecoration(
             color: RdColors.rail,
-            border: Border(top: BorderSide(color: Color(0x14FFFFFF))),
+            border: Border(top: BorderSide(color: RdColors.white8)),
           ),
           child: actions,
         ),
@@ -778,15 +778,13 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
             bottom: false,
             child: Align(
               alignment: Alignment.centerLeft,
-              child: _HeaderButton(
-                tooltip: i18n.t('rd.operators.back'),
-                size: 44,
+              child: RdIconButton(
+                icon: Icons.chevron_left,
+                tooltip: i18n.t('common.back'),
                 onPressed: widget.onBack,
-                child: const Icon(
-                  Icons.chevron_left,
-                  size: 22,
-                  color: Color(0xFFEBF0FF),
-                ),
+                size: 44,
+                iconSize: 22,
+                iconColor: const Color(0xFFEBF0FF),
               ),
             ),
           ),
@@ -834,53 +832,6 @@ class _StickyTabsDelegate extends SliverPersistentHeaderDelegate {
 // Header / hero / actions
 // ---------------------------------------------------------------------------
 
-/// 14px-radius soft button of the detail header.
-class _HeaderButton extends StatelessWidget {
-  const _HeaderButton({
-    required this.tooltip,
-    required this.onPressed,
-    required this.child,
-    this.size = 40,
-    this.pressed,
-  });
-
-  final String tooltip;
-  final VoidCallback onPressed;
-  final Widget child;
-  final double size;
-  final bool? pressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      waitDuration: const Duration(milliseconds: 400),
-      child: Semantics(
-        button: true,
-        toggled: pressed,
-        label: tooltip,
-        excludeSemantics: true,
-        child: Material(
-          color: const Color(0x0DFFFFFF),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: const BorderSide(color: Color(0x14FFFFFF)),
-          ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(14),
-            onTap: onPressed,
-            child: SizedBox(
-              width: size,
-              height: size,
-              child: Center(child: child),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _DetailHeader extends StatelessWidget {
   const _DetailHeader({
     required this.name,
@@ -907,15 +858,13 @@ class _DetailHeader extends StatelessWidget {
     final size = compact ? 44.0 : 40.0;
     final row = Row(
       children: [
-        _HeaderButton(
+        RdIconButton(
+          icon: Icons.chevron_left,
           tooltip: backTooltip,
-          size: size,
           onPressed: onBack,
-          child: const Icon(
-            Icons.chevron_left,
-            size: 22,
-            color: Color(0xFFEBF0FF),
-          ),
+          size: size,
+          iconSize: 22,
+          iconColor: const Color(0xFFEBF0FF),
         ),
         SizedBox(width: compact ? 8 : 10),
         Flexible(
@@ -965,7 +914,7 @@ class _DetailHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0x14FFFFFF)),
+        border: Border.all(color: RdColors.white8),
         gradient: const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -992,16 +941,14 @@ class _FavoriteButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _HeaderButton(
+    return RdIconButton(
+      icon: favorite ? Icons.star : Icons.star_border,
       tooltip: tooltip,
-      size: size,
-      pressed: favorite,
       onPressed: onPressed,
-      child: Icon(
-        favorite ? Icons.star : Icons.star_border,
-        size: 20,
-        color: RdColors.gold,
-      ),
+      size: size,
+      toggled: favorite,
+      iconSize: 20,
+      iconColor: RdColors.gold,
     );
   }
 }
@@ -1025,7 +972,7 @@ class _HeroCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: opPanelFill,
         borderRadius: BorderRadius.circular(compact ? 24 : 28),
-        border: Border.all(color: opPanelBorder),
+        border: Border.all(color: RdColors.line2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1104,7 +1051,7 @@ class _HeroCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 spacing: compact ? 8 : 10,
                 children: [
-                  OpPortrait(
+                  RdPortrait(
                     charId: operator.id,
                     name: operator.name,
                     size: portrait,
@@ -1239,7 +1186,7 @@ class _PlanActions extends StatelessWidget {
       color: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(showFavorite ? 12 : 14),
-        side: const BorderSide(color: Color(0x6685B6FF)),
+        side: const BorderSide(color: RdColors.tonalBorder),
       ),
       child: InkWell(
         key: const Key('operator-detail-open-plan'),
@@ -1250,11 +1197,11 @@ class _PlanActions extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14),
           alignment: Alignment.center,
           child: Text(
-            i18n.t('rd.operators.detail.openPlan'),
+            i18n.t('common.openPlan'),
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: Color(0xFFDBE8FF),
+              color: RdColors.linkText,
             ),
           ),
         ),
@@ -1277,7 +1224,7 @@ class _PlanActions extends StatelessWidget {
                 color: Colors.transparent,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(RdRadii.control),
-                  side: const BorderSide(color: Color(0x24FFFFFF)),
+                  side: const BorderSide(color: RdColors.white14),
                 ),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(RdRadii.control),
@@ -1321,42 +1268,15 @@ Future<void> showOperatorTermSheet({
     i18n: i18n,
     compact: compact,
   );
-  if (compact) {
-    final height = MediaQuery.sizeOf(context).height;
-    return showModalBottomSheet<void>(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: const Color(0x80000000),
-      constraints: BoxConstraints(maxHeight: height * 0.65),
-      builder: (context) => content,
-    );
-  }
-  return showGeneralDialog<void>(
+  final height = MediaQuery.sizeOf(context).height;
+  return showRdSheet<void>(
     context: context,
-    useRootNavigator: true,
-    barrierDismissible: true,
-    barrierLabel: i18n.t('rd.operators.detail.closeTerm'),
-    barrierColor: const Color(0x80000000),
-    transitionDuration: const Duration(milliseconds: 160),
-    transitionBuilder: (context, animation, secondary, child) =>
-        FadeTransition(opacity: animation, child: child),
-    pageBuilder: (context, animation, secondary) => SafeArea(
-      child: Align(
-        alignment: const Alignment(0, -0.6),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: 560,
-              maxHeight: MediaQuery.sizeOf(context).height * 0.7,
-            ),
-            child: content,
-          ),
-        ),
-      ),
-    ),
+    barrierLabel: i18n.t('common.close'),
+    sheetMaxHeight: height * 0.65,
+    dialogMaxHeight: height * 0.7,
+    dialogAlignment: const Alignment(0, -0.6),
+    dialogPadding: const EdgeInsets.all(24),
+    builder: (context) => content,
   );
 }
 
@@ -1441,7 +1361,7 @@ class _TermContentState extends State<_TermContent> {
                             width: 40,
                             height: 4,
                             decoration: BoxDecoration(
-                              color: const Color(0x33FFFFFF),
+                              color: RdColors.white20,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -1479,8 +1399,7 @@ class _TermContentState extends State<_TermContent> {
                           const SizedBox(width: 10),
                           RdIconButton(
                             icon: Icons.close,
-                            tooltip:
-                                widget.i18n.t('rd.operators.detail.closeTerm'),
+                            tooltip: widget.i18n.t('common.close'),
                             size: compact ? 44 : 40,
                             filled: false,
                             onPressed: () => Navigator.of(context).maybePop(),
@@ -1493,7 +1412,7 @@ class _TermContentState extends State<_TermContent> {
                         style: TextStyle(
                           fontSize: compact ? 15 : 14,
                           height: 1.75,
-                          color: detailBodyColor,
+                          color: RdColors.body,
                         ),
                         onTermTap: (key, label) {
                           final next = widget.terms[key];

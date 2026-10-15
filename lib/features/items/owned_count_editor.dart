@@ -193,38 +193,44 @@ class OwnedCountEditorState extends ConsumerState<OwnedCountEditor> {
             ],
             Row(
               children: [
-                _StepButton(
-                  label: '−',
-                  semanticsLabel: i18n.t('rd.items.decrease'),
-                  size: stepSize,
-                  disabled: disabled,
-                  onPressStart: () => _beginAdjusting(-1),
-                  onPressEnd: _endAdjusting,
-                  onActivate: () => _stepOnce(-1),
+                RdStepButton(
+                  increase: false,
+                  tooltip: i18n.t('rd.items.decrease'),
+                  width: stepSize,
+                  height: stepSize,
+                  tonal: true,
+                  onPressed: disabled ? null : () => _stepOnce(-1),
+                  onHoldStart: () => _beginAdjusting(-1),
+                  onHoldEnd: _endAdjusting,
                 ),
                 SizedBox(width: compact ? 10 : 12),
                 Expanded(
-                  child: _OwnedCountInput(
+                  child: RdNumberField(
                     controller: _draft,
                     focusNode: _focusNode,
                     enabled: !disabled,
                     height: stepSize,
-                    label: i18n.t('rd.items.countInput'),
-                    background: compact
+                    fontSize: 20,
+                    radius: RdRadii.inner,
+                    color: compact
                         ? RdColors.sheetOption
                         : const Color(0xFF0B1222),
-                    onSubmitted: () => unawaited(commit()),
+                    borderColor: RdColors.tonalBorder,
+                    semanticLabel: i18n.t('rd.items.countInput'),
+                    inputFormatters: const [_OwnedCountFormatter()],
+                    onSubmitted: (_) => unawaited(commit()),
                   ),
                 ),
                 SizedBox(width: compact ? 10 : 12),
-                _StepButton(
-                  label: '+',
-                  semanticsLabel: i18n.t('rd.items.increase'),
-                  size: stepSize,
-                  disabled: disabled,
-                  onPressStart: () => _beginAdjusting(1),
-                  onPressEnd: _endAdjusting,
-                  onActivate: () => _stepOnce(1),
+                RdStepButton(
+                  increase: true,
+                  tooltip: i18n.t('rd.items.increase'),
+                  width: stepSize,
+                  height: stepSize,
+                  tonal: true,
+                  onPressed: disabled ? null : () => _stepOnce(1),
+                  onHoldStart: () => _beginAdjusting(1),
+                  onHoldEnd: _endAdjusting,
                 ),
               ],
             ),
@@ -260,7 +266,7 @@ class OwnedCountEditorState extends ConsumerState<OwnedCountEditor> {
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 13,
-                    color: Color(0xFFA9C8FF),
+                    color: RdColors.link,
                   ),
                 ),
               ),
@@ -344,12 +350,12 @@ class _HoldHints extends StatelessWidget {
   final String inputHint;
 
   static const _stepFills = [
-    Color(0x2985B6FF), // rgba(133,182,255,0.16)
+    RdColors.chipOnFill, // rgba(133,182,255,0.16)
     Color(0x3D85B6FF), // 0.24
     Color(0x5785B6FF), // 0.34
   ];
   static const _stepText = [
-    Color(0xFFDCE9FF),
+    RdColors.blueText,
     Color(0xFFE7EFFF),
     RdColors.text,
   ];
@@ -407,110 +413,6 @@ class _HoldHints extends StatelessWidget {
   }
 }
 
-/// -/+ button with press-and-hold repeat; Enter/Space (and the semantics tap
-/// action) steps once and saves.
-class _StepButton extends StatefulWidget {
-  const _StepButton({
-    required this.label,
-    required this.semanticsLabel,
-    required this.size,
-    required this.disabled,
-    required this.onPressStart,
-    required this.onPressEnd,
-    required this.onActivate,
-  });
-
-  final String label;
-  final String semanticsLabel;
-  final double size;
-  final bool disabled;
-  final VoidCallback onPressStart;
-  final VoidCallback onPressEnd;
-  final VoidCallback onActivate;
-
-  @override
-  State<_StepButton> createState() => _StepButtonState();
-}
-
-class _StepButtonState extends State<_StepButton> {
-  bool _hovered = false;
-  bool _focused = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final disabled = widget.disabled;
-    final highlighted = (_hovered || _focused) && !disabled;
-    return Tooltip(
-      message: widget.semanticsLabel,
-      waitDuration: const Duration(milliseconds: 600),
-      excludeFromSemantics: true,
-      child: Semantics(
-        button: true,
-        enabled: !disabled,
-        label: widget.semanticsLabel,
-        onTap: disabled ? null : widget.onActivate,
-        excludeSemantics: true,
-        child: FocusableActionDetector(
-          enabled: !disabled,
-          mouseCursor: disabled
-              ? SystemMouseCursors.forbidden
-              : SystemMouseCursors.click,
-          onShowFocusHighlight: (value) => setState(() => _focused = value),
-          onShowHoverHighlight: (value) {
-            setState(() => _hovered = value);
-            if (!value) {
-              // `@mouseleave="commitOwnedCountDraft"` while holding.
-              widget.onPressEnd();
-            }
-          },
-          actions: {
-            ActivateIntent: CallbackAction<ActivateIntent>(
-              onInvoke: (_) {
-                widget.onActivate();
-                return null;
-              },
-            ),
-          },
-          child: Listener(
-            onPointerDown: disabled ? null : (_) => widget.onPressStart(),
-            onPointerUp: (_) => widget.onPressEnd(),
-            onPointerCancel: (_) => widget.onPressEnd(),
-            child: Opacity(
-              opacity: disabled ? 0.45 : 1,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                width: widget.size,
-                height: widget.size,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: highlighted
-                      ? const Color(0x3D4D75BC)
-                      : const Color(0x294D75BC),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: highlighted
-                        ? const Color(0x7A85B6FF)
-                        : const Color(0x4785B6FF),
-                  ),
-                ),
-                child: Text(
-                  widget.label,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    height: 1,
-                    fontWeight: FontWeight.w700,
-                    color: RdColors.text,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _OwnedCountFormatter extends TextInputFormatter {
   const _OwnedCountFormatter();
 
@@ -523,76 +425,6 @@ class _OwnedCountFormatter extends TextInputFormatter {
     return TextEditingValue(
       text: text,
       selection: TextSelection.collapsed(offset: text.length),
-    );
-  }
-}
-
-/// Numeric input (mono 20px, centered) with a dimming veil while saving.
-class _OwnedCountInput extends StatelessWidget {
-  const _OwnedCountInput({
-    required this.controller,
-    required this.focusNode,
-    required this.enabled,
-    required this.height,
-    required this.label,
-    required this.background,
-    required this.onSubmitted,
-  });
-
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final bool enabled;
-  final double height;
-  final String label;
-  final Color background;
-  final VoidCallback onSubmitted;
-
-  @override
-  Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(RdRadii.inner);
-    return Stack(
-      children: [
-        Container(
-          height: height,
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: background,
-            borderRadius: radius,
-            border: Border.all(color: const Color(0x6685B6FF)),
-          ),
-          child: Semantics(
-            label: label,
-            child: TextField(
-              controller: controller,
-              focusNode: focusNode,
-              enabled: enabled,
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.done,
-              textAlign: TextAlign.center,
-              inputFormatters: const [_OwnedCountFormatter()],
-              onSubmitted: (_) => onSubmitted(),
-              cursorColor: RdColors.accent,
-              style: RdText.mono(fontSize: 20),
-              decoration: const InputDecoration(
-                isCollapsed: true,
-                border: InputBorder.none,
-              ),
-            ),
-          ),
-        ),
-        if (!enabled)
-          Positioned.fill(
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: const Color(0x8C050914),
-                  borderRadius: radius,
-                ),
-              ),
-            ),
-          ),
-      ],
     );
   }
 }

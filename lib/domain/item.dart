@@ -1,3 +1,9 @@
+/// LMD (龙门币) item id.
+const lmdItemId = '4001';
+
+/// Battle record EXP item id used for the plan EXP totals.
+const expItemId = '5001';
+
 class ItemEntry {
   const ItemEntry({
     required this.itemId,

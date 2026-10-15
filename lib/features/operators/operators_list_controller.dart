@@ -7,10 +7,61 @@ import '../../app/providers.dart';
 import '../../domain/operator.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../services/operator_service.dart';
+import '../shared/operator_search.dart';
 
 /// `useInfiniteSlice` options used by the Vue page.
 const operatorsInitialCount = 36;
 const operatorsBatchSize = 24;
+
+/// The four filter dimensions of the operators list (the old filter drawer:
+/// rarity, profession, affiliation and BA tags).
+enum OperatorFilterDimension { rarity, profession, affiliation, baTags }
+
+extension OperatorFilterDimensionInfo on OperatorFilterDimension {
+  String title(NexusI18n i18n) => switch (this) {
+        OperatorFilterDimension.rarity =>
+          i18n.t('operatorsList.filters.rarity'),
+        OperatorFilterDimension.profession =>
+          i18n.t('operatorsList.filters.profession'),
+        OperatorFilterDimension.affiliation =>
+          i18n.t('operatorsList.filters.affiliation'),
+        OperatorFilterDimension.baTags =>
+          i18n.t('operatorsList.filters.baTags'),
+      };
+
+  /// Key fragment of the dimension's chips and rows.
+  String get keyName => switch (this) {
+        OperatorFilterDimension.rarity => 'rarity',
+        OperatorFilterDimension.profession => 'profession',
+        OperatorFilterDimension.affiliation => 'affiliation',
+        OperatorFilterDimension.baTags => 'ba-tags',
+      };
+
+  /// Several values can be picked at once (BA tags).
+  bool get multi => this == OperatorFilterDimension.baTags;
+
+  /// Long option lists get a search box.
+  bool get searchable =>
+      this == OperatorFilterDimension.affiliation ||
+      this == OperatorFilterDimension.baTags;
+}
+
+/// One selectable value of a [OperatorFilterDimension].
+class OperatorFilterOption {
+  const OperatorFilterOption({
+    required this.dimension,
+    required this.value,
+    required this.label,
+    required this.selected,
+  });
+
+  final OperatorFilterDimension dimension;
+
+  /// The rarity (int) or the profession / affiliation / tag (String).
+  final Object value;
+  final String label;
+  final bool selected;
+}
 
 class OperatorFilters {
   const OperatorFilters({
@@ -216,6 +267,109 @@ class OperatorsListController extends ChangeNotifier {
     );
   }
 
+  /// Options of [dimension] for the current data, with their labels and
+  /// whether each is selected.
+  List<OperatorFilterOption> filterOptions(
+    OperatorFilterDimension dimension,
+    NexusI18n i18n,
+  ) {
+    final filters = _filters;
+    OperatorFilterOption option(Object value, String label, bool selected) =>
+        OperatorFilterOption(
+          dimension: dimension,
+          value: value,
+          label: label,
+          selected: selected,
+        );
+    return switch (dimension) {
+      OperatorFilterDimension.rarity => [
+          for (final rarity in options.rarities)
+            option(rarity, '$rarity ★', filters.rarity == rarity),
+        ],
+      OperatorFilterDimension.profession => [
+          for (final profession in options.professions)
+            option(
+              profession,
+              i18n.profession(profession),
+              filters.profession == profession,
+            ),
+        ],
+      OperatorFilterDimension.affiliation => [
+          for (final affiliation in options.affiliations)
+            option(
+              affiliation,
+              affiliation,
+              filters.affiliation == affiliation,
+            ),
+        ],
+      OperatorFilterDimension.baTags => [
+          for (final tag in options.baTags)
+            option(tag, tag, filters.baTags.contains(tag)),
+        ],
+    };
+  }
+
+  /// Selects [option], or clears it when it is already the selected value;
+  /// BA tags toggle.
+  void applyFilterOption(OperatorFilterOption option) {
+    final value = option.value;
+    switch (option.dimension) {
+      case OperatorFilterDimension.rarity:
+        filters = _filters.copyWith(
+          rarity: () => _filters.rarity == value ? null : value as int,
+        );
+      case OperatorFilterDimension.profession:
+        filters = _filters.copyWith(
+          profession: () =>
+              _filters.profession == value ? null : value as String,
+        );
+      case OperatorFilterDimension.affiliation:
+        filters = _filters.copyWith(
+          affiliation: () =>
+              _filters.affiliation == value ? null : value as String,
+        );
+      case OperatorFilterDimension.baTags:
+        toggleBaTag(value as String);
+    }
+  }
+
+  /// Selected value(s) of [dimension] as one label, or null when unset.
+  String? shownFilterValue(OperatorFilterDimension dimension, NexusI18n i18n) {
+    final filters = _filters;
+    switch (dimension) {
+      case OperatorFilterDimension.rarity:
+        return filters.rarity == null ? null : '${filters.rarity} ★';
+      case OperatorFilterDimension.profession:
+        return filters.profession == null
+            ? null
+            : i18n.profession(filters.profession!);
+      case OperatorFilterDimension.affiliation:
+        return filters.affiliation;
+      case OperatorFilterDimension.baTags:
+        final tags = filters.baTags;
+        if (tags.isEmpty) {
+          return null;
+        }
+        return tags.length == 1
+            ? tags.first
+            : i18n.t('rd.operators.chip.more', {
+                'value': tags.first,
+                'count': tags.length - 1,
+              });
+    }
+  }
+
+  void clearFilterDimension(OperatorFilterDimension dimension) {
+    filters = switch (dimension) {
+      OperatorFilterDimension.rarity => _filters.copyWith(rarity: () => null),
+      OperatorFilterDimension.profession =>
+        _filters.copyWith(profession: () => null),
+      OperatorFilterDimension.affiliation =>
+        _filters.copyWith(affiliation: () => null),
+      OperatorFilterDimension.baTags => _filters.copyWith(baTags: const []),
+    };
+  }
+
   void loadMore() {
     if (!hasMore) {
       return;
@@ -230,22 +384,14 @@ class OperatorsListController extends ChangeNotifier {
   void _applyLocalFilters() {
     final filters = _filters;
     final i18n = _ref.read(i18nProvider);
-    final query = filters.query.trim().toLowerCase();
+    final needle = operatorSearchNeedle(filters.query);
     operatorList = _allOperators.where((operator) {
-      final affiliations = [
-        ...operator.teams,
-        ...operator.nations,
-        ...operator.groups,
-      ];
-      final matchesQuery = query.isEmpty ||
-          [
-            operator.name,
-            operator.profession,
-            i18n.profession(operator.profession),
-            ...affiliations,
-          ].any((value) => value.toLowerCase().contains(query));
-      final matchesAffiliation = filters.affiliation == null ||
-          affiliations.contains(filters.affiliation);
+      final matchesQuery = operatorMatchesQuery(operator, needle, i18n);
+      final affiliation = filters.affiliation;
+      final matchesAffiliation = affiliation == null ||
+          operator.teams.contains(affiliation) ||
+          operator.nations.contains(affiliation) ||
+          operator.groups.contains(affiliation);
       final matchesRarity =
           filters.rarity == null || operator.rarity == filters.rarity;
       final matchesProfession = filters.profession == null ||

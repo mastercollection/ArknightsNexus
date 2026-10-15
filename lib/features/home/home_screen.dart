@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../i18n/nexus_i18n.dart';
 import '../../ui/redesign/rd_widgets.dart';
 import 'home_plan_summary.dart';
 import 'home_region_sync.dart';
-
-const _appIcon = 'assets/icons/app/nexus-beacon.svg';
+import '../shared/region_select.dart';
 
 /// Home dashboard (port of `src/pages/index.vue`, redesigned after
 /// `Main.dc.html` / `MobileHome.dc.html`).
@@ -172,7 +170,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 final title = Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(i18n.t('rd.home.eyebrow'), style: RdText.eyebrow),
+                    Text(i18n.t('home.hero.title'), style: RdText.eyebrow),
                     const SizedBox(height: 4),
                     Semantics(
                       header: true,
@@ -239,17 +237,7 @@ class _Brand extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: 44),
         child: Row(
           children: [
-            Container(
-              width: 32,
-              height: 32,
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0D1730),
-                borderRadius: BorderRadius.circular(9),
-                border: Border.all(color: const Color(0x598BD6FF)),
-              ),
-              child: SvgPicture.asset(_appIcon),
-            ),
+            const RdAppMark(),
             const SizedBox(width: 10),
             const Flexible(
               child: Text(
@@ -313,12 +301,14 @@ class _SearchBlock extends ConsumerWidget {
               children: [
                 field,
                 const SizedBox(height: 8),
-                _TonalButton(
+                RdButton(
                   key: const Key('home-search-button'),
                   label: query.isEmpty
                       ? i18n.t('home.search.action')
                       : i18n.t('rd.home.searchWithQuery', {'query': query}),
                   onPressed: onSubmit,
+                  variant: RdButtonVariant.tonal,
+                  expand: true,
                 ),
                 const SizedBox(height: 8),
                 hint,
@@ -361,52 +351,11 @@ class _EnterKey extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: const Color(0x24FFFFFF)),
+          border: Border.all(color: RdColors.white14),
         ),
         child: Text(
           'Enter',
           style: RdText.mono(fontSize: 11, color: RdColors.muted),
-        ),
-      ),
-    );
-  }
-}
-
-/// Full-width accent-tinted button of the phone layouts.
-class _TonalButton extends StatelessWidget {
-  const _TonalButton({required this.label, required this.onPressed, super.key});
-
-  final String label;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      child: Material(
-        color: const Color(0x2485B6FF),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(RdRadii.control),
-          side: const BorderSide(color: Color(0x6685B6FF)),
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(RdRadii.control),
-          onTap: onPressed,
-          child: Container(
-            height: 44,
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: RdColors.text,
-              ),
-            ),
-          ),
         ),
       ),
     );
@@ -513,43 +462,16 @@ class _MenuGrid extends ConsumerWidget {
         icon: 'assets/icons/home/enemy.webp',
       ),
     ];
-    final gap = compact ? 12.0 : 14.0;
-    final grid = LayoutBuilder(
-      builder: (context, constraints) {
-        // repeat(auto-fit, minmax(220px, 1fr)) on PC, two columns on phones.
-        final columns = compact
-            ? 2
-            : ((constraints.maxWidth + gap) ~/ (minTileWidth + gap))
-                .clamp(1, 4);
-        final rows = <Widget>[];
-        for (var start = 0; start < items.length; start += columns) {
-          final slice = items.skip(start).take(columns).toList();
-          if (rows.isNotEmpty) {
-            rows.add(SizedBox(height: gap));
-          }
-          rows.add(
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (var i = 0; i < columns; i++) ...[
-                    if (i > 0) SizedBox(width: gap),
-                    Expanded(
-                      child: i < slice.length
-                          ? _MenuTile(item: slice[i], compact: compact)
-                          : const SizedBox.shrink(),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          );
-        }
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: rows,
-        );
-      },
+    // repeat(auto-fit, minmax(220px, 1fr)) on PC, two columns on phones.
+    final grid = RdAutoGrid(
+      columns: compact ? 2 : null,
+      minTileWidth: minTileWidth,
+      maxColumns: 4,
+      gap: compact ? 12.0 : 14.0,
+      equalHeight: true,
+      children: [
+        for (final item in items) _MenuTile(item: item, compact: compact),
+      ],
     );
     if (compact) {
       return grid;

@@ -12,18 +12,6 @@ import 'potential_diff_display.dart';
 // Static icon assets
 // ---------------------------------------------------------------------------
 
-String? eliteIconAsset(int? elite) {
-  if (elite == null || elite < 0 || elite > 2) {
-    return null;
-  }
-  return 'assets/icons/elite/$elite.webp';
-}
-
-/// Mastery icons exist only for skill levels 8-10 (M1-M3).
-String? skillLevelIconAsset(int level) {
-  return level >= 8 && level <= 10 ? 'assets/icons/skill/$level.png' : null;
-}
-
 /// `potentialIcons[rank] ?? potentialIcons[1]`.
 String potentialIconAsset(int rank) {
   final safe = rank >= 1 && rank <= 6 ? rank : 1;

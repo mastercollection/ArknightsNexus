@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../../domain/operator.dart';
 import '../../ui/redesign/rd_widgets.dart';
 import 'operator_detail_view_model.dart';
-import 'operator_detail_widgets.dart';
 
 /// Skill level comparison table: horizontally scrollable, the item column
 /// stays pinned on the left, the selected level column is highlighted and
@@ -40,7 +39,7 @@ class OperatorSkillTable extends StatefulWidget {
 const _fontSize = 13.0;
 const _cellPadding = EdgeInsets.symmetric(horizontal: 10, vertical: 8);
 const _stickyFill = Color(0xFF0B0F19);
-const _rowLine = Color(0x14FFFFFF);
+const _rowLine = RdColors.white8;
 
 class _OperatorSkillTableState extends State<OperatorSkillTable> {
   final _controller = ScrollController();
@@ -235,8 +234,8 @@ class _OperatorSkillTableState extends State<OperatorSkillTable> {
             dataCell(
               isSelected: level.level == selected,
               selectedFill: const Color(0x2959B5FF),
-              child: skillLevelIconAsset(level.level) != null
-                  ? MasteryIcon(
+              child: rdMasteryAsset(level.level) != null
+                  ? RdMasteryIcon(
                       level.level,
                       semanticLabel: widget.masteryLabel?.call(level.level - 7),
                     )
@@ -280,7 +279,7 @@ class _OperatorSkillTableState extends State<OperatorSkillTable> {
                         fontSize: _fontSize,
                         color: i < levels.length && levels[i].level == selected
                             ? Colors.white
-                            : detailBodyColor,
+                            : RdColors.body,
                       ),
                     ),
                   ),

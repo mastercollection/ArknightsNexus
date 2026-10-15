@@ -1,11 +1,8 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/operator.dart';
 import '../../i18n/nexus_i18n.dart';
-import '../../ui/nexus_ui.dart' show NexusPulse;
 import '../../ui/redesign/rd_widgets.dart';
 import 'operators_common.dart';
 import 'operators_list_controller.dart';
@@ -200,7 +197,7 @@ class _OperatorsGridViewState extends ConsumerState<OperatorsGridView> {
     return SliverLayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.crossAxisExtent;
-        final columns = math.max(2, ((width + gap) / (minTile + gap)).floor());
+        final columns = rdAutoColumns(width, minTile, gap: gap, min: 2);
         return SliverGrid(
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: columns,
@@ -249,7 +246,7 @@ class _OperatorTileState extends State<OperatorTile> {
         ? const Color(0xB385B6FF)
         : _hovered
             ? const Color(0x5985B6FF)
-            : opPanelBorder;
+            : RdColors.line2;
     final background = widget.compact
         ? RdColors.card
         : selected
@@ -281,7 +278,7 @@ class _OperatorTileState extends State<OperatorTile> {
         padding: const EdgeInsets.fromLTRB(6, 10, 6, 12),
         child: Column(
           children: [
-            OpPortrait(
+            RdPortrait(
               charId: operator.id,
               name: operator.name,
               size: 76,
@@ -319,7 +316,7 @@ class _OperatorTileState extends State<OperatorTile> {
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  OpPortrait(
+                  RdPortrait(
                     charId: operator.id,
                     name: operator.name,
                     size: 80,
@@ -399,7 +396,7 @@ class _LoadingTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: compact ? RdColors.card : opPanelFill,
         borderRadius: BorderRadius.circular(compact ? 16 : 22),
-        border: Border.all(color: opPanelBorder),
+        border: Border.all(color: RdColors.line2),
       ),
       child: Column(
         children: [
@@ -411,18 +408,17 @@ class _LoadingTile extends StatelessWidget {
               color: RdColors.portrait,
               borderRadius: BorderRadius.circular(compact ? 18 : 22),
             ),
-            child: const NexusPulse(
-              width: 44,
-              height: 44,
-              radius: 16,
-              color: Color(0x0FFFFFFF),
+            child: const RdPulse(
+              child: RdSkeleton(
+                width: 44,
+                height: 44,
+                radius: 16,
+                color: RdColors.soft,
+              ),
             ),
           ),
           const SizedBox(height: 10),
-          const FractionallySizedBox(
-            widthFactor: 0.72,
-            child: NexusPulse(height: 12, color: Color(0x14FFFFFF)),
-          ),
+          const RdPulse(child: RdSkeleton(height: 12, widthFactor: 0.72)),
         ],
       ),
     );

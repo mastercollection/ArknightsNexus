@@ -1,21 +1,15 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 
 import '../../ui/nexus_media.dart';
 import '../../ui/redesign/rd_widgets.dart';
 
+export '../shared/number_format.dart' show formatPlanNumber;
+
 /// Colours of the redesigned plan pages that `RdColors` does not name.
 class PlanColors {
   const PlanColors._();
-
-  /// `#dbe2f0`: first line of state panels, tier labels.
-  static const stateTitle = Color(0xFFDBE2F0);
-
-  /// `rgba(255,255,255,0.03)`: inset blocks inside cards.
-  static const inset = Color(0x08FFFFFF);
 
   /// `#ffb3b3`: shortage counts.
   static const shortage = Color(0xFFFFB3B3);
@@ -25,27 +19,12 @@ class PlanColors {
   static const validationFill = Color(0x14FF6666);
   static const validationBorder = Color(0x40FF7878);
 
-  /// Runs chip (`rgba(113,165,255,0.16)` / `#dce9ff`).
-  static const runsFill = Color(0x2971A5FF);
-  static const runsText = Color(0xFFDCE9FF);
-
-  /// Sanity chip (`rgba(255,207,112,0.14)` / `#ffe2a8`).
-  static const sanityFill = Color(0x24FFCF70);
-
-  /// Outlined accent button ("다시 불러오기", "상세 열기", "추가").
-  static const linkBorder = Color(0x8085B6FF);
-  static const linkFill = Color(0x1F85B6FF);
-  static const linkText = Color(0xFFDBE8FF);
-
   /// Removal (selection mode) colours.
   static const dangerBorder = Color(0x73FF7878);
   static const dangerFill = Color(0x29FF7878);
   static const dangerText = Color(0xFFFFD0D0);
   static const pendingFill = Color(0x3378141C);
   static const pendingBorder = Color(0x66FF7878);
-
-  /// Number inputs and steppers.
-  static const fieldBorder = Color(0x24FFFFFF);
 
   /// Muted footnote / separator colour (`#6f7c94`).
   static const faint = Color(0xFF6F7C94);
@@ -68,11 +47,6 @@ class PlanColors {
   static const lmdTint = Color(0x8CC4A0FF);
 }
 
-final _numberFormat = NumberFormat('#,##0.###', 'en_US');
-
-/// `new Intl.NumberFormat('ko-KR').format(value)`.
-String formatPlanNumber(num value) => _numberFormat.format(value);
-
 /// `max(0, required - owned)`: owned counts come from the item inventory.
 double planShortage(num required, int? owned) =>
     math.max(0, required.toDouble() - (owned ?? 0));
@@ -82,14 +56,10 @@ String planSkillLevelLabel(int level) =>
     level <= 7 ? 'Lv.$level' : 'Rank ${level - 7}';
 
 /// Mastery badge images the user asked for wherever M1-M3 is shown.
-String? planMasteryAsset(int level) =>
+String? rdMasteryAsset(int level) =>
     level >= 8 && level <= 10 ? 'assets/icons/skill/$level.png' : null;
 
 bool _isCompact(BuildContext context) => context.rdLayout == RdLayout.compact;
-
-/// Monospace text style of the canvas (`JetBrains Mono`).
-TextStyle planMono(double size, {Color color = RdColors.text}) =>
-    RdText.mono(fontSize: size, color: color);
 
 /// Page body of a plan screen: the header stays pinned above the scrolling
 /// content on phones and scrolls with it on wider layouts, as the canvas
@@ -159,227 +129,6 @@ class PlanPageFrame extends StatelessWidget {
   }
 }
 
-/// Card shell of the plan pages (`#0c1426`, radius 18).
-class PlanCard extends StatelessWidget {
-  const PlanCard({required this.child, this.padding, super.key});
-
-  final Widget child;
-  final EdgeInsetsGeometry? padding;
-
-  @override
-  Widget build(BuildContext context) {
-    return RdCard(
-      radius: RdRadii.tile,
-      padding: padding ?? EdgeInsets.all(_isCompact(context) ? 14 : 18),
-      child: child,
-    );
-  }
-}
-
-/// `rgba(255,255,255,0.03)` block inside a card.
-class PlanInset extends StatelessWidget {
-  const PlanInset({
-    required this.child,
-    this.padding = const EdgeInsets.all(12),
-    this.radius = RdRadii.inner,
-    this.color = PlanColors.inset,
-    super.key,
-  });
-
-  final Widget child;
-  final EdgeInsetsGeometry padding;
-  final double radius;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: padding,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(radius),
-      ),
-      child: child,
-    );
-  }
-}
-
-/// Section heading: bold title + secondary description.
-class PlanHeading extends StatelessWidget {
-  const PlanHeading({
-    required this.title,
-    this.description,
-    this.large = false,
-    super.key,
-  });
-
-  final String title;
-  final String? description;
-
-  /// 17px (16px on phones) section titles; otherwise 15px.
-  final bool large;
-
-  @override
-  Widget build(BuildContext context) {
-    final compact = _isCompact(context);
-    final titleSize = large ? (compact ? 16.0 : 17.0) : 15.0;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Semantics(
-          header: true,
-          child: Text(
-            title,
-            style: TextStyle(
-              fontSize: titleSize,
-              fontWeight: FontWeight.w700,
-              color: RdColors.text,
-            ),
-          ),
-        ),
-        if (description != null && description!.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          Text(
-            description!,
-            style: TextStyle(
-              fontSize: large && !compact ? 13 : 12,
-              height: 1.45,
-              color: RdColors.secondary2,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-/// Empty state block (`rgba(255,255,255,0.03)`, radius 16).
-class PlanEmptyBox extends StatelessWidget {
-  const PlanEmptyBox({
-    required this.title,
-    required this.description,
-    super.key,
-  });
-
-  final String title;
-  final String description;
-
-  @override
-  Widget build(BuildContext context) {
-    return PlanInset(
-      padding: EdgeInsets.all(_isCompact(context) ? 16 : 18),
-      radius: 16,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 15, color: PlanColors.stateTitle),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            description,
-            style: const TextStyle(fontSize: 13, color: RdColors.secondary2),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Error state with the raw error message and an optional retry button.
-class PlanErrorPanel extends StatelessWidget {
-  const PlanErrorPanel({
-    required this.title,
-    required this.message,
-    this.retryLabel,
-    this.onRetry,
-    super.key,
-  });
-
-  final String title;
-  final String message;
-  final String? retryLabel;
-  final VoidCallback? onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      liveRegion: true,
-      child: PlanCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 15,
-                color: PlanColors.stateTitle,
-              ),
-            ),
-            const SizedBox(height: 10),
-            SelectableText(
-              message,
-              style: planMono(13, color: RdColors.secondary2),
-            ),
-            if (onRetry != null && retryLabel != null) ...[
-              const SizedBox(height: 10),
-              PlanLinkButton(label: retryLabel!, onPressed: onRetry),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Outlined accent button of the canvas (retry, open detail).
-class PlanLinkButton extends StatelessWidget {
-  const PlanLinkButton({
-    required this.label,
-    required this.onPressed,
-    this.height,
-    super.key,
-  });
-
-  final String label;
-  final VoidCallback? onPressed;
-  final double? height;
-
-  @override
-  Widget build(BuildContext context) {
-    final resolvedHeight = height ?? (_isCompact(context) ? 44.0 : 40.0);
-    return Material(
-      color: PlanColors.linkFill,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(RdRadii.control),
-        side: const BorderSide(color: PlanColors.linkBorder),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(RdRadii.control),
-        onTap: onPressed,
-        child: Container(
-          height: resolvedHeight,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            maxLines: 1,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: PlanColors.linkText,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// 44px accent-filled icon button (phone "add operator").
 class PlanAccentIconButton extends StatelessWidget {
   const PlanAccentIconButton({
@@ -415,110 +164,6 @@ class PlanAccentIconButton extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Opacity pulse of the canvas skeletons (`pulse 1.6s`).
-class PlanPulse extends StatefulWidget {
-  const PlanPulse({required this.child, super.key});
-
-  final Widget child;
-
-  @override
-  State<PlanPulse> createState() => _PlanPulseState();
-}
-
-class _PlanPulseState extends State<PlanPulse>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 800),
-    lowerBound: 0.45,
-  )..repeat(reverse: true);
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(opacity: _controller, child: widget.child);
-  }
-}
-
-/// Rounded placeholder block used inside skeletons.
-class PlanSkeletonBlock extends StatelessWidget {
-  const PlanSkeletonBlock({
-    this.width,
-    this.height = 14,
-    this.widthFactor,
-    this.radius = RdRadii.pill,
-    this.color = const Color(0x14FFFFFF),
-    super.key,
-  });
-
-  final double? width;
-  final double height;
-  final double? widthFactor;
-  final double radius;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final box = Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(radius),
-      ),
-    );
-    if (widthFactor == null) {
-      return box;
-    }
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: FractionallySizedBox(widthFactor: widthFactor, child: box),
-    );
-  }
-}
-
-/// Lays out [children] in equal-width columns: [columns] fixed, or as many
-/// [minTileWidth]-wide tracks as fit (`repeat(auto-fill, minmax(...))`).
-class PlanGrid extends StatelessWidget {
-  const PlanGrid({
-    required this.children,
-    this.columns,
-    this.minTileWidth,
-    this.gap = 12,
-    super.key,
-  }) : assert(columns != null || minTileWidth != null);
-
-  final List<Widget> children;
-  final int? columns;
-  final double? minTileWidth;
-  final double gap;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final count = columns ??
-            math.max(1, ((width + gap) / (minTileWidth! + gap)).floor());
-        // Floor so rounding never pushes the last tile onto a new row.
-        final tile = ((width - gap * (count - 1)) / count).floorToDouble();
-        return Wrap(
-          spacing: gap,
-          runSpacing: gap,
-          children: [
-            for (final child in children) SizedBox(width: tile, child: child),
-          ],
-        );
-      },
     );
   }
 }
@@ -585,7 +230,7 @@ class PlanOperatorTile extends StatelessWidget {
       PlanTileMode.favorite => (RdColors.inner, const Color(0x5985B6FF)),
       PlanTileMode.pick => pending
           ? (PlanColors.pendingFill, PlanColors.pendingBorder)
-          : (const Color(0x05FFFFFF), const Color(0x1AFFFFFF)),
+          : (const Color(0x05FFFFFF), RdColors.white10),
     };
     final radius = BorderRadius.circular(compact ? 16 : RdRadii.tile);
 
@@ -598,7 +243,7 @@ class PlanOperatorTile extends StatelessWidget {
           shape: BoxShape.circle,
           color: pending ? const Color(0xFF4A1A20) : const Color(0xFF0A0F1E),
           border: Border.all(
-            color: pending ? const Color(0x80FF7878) : const Color(0x24FFFFFF),
+            color: pending ? const Color(0x80FF7878) : RdColors.white14,
           ),
         ),
         child: Icon(
@@ -647,10 +292,11 @@ class PlanOperatorTile extends StatelessWidget {
                 Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    OperatorPortrait(
+                    RdPortrait(
                       charId: operatorId,
                       name: name,
-                      dimension: portrait,
+                      size: portrait,
+                      radius: 24,
                     ),
                     Positioned(
                       left: 0,
@@ -685,7 +331,7 @@ class PlanOperatorTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: compact ? 11 : 12,
-                      color: const Color(0xFFA9C8FF),
+                      color: RdColors.link,
                     ),
                   ),
                 ],
@@ -811,7 +457,7 @@ class PlanResourceCard extends StatelessWidget {
         Text(
           value,
           textAlign: TextAlign.center,
-          style: planMono(compact ? 17 : 19),
+          style: RdText.mono(fontSize: compact ? 17 : 19),
         ),
         if (shortageLabel != null) ...[
           const SizedBox(height: 4),
@@ -832,7 +478,7 @@ class PlanResourceCard extends StatelessWidget {
       vertical: compact ? 12 : 14,
     );
     if (inset) {
-      return PlanInset(padding: padding, child: Center(child: content));
+      return RdInset(padding: padding, child: Center(child: content));
     }
     return RdCard(
       radius: RdRadii.tile,
@@ -877,7 +523,10 @@ class PlanFarmingRow extends StatelessWidget {
                 if (code != null)
                   TextSpan(
                     text: code,
-                    style: planMono(fontSize, color: RdColors.secondary),
+                    style: RdText.mono(
+                      fontSize: fontSize,
+                      color: RdColors.secondary,
+                    ),
                   ),
               ],
             ),
@@ -888,7 +537,7 @@ class PlanFarmingRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: gold ? PlanColors.sanityFill : PlanColors.runsFill,
+            color: gold ? RdColors.goldFill : RdColors.blueFill,
             borderRadius: BorderRadius.circular(RdRadii.pill),
           ),
           child: Text(
@@ -896,7 +545,7 @@ class PlanFarmingRow extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: gold ? FontWeight.w700 : FontWeight.w400,
-              color: gold ? RdColors.warnText : PlanColors.runsText,
+              color: gold ? RdColors.warnText : RdColors.blueText,
             ),
           ),
         ),
@@ -905,7 +554,7 @@ class PlanFarmingRow extends StatelessWidget {
     if (!boxed) {
       return row;
     }
-    return PlanInset(
+    return RdInset(
       padding:
           EdgeInsets.symmetric(horizontal: 12, vertical: compact ? 10 : 12),
       child: row,
@@ -1002,7 +651,7 @@ class PlanSaveStatusPill extends StatelessWidget {
       decoration: BoxDecoration(shape: BoxShape.circle, color: dotColor),
     );
     if (status == PlanSaveStatus.saving) {
-      dot = PlanPulse(child: dot);
+      dot = RdPulse(child: dot);
     }
     return Semantics(
       liveRegion: true,
@@ -1016,7 +665,7 @@ class PlanSaveStatusPill extends StatelessWidget {
           color: failed ? PlanColors.toastFill : RdColors.inner2,
           borderRadius: BorderRadius.circular(RdRadii.pill),
           border: Border.all(
-            color: failed ? const Color(0x80FF7878) : const Color(0x1AFFFFFF),
+            color: failed ? const Color(0x80FF7878) : RdColors.white10,
           ),
         ),
         child: Row(
@@ -1118,93 +767,6 @@ class PlanErrorToast extends StatelessWidget {
   }
 }
 
-/// Segmented radio group (elite phase, module stage).
-class PlanSegmentedPicker<T> extends StatelessWidget {
-  const PlanSegmentedPicker({
-    required this.options,
-    required this.selected,
-    required this.onChanged,
-    required this.labelOf,
-    required this.semanticLabel,
-    this.leadingOf,
-    this.segmentKeyOf,
-    super.key,
-  });
-
-  final List<T> options;
-  final T? selected;
-  final ValueChanged<T> onChanged;
-  final String Function(T) labelOf;
-  final Widget? Function(T)? leadingOf;
-  final Key Function(T)? segmentKeyOf;
-  final String semanticLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final compact = _isCompact(context);
-    final height = compact ? 44.0 : 40.0;
-    return Semantics(
-      label: semanticLabel,
-      container: true,
-      child: Container(
-        padding: EdgeInsets.all(compact ? 3 : 4),
-        decoration: BoxDecoration(
-          color: RdColors.segmentTrack,
-          borderRadius: BorderRadius.circular(RdRadii.control),
-        ),
-        child: Row(
-          children: [
-            for (var i = 0; i < options.length; i++) ...[
-              if (i > 0) SizedBox(width: compact ? 3 : 4),
-              Expanded(child: _segment(options[i], height)),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _segment(T option, double height) {
-    final on = option == selected;
-    final leading = leadingOf?.call(option);
-    return Semantics(
-      key: segmentKeyOf?.call(option),
-      button: true,
-      selected: on,
-      inMutuallyExclusiveGroup: true,
-      child: Material(
-        color: on ? RdColors.segmentOn : Colors.transparent,
-        borderRadius: BorderRadius.circular(9),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(9),
-          onTap: on ? null : () => onChanged(option),
-          child: SizedBox(
-            height: height,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (leading != null) ...[leading, const SizedBox(width: 4)],
-                Flexible(
-                  child: Text(
-                    labelOf(option),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: on ? FontWeight.w700 : FontWeight.w500,
-                      color: on ? const Color(0xFFF3F8FF) : RdColors.secondary2,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Skill level 1-10 chips: 1-7 as numbers, 8-10 as the mastery images.
 class PlanSkillLevelPicker extends StatelessWidget {
   const PlanSkillLevelPicker({
@@ -1247,16 +809,12 @@ class PlanSkillLevelPicker extends StatelessWidget {
 
   Widget _chip(int level, double height) {
     final on = level == selected;
-    final mastery = planMasteryAsset(level);
+    final mastery = rdMasteryAsset(level);
     final (Color fill, Color border, Color text) = on
-        ? (RdColors.segmentOn, const Color(0xB385B6FF), const Color(0xFFF3F8FF))
+        ? (RdColors.segmentOn, const Color(0xB385B6FF), RdColors.onSegment)
         : mastery != null
             ? (const Color(0x0FFFCF70), const Color(0x47FFCF70), RdColors.gold)
-            : (
-                RdColors.segmentTrack,
-                const Color(0x1AFFFFFF),
-                RdColors.secondary
-              );
+            : (RdColors.segmentTrack, RdColors.white10, RdColors.secondary);
     return Semantics(
       key: Key('$chipKeyPrefix-$level'),
       button: true,
@@ -1279,18 +837,16 @@ class PlanSkillLevelPicker extends StatelessWidget {
             height: height,
             child: Center(
               child: mastery == null
-                  ? Text('$level', style: planMono(13, color: text))
+                  ? Text(
+                      '$level',
+                      style: RdText.mono(fontSize: 13, color: text),
+                    )
                   : Padding(
                       padding: const EdgeInsets.all(2),
-                      child: Image.asset(
-                        mastery,
-                        width: 24,
-                        height: 24,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => Text(
-                          'M${level - 7}',
-                          style: planMono(12, color: text),
-                        ),
+                      child: RdMasteryIcon(
+                        level,
+                        size: 24,
+                        fallbackStyle: RdText.mono(fontSize: 12, color: text),
                       ),
                     ),
             ),
@@ -1316,47 +872,17 @@ class PlanSkillLevelBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final asset = planMasteryAsset(level);
-    if (asset == null) {
+    if (rdMasteryAsset(level) == null) {
       return Text(
         planSkillLevelLabel(level),
-        style: planMono(fontSize, color: RdColors.secondary),
+        style: RdText.mono(fontSize: fontSize, color: RdColors.secondary),
       );
     }
-    return Semantics(
-      label: masteryLabel(level - 7),
-      excludeSemantics: true,
-      child: Image.asset(
-        asset,
-        width: fontSize + 8,
-        height: fontSize + 8,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) => Text(
-          'M${level - 7}',
-          style: planMono(fontSize, color: RdColors.gold),
-        ),
-      ),
-    );
-  }
-}
-
-/// Elite phase icon (`assets/icons/elite/N.webp`) used in the elite picker.
-class PlanEliteIcon extends StatelessWidget {
-  const PlanEliteIcon({required this.elite, this.size = 18, super.key});
-
-  final int elite;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return ExcludeSemantics(
-      child: Image.asset(
-        'assets/icons/elite/$elite.webp',
-        width: size,
-        height: size,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
-      ),
+    return RdMasteryIcon(
+      level,
+      size: fontSize + 8,
+      semanticLabel: masteryLabel(level - 7),
+      fallbackStyle: RdText.mono(fontSize: fontSize, color: RdColors.gold),
     );
   }
 }
@@ -1388,15 +914,16 @@ class PlanLevelStepper extends StatelessWidget {
     final upper = math.max(1, max);
     return Row(
       children: [
-        _StepButton(
-          symbol: '−',
+        RdStepButton(
+          increase: false,
           tooltip: decreaseLabel,
           width: compact ? 44 : 40,
+          height: 44,
           onPressed: value > 1 ? () => onChanged(math.max(1, value - 1)) : null,
         ),
         const SizedBox(width: 6),
         Expanded(
-          child: PlanNumberInput(
+          child: RdNumberInput(
             key: inputKey,
             value: value,
             min: 1,
@@ -1406,10 +933,11 @@ class PlanLevelStepper extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 6),
-        _StepButton(
-          symbol: '+',
+        RdStepButton(
+          increase: true,
           tooltip: increaseLabel,
           width: compact ? 44 : 40,
+          height: 44,
           onPressed: value < upper
               ? () => onChanged(math.min(upper, value + 1))
               : null,
@@ -1420,190 +948,11 @@ class PlanLevelStepper extends StatelessWidget {
           child: Text(
             '/ $upper',
             maxLines: 1,
-            style: planMono(compact ? 11 : 12, color: RdColors.muted),
+            style:
+                RdText.mono(fontSize: compact ? 11 : 12, color: RdColors.muted),
           ),
         ),
       ],
-    );
-  }
-}
-
-class _StepButton extends StatelessWidget {
-  const _StepButton({
-    required this.symbol,
-    required this.tooltip,
-    required this.width,
-    required this.onPressed,
-  });
-
-  final String symbol;
-  final String tooltip;
-  final double width;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onPressed != null;
-    return Tooltip(
-      message: tooltip,
-      child: Semantics(
-        button: true,
-        enabled: enabled,
-        label: tooltip,
-        excludeSemantics: true,
-        child: Material(
-          color: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(RdRadii.small),
-            side: const BorderSide(color: PlanColors.fieldBorder),
-          ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(RdRadii.small),
-            onTap: onPressed,
-            child: SizedBox(
-              width: width,
-              height: 44,
-              child: Center(
-                child: Text(
-                  symbol,
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: enabled ? RdColors.secondary : RdColors.placeholder,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Centered integer input that clamps to [min]..[max] while typing and
-/// restores the display value on blur (`el-input-number :controls=false`).
-class PlanNumberInput extends StatefulWidget {
-  const PlanNumberInput({
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.onChanged,
-    this.semanticLabel,
-    super.key,
-  });
-
-  final int value;
-  final int min;
-  final int max;
-  final ValueChanged<int> onChanged;
-  final String? semanticLabel;
-
-  @override
-  State<PlanNumberInput> createState() => _PlanNumberInputState();
-}
-
-class _PlanNumberInputState extends State<PlanNumberInput> {
-  late final TextEditingController _controller =
-      TextEditingController(text: '${widget.value}');
-  final _focusNode = FocusNode();
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(_handleFocus);
-  }
-
-  @override
-  void didUpdateWidget(PlanNumberInput oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final text = '${widget.value}';
-    if (_controller.text == text) {
-      return;
-    }
-    // Stepper taps change the value while the field may still hold focus;
-    // a field being edited (empty, or over the cap) is left alone.
-    final parsed = int.tryParse(_controller.text.trim());
-    if (!_focusNode.hasFocus ||
-        (parsed != null && _clamp(parsed) != widget.value)) {
-      _controller.value = TextEditingValue(
-        text: text,
-        selection: TextSelection.collapsed(offset: text.length),
-      );
-    }
-  }
-
-  @override
-  void dispose() {
-    _focusNode.removeListener(_handleFocus);
-    _focusNode.dispose();
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _handleFocus() {
-    if (!_focusNode.hasFocus) {
-      _restoreDisplay();
-    }
-    setState(() {});
-  }
-
-  void _restoreDisplay() {
-    final text = '${_clamp(widget.value)}';
-    if (_controller.text != text) {
-      _controller.text = text;
-    }
-  }
-
-  int _clamp(int value) {
-    final upper = math.max(widget.min, widget.max);
-    return value.clamp(widget.min, upper);
-  }
-
-  void _handleChanged(String text) {
-    final parsed = int.tryParse(text.trim());
-    if (parsed == null) {
-      return;
-    }
-    final next = _clamp(parsed);
-    if (next != widget.value) {
-      widget.onChanged(next);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final focused = _focusNode.hasFocus;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      height: 44,
-      alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: RdColors.segmentTrack,
-        borderRadius: BorderRadius.circular(RdRadii.small),
-        border: Border.all(
-          color: focused ? RdColors.accent : PlanColors.fieldBorder,
-        ),
-      ),
-      child: Semantics(
-        label: widget.semanticLabel,
-        textField: true,
-        child: TextField(
-          controller: _controller,
-          focusNode: _focusNode,
-          textAlign: TextAlign.center,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          onChanged: _handleChanged,
-          onSubmitted: (_) => _restoreDisplay(),
-          cursorColor: RdColors.accent,
-          style: planMono(15),
-          decoration: const InputDecoration(
-            isCollapsed: true,
-            border: InputBorder.none,
-          ),
-        ),
-      ),
     );
   }
 }

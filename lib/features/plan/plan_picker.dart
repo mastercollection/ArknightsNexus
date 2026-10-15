@@ -5,9 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/operator.dart';
 import '../../i18n/nexus_i18n.dart';
-import '../../ui/nexus_media.dart';
 import '../../ui/redesign/rd_widgets.dart';
-import 'plan_widgets.dart';
+import '../shared/operator_search.dart';
 
 /// Lets the plan page refresh or close the open picker.
 class PlanPickerController {
@@ -27,60 +26,22 @@ Future<void> showPlanOperatorPicker({
   required List<OperatorSummary> Function() operators,
   required Future<void> Function(String operatorId) onAdd,
 }) {
-  final size = MediaQuery.sizeOf(context);
-  PlanOperatorPicker panel(bool compact) => PlanOperatorPicker(
-        compact: compact,
-        onAttach: onAttach,
-        query: query,
-        onQueryChanged: onQueryChanged,
-        operators: operators,
-        onAdd: onAdd,
-      );
-
-  if (context.rdLayout == RdLayout.compact) {
-    final height = math.min(600.0, size.height * 0.88);
-    return showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: RdColors.sheet,
-      barrierColor: const Color(0x80000000),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-      ),
-      constraints: BoxConstraints(
-        minHeight: height,
-        maxHeight: height,
-        maxWidth: double.infinity,
-      ),
-      builder: (_) => panel(true),
-    );
-  }
-
-  return showDialog<void>(
+  final height = MediaQuery.sizeOf(context).height;
+  final compact = context.rdLayout == RdLayout.compact;
+  return showRdSheet<void>(
     context: context,
-    barrierColor: const Color(0x8C000000),
-    builder: (dialogContext) {
-      final maxHeight = math.min(640.0, size.height - 72 - 24);
-      return Align(
-        alignment: Alignment.topCenter,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 72, 16, 24),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: 640, maxHeight: maxHeight),
-            child: Material(
-              color: RdColors.sheet,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(22),
-                side: const BorderSide(color: Color(0x14FFFFFF)),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: panel(false),
-            ),
-          ),
-        ),
-      );
-    },
+    maxWidth: 640,
+    dialogAlignment: Alignment.topCenter,
+    dialogPadding: const EdgeInsets.fromLTRB(16, 72, 16, 24),
+    dialogMaxHeight: math.min(640.0, height - 72 - 24),
+    builder: (_) => PlanOperatorPicker(
+      compact: compact,
+      onAttach: onAttach,
+      query: query,
+      onQueryChanged: onQueryChanged,
+      operators: operators,
+      onAdd: onAdd,
+    ),
   );
 }
 
@@ -135,7 +96,7 @@ class _PlanOperatorPickerState extends ConsumerState<PlanOperatorPicker> {
     final i18n = ref.watch(i18nProvider);
     final operators = widget.operators();
     final compact = widget.compact;
-    final closeLabel = i18n.t('rd.plan.close');
+    final closeLabel = i18n.t('common.close');
 
     final header = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,13 +125,6 @@ class _PlanOperatorPickerState extends ConsumerState<PlanOperatorPicker> {
             ],
           ),
         ),
-        RdIconButton(
-          key: const Key('plan-picker-close'),
-          icon: Icons.close,
-          tooltip: closeLabel,
-          filled: false,
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
       ],
     );
 
@@ -185,9 +139,12 @@ class _PlanOperatorPickerState extends ConsumerState<PlanOperatorPicker> {
     );
 
     final Widget list = operators.isEmpty
-        ? PlanEmptyBox(
+        ? RdStatePanel(
+            kind: RdStateKind.empty,
+            layout: RdStateLayout.left,
+            surface: RdStateSurface.inset,
             title: i18n.t('planPage.picker.emptyTitle'),
-            description: i18n.t('planPage.picker.emptyDescription'),
+            message: i18n.t('planPage.picker.emptyDescription'),
           )
         : ListView.separated(
             shrinkWrap: !compact,
@@ -212,41 +169,28 @@ class _PlanOperatorPickerState extends ConsumerState<PlanOperatorPicker> {
             },
           );
 
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: compact
-            ? const EdgeInsets.fromLTRB(16, 12, 16, 24)
-            : const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: compact ? MainAxisSize.max : MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (compact) ...[
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0x33FFFFFF),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-            header,
-            SizedBox(height: compact ? 12 : 14),
-            search,
-            SizedBox(height: compact ? 12 : 14),
-            if (operators.isEmpty)
-              list
-            else if (compact)
-              Expanded(child: list)
-            else
-              Flexible(child: list),
-          ],
-        ),
+    return RdSheetFrame(
+      header: header,
+      closeLabel: closeLabel,
+      closeKey: const Key('plan-picker-close'),
+      color: RdColors.sheet,
+      sheetHeight: math.min(600.0, MediaQuery.sizeOf(context).height * 0.88),
+      dialogPadding: const EdgeInsets.all(20),
+      headerGap: compact ? 12 : 14,
+      scrollable: false,
+      child: Column(
+        mainAxisSize: compact ? MainAxisSize.max : MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          search,
+          SizedBox(height: compact ? 12 : 14),
+          if (operators.isEmpty)
+            list
+          else if (compact)
+            Expanded(child: list)
+          else
+            Flexible(child: list),
+        ],
       ),
     );
   }
@@ -279,7 +223,7 @@ class _PickerRow extends StatelessWidget {
         color: RdColors.sheetOption,
         shape: RoundedRectangleBorder(
           borderRadius: radius,
-          side: const BorderSide(color: Color(0x14FFFFFF)),
+          side: const BorderSide(color: RdColors.white8),
         ),
         child: InkWell(
           borderRadius: radius,
@@ -293,11 +237,11 @@ class _PickerRow extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  OperatorPortrait(
+                  RdPortrait(
                     charId: operator.id,
                     name: operator.name,
-                    size: PortraitSize.sm,
-                    dimension: 44,
+                    size: 44,
+                    radius: 18,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -337,14 +281,14 @@ class _PickerRow extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: RdColors.chipOnFill,
                       borderRadius: BorderRadius.circular(RdRadii.pill),
-                      border: Border.all(color: PlanColors.linkBorder),
+                      border: Border.all(color: RdColors.linkBorder),
                     ),
                     child: Text(
                       addLabel,
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: PlanColors.linkText,
+                        color: RdColors.linkText,
                       ),
                     ),
                   ),
@@ -358,29 +302,20 @@ class _PickerRow extends StatelessWidget {
   }
 }
 
-/// `pickerOperators`: not yet in the plan and matching the query against the
-/// name, raw and translated profession, teams, nations and groups.
+/// `pickerOperators`: not yet in the plan and matching the query
+/// ([operatorMatchesQuery]).
 List<OperatorSummary> filterPlanPickerOperators({
   required List<OperatorSummary> operators,
   required List<String> selectedIds,
   required String query,
   required NexusI18n i18n,
 }) {
-  final needle = query.trim().toLowerCase();
-  return operators.where((operator) {
-    if (selectedIds.contains(operator.id)) {
-      return false;
-    }
-    if (needle.isEmpty) {
-      return true;
-    }
-    return [
-      operator.name,
-      operator.profession,
-      i18n.profession(operator.profession),
-      ...operator.teams,
-      ...operator.nations,
-      ...operator.groups,
-    ].any((value) => value.toLowerCase().contains(needle));
-  }).toList();
+  final needle = operatorSearchNeedle(query);
+  return operators
+      .where(
+        (operator) =>
+            !selectedIds.contains(operator.id) &&
+            operatorMatchesQuery(operator, needle, i18n),
+      )
+      .toList();
 }
