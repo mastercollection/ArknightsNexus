@@ -349,14 +349,13 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
       label: i18n.t('rd.plan.tabsLabel'),
       container: true,
       child: RdSegmented<_PlanTab>(
-        options: _PlanTab.values,
+        segments: [
+          RdSegment(_PlanTab.operators, i18n.t('planPage.tabs.operators')),
+          RdSegment(_PlanTab.summary, i18n.t('planPage.tabs.summary')),
+        ],
         selected: _activeTab,
         onChanged: _setTab,
-        height: 50,
-        expand: true,
-        labelOf: (tab) => tab == _PlanTab.operators
-            ? i18n.t('planPage.tabs.operators')
-            : i18n.t('planPage.tabs.summary'),
+        height: 44,
       ),
     );
 

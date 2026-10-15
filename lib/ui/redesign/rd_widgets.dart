@@ -458,71 +458,108 @@ class _RdSearchFieldState extends State<RdSearchField> {
   }
 }
 
-/// Segmented control (track `#111a2c`, selected `rgba(92,148,220,0.9)`).
+/// One option of an [RdSegmented].
+class RdSegment<T> {
+  const RdSegment(this.value, this.label, {this.leading, this.key});
+
+  final T value;
+  final String label;
+
+  /// Icon before the label (elite icon).
+  final Widget? leading;
+
+  /// Key of the segment's semantics node (tests and automation).
+  final Key? key;
+}
+
+/// Segmented control (`radiogroup`, track `#111a2c`, equal-width segments,
+/// selected `rgba(92,148,220,0.9)`). [height] is the segment height; the
+/// track adds 4px (3px on phones) around it.
 class RdSegmented<T> extends StatelessWidget {
   const RdSegmented({
-    required this.options,
+    required this.segments,
     required this.selected,
     required this.onChanged,
-    required this.labelOf,
     this.height = 40,
-    this.expand = false,
+    this.semanticLabel,
     super.key,
   });
 
-  final List<T> options;
-  final T selected;
+  final List<RdSegment<T>> segments;
+
+  /// No segment is highlighted while this is null.
+  final T? selected;
   final ValueChanged<T>? onChanged;
-  final String Function(T) labelOf;
   final double height;
-  final bool expand;
+
+  /// Names the group for screen readers.
+  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
-    Widget segment(T option) {
-      final on = option == selected;
-      final child = Semantics(
-        selected: on,
-        button: true,
-        inMutuallyExclusiveGroup: true,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onChanged == null ? null : () => onChanged!(option),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            height: height - 6,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: on ? RdColors.segmentOn : Colors.transparent,
-              borderRadius: BorderRadius.circular(RdRadii.small - 2),
-            ),
-            child: Text(
-              labelOf(option),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: on ? FontWeight.w700 : FontWeight.w500,
-                color: on ? RdColors.onSegment : RdColors.secondary,
-              ),
+    final gap = context.rdLayout == RdLayout.compact ? 3.0 : 4.0;
+    return Semantics(
+      container: true,
+      label: semanticLabel,
+      child: Container(
+        padding: EdgeInsets.all(gap),
+        decoration: BoxDecoration(
+          color: RdColors.segmentTrack,
+          borderRadius: BorderRadius.circular(RdRadii.control),
+        ),
+        child: Row(
+          children: [
+            for (var i = 0; i < segments.length; i++) ...[
+              if (i > 0) SizedBox(width: gap),
+              Expanded(child: _segment(segments[i])),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _segment(RdSegment<T> segment) {
+    final on = segment.value == selected;
+    final onChanged = this.onChanged;
+    return Semantics(
+      key: segment.key,
+      button: true,
+      selected: on,
+      inMutuallyExclusiveGroup: true,
+      child: Material(
+        color: on ? RdColors.segmentOn : Colors.transparent,
+        borderRadius: BorderRadius.circular(9),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(9),
+          onTap:
+              on || onChanged == null ? null : () => onChanged(segment.value),
+          child: SizedBox(
+            height: height,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (segment.leading != null) ...[
+                  segment.leading!,
+                  if (segment.label.isNotEmpty) const SizedBox(width: 6),
+                ],
+                if (segment.label.isNotEmpty)
+                  Flexible(
+                    child: Text(
+                      segment.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: on ? FontWeight.w700 : FontWeight.w500,
+                        color: on ? RdColors.onSegment : RdColors.secondary2,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
-      );
-      return expand ? Expanded(child: child) : child;
-    }
-
-    return Container(
-      height: height,
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: RdColors.segmentTrack,
-        borderRadius: BorderRadius.circular(RdRadii.small),
-      ),
-      child: Row(
-        mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
-        children: [for (final option in options) segment(option)],
       ),
     );
   }

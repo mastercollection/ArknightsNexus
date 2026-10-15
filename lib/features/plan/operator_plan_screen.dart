@@ -421,13 +421,19 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
 
     Widget elitePicker({required bool target}) {
       final side = target ? 'target' : 'current';
-      return PlanSegmentedPicker<int>(
+      return RdSegmented<int>(
         key: Key('plan-$side-elite'),
-        options: const [0, 1, 2],
+        segments: [
+          for (final elite in const [0, 1, 2])
+            RdSegment(
+              elite,
+              'E$elite',
+              leading: PlanEliteIcon(elite: elite),
+              key: Key('plan-$side-elite-$elite'),
+            ),
+        ],
         selected: target ? plan.target.elite : plan.current.elite,
-        labelOf: (elite) => 'E$elite',
-        leadingOf: (elite) => PlanEliteIcon(elite: elite),
-        segmentKeyOf: (elite) => Key('plan-$side-elite-$elite'),
+        height: compact ? 44 : 40,
         semanticLabel: '${target ? targetTitle : currentTitle} $eliteLabel',
         onChanged: (elite) => _updatePlan(
           (plan) => target
@@ -742,14 +748,20 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
 
     Widget picker({required bool target}) {
       final side = target ? 'target' : 'current';
-      return PlanSegmentedPicker<int>(
+      return RdSegmented<int>(
         key: Key('plan-$side-module-$id'),
-        options: stages,
+        segments: [
+          for (final stage in stages)
+            RdSegment(
+              stage,
+              stage == 0 ? locked : 'Stage $stage',
+              key: Key('plan-$side-module-$id-$stage'),
+            ),
+        ],
         selected: target
             ? _findModule(plan.target.modules, id)?.targetStage
             : _findModule(plan.current.modules, id)?.currentStage,
-        labelOf: (stage) => stage == 0 ? locked : 'Stage $stage',
-        segmentKeyOf: (stage) => Key('plan-$side-module-$id-$stage'),
+        height: compact ? 44 : 40,
         semanticLabel:
             '${module.uniEquipName} ${target ? targetLabel : currentLabel}',
         onChanged: (stage) => _updatePlan(

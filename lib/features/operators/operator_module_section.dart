@@ -7,7 +7,6 @@ import '../../i18n/nexus_i18n.dart';
 import '../../ui/redesign/rd_widgets.dart';
 import 'operator_detail_view_model.dart';
 import 'operator_detail_widgets.dart';
-import 'operators_common.dart';
 
 /// Modules panel of the operator detail: module picker pills, the selected
 /// module card (equip icon, unlock / trust chips, stage segmented control),
@@ -396,14 +395,14 @@ class _ModuleCard extends StatelessWidget {
                   fontSize: 14,
                   color: RdColors.heading,
                 ),
-                OpSegmented<int>(
+                RdSegmented<int>(
                   key: const ValueKey('module-stage'),
                   semanticLabel: i18n.t('operatorDetail.labels.moduleStage'),
                   height: compact ? 44 : 40,
-                  value: level,
+                  selected: level,
                   segments: [
                     for (final entry in module.battlePhases)
-                      OpSegment(entry.equipLevel, '${entry.equipLevel}'),
+                      RdSegment(entry.equipLevel, '${entry.equipLevel}'),
                   ],
                   onChanged: onLevelChanged,
                 ),

@@ -60,14 +60,14 @@ class OperatorStatsPanel extends StatelessWidget {
       spacing: 8,
       children: [
         Text(i18n.t('operatorDetail.labels.elite'), style: fieldLabel),
-        OpSegmented<int>(
+        RdSegmented<int>(
           key: const ValueKey('stats-elite'),
           semanticLabel: i18n.t('operatorDetail.labels.elite'),
           height: compact ? 44 : 40,
-          value: elite,
+          selected: elite,
           segments: [
             for (var i = 0; i < operator.eliteCaps.length; i++)
-              OpSegment(i, _eliteLabel(i18n, i), leading: _eliteLeading(i)),
+              RdSegment(i, _eliteLabel(i18n, i), leading: _eliteLeading(i)),
           ],
           onChanged: onEliteChanged,
         ),
@@ -206,14 +206,14 @@ class OperatorAbilitiesPanel extends StatelessWidget {
       spacing: 14,
       children: [
         if (operator.eliteCaps.isNotEmpty)
-          OpSegmented<int>(
+          RdSegmented<int>(
             key: const ValueKey('abilities-elite'),
             semanticLabel: i18n.t('operatorDetail.labels.elite'),
             height: compact ? 44 : 40,
-            value: eliteTab,
+            selected: eliteTab,
             segments: [
               for (var i = 0; i < operator.eliteCaps.length; i++)
-                OpSegment(i, 'E$i', leading: _eliteLeading(i)),
+                RdSegment(i, 'E$i', leading: _eliteLeading(i)),
             ],
             onChanged: onEliteTabChanged,
           ),

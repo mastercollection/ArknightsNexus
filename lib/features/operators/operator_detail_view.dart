@@ -477,14 +477,14 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
       onToggleFavorite: _toggleFavorite,
     );
     final hero = _HeroCard(operator: operator, i18n: i18n, compact: _compact);
-    final tabs = OpSegmented<DetailSection>(
+    final tabs = RdSegmented<DetailSection>(
       key: const ValueKey('detail-tabs'),
       semanticLabel: i18n.t('rd.operators.detail.sections'),
       height: _compact ? 44 : 40,
-      value: section,
+      selected: section,
       segments: [
         for (final entry in sections)
-          OpSegment(entry, i18n.t('operatorDetail.sections.${entry.name}')),
+          RdSegment(entry, i18n.t('operatorDetail.sections.${entry.name}')),
       ],
       onChanged: (value) => setState(() => _section = value),
     );
