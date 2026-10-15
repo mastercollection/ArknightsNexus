@@ -43,20 +43,38 @@ class _RichTextContentState extends State<RichTextContent> {
 
   @override
   void dispose() {
-    _disposeRecognizers();
-    super.dispose();
-  }
-
-  void _disposeRecognizers() {
     for (final recognizer in _recognizers) {
       recognizer.dispose();
     }
-    _recognizers.clear();
+    super.dispose();
+  }
+
+  /// The tap recognizer of the [index]th term link. Recognizers outlive
+  /// rebuilds: hovering a link rebuilds the text to recolour it, and a
+  /// recognizer disposed by that rebuild would drop the click that follows.
+  TapGestureRecognizer _recognizerAt(int index) {
+    while (_recognizers.length <= index) {
+      _recognizers.add(TapGestureRecognizer());
+    }
+    return _recognizers[index];
+  }
+
+  // The mouse can leave a link after this text was removed from the tree.
+  void _setHovered(int? index) {
+    if (mounted) {
+      setState(() => _hoveredTerm = index);
+    }
+  }
+
+  /// Drops recognizers for term links that no longer exist.
+  void _trimRecognizers(int count) {
+    while (_recognizers.length > count) {
+      _recognizers.removeLast().dispose();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    _disposeRecognizers();
     final base = DefaultTextStyle.of(context).style.merge(widget.style);
     var termIndex = 0;
 
@@ -93,9 +111,8 @@ class _RichTextContentState extends State<RichTextContent> {
             );
           case RichTermRun(:final key, :final text, :final badges):
             final index = termIndex++;
-            final recognizer = TapGestureRecognizer()
+            final recognizer = _recognizerAt(index)
               ..onTap = () => widget.onTermTap?.call(key, text);
-            _recognizers.add(recognizer);
             final hovered = _hoveredTerm == index;
             final color =
                 hovered ? const Color(0xFFA6DDFF) : const Color(0xFF7CCFFF);
@@ -104,12 +121,12 @@ class _RichTextContentState extends State<RichTextContent> {
                 text: text,
                 recognizer: recognizer,
                 mouseCursor: SystemMouseCursors.click,
-                onEnter: (_) => setState(() => _hoveredTerm = index),
-                onExit: (_) => setState(() {
+                onEnter: (_) => _setHovered(index),
+                onExit: (_) {
                   if (_hoveredTerm == index) {
-                    _hoveredTerm = null;
+                    _setHovered(null);
                   }
-                }),
+                },
                 style: TextStyle(
                   color: color,
                   decoration: TextDecoration.underline,
@@ -123,10 +140,9 @@ class _RichTextContentState extends State<RichTextContent> {
       return spans;
     }
 
-    return Text.rich(
-      TextSpan(children: spansFor(widget.segments)),
-      style: base,
-    );
+    final spans = spansFor(widget.segments);
+    _trimRecognizers(termIndex);
+    return Text.rich(TextSpan(children: spans), style: base);
   }
 }
 
