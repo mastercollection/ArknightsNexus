@@ -26,60 +26,22 @@ Future<void> showPlanOperatorPicker({
   required List<OperatorSummary> Function() operators,
   required Future<void> Function(String operatorId) onAdd,
 }) {
-  final size = MediaQuery.sizeOf(context);
-  PlanOperatorPicker panel(bool compact) => PlanOperatorPicker(
-        compact: compact,
-        onAttach: onAttach,
-        query: query,
-        onQueryChanged: onQueryChanged,
-        operators: operators,
-        onAdd: onAdd,
-      );
-
-  if (context.rdLayout == RdLayout.compact) {
-    final height = math.min(600.0, size.height * 0.88);
-    return showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: RdColors.sheet,
-      barrierColor: RdColors.barrier,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-      ),
-      constraints: BoxConstraints(
-        minHeight: height,
-        maxHeight: height,
-        maxWidth: double.infinity,
-      ),
-      builder: (_) => panel(true),
-    );
-  }
-
-  return showDialog<void>(
+  final height = MediaQuery.sizeOf(context).height;
+  final compact = context.rdLayout == RdLayout.compact;
+  return showRdSheet<void>(
     context: context,
-    barrierColor: const Color(0x8C000000),
-    builder: (dialogContext) {
-      final maxHeight = math.min(640.0, size.height - 72 - 24);
-      return Align(
-        alignment: Alignment.topCenter,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 72, 16, 24),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: 640, maxHeight: maxHeight),
-            child: Material(
-              color: RdColors.sheet,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(22),
-                side: const BorderSide(color: RdColors.white8),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: panel(false),
-            ),
-          ),
-        ),
-      );
-    },
+    maxWidth: 640,
+    dialogAlignment: Alignment.topCenter,
+    dialogPadding: const EdgeInsets.fromLTRB(16, 72, 16, 24),
+    dialogMaxHeight: math.min(640.0, height - 72 - 24),
+    builder: (_) => PlanOperatorPicker(
+      compact: compact,
+      onAttach: onAttach,
+      query: query,
+      onQueryChanged: onQueryChanged,
+      operators: operators,
+      onAdd: onAdd,
+    ),
   );
 }
 
@@ -163,13 +125,6 @@ class _PlanOperatorPickerState extends ConsumerState<PlanOperatorPicker> {
             ],
           ),
         ),
-        RdIconButton(
-          key: const Key('plan-picker-close'),
-          icon: Icons.close,
-          tooltip: closeLabel,
-          filled: false,
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
       ],
     );
 
@@ -214,41 +169,28 @@ class _PlanOperatorPickerState extends ConsumerState<PlanOperatorPicker> {
             },
           );
 
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: compact
-            ? const EdgeInsets.fromLTRB(16, 12, 16, 24)
-            : const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: compact ? MainAxisSize.max : MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (compact) ...[
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: RdColors.white20,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-            header,
-            SizedBox(height: compact ? 12 : 14),
-            search,
-            SizedBox(height: compact ? 12 : 14),
-            if (operators.isEmpty)
-              list
-            else if (compact)
-              Expanded(child: list)
-            else
-              Flexible(child: list),
-          ],
-        ),
+    return RdSheetFrame(
+      header: header,
+      closeLabel: closeLabel,
+      closeKey: const Key('plan-picker-close'),
+      color: RdColors.sheet,
+      sheetHeight: math.min(600.0, MediaQuery.sizeOf(context).height * 0.88),
+      dialogPadding: const EdgeInsets.all(20),
+      headerGap: compact ? 12 : 14,
+      scrollable: false,
+      child: Column(
+        mainAxisSize: compact ? MainAxisSize.max : MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          search,
+          SizedBox(height: compact ? 12 : 14),
+          if (operators.isEmpty)
+            list
+          else if (compact)
+            Expanded(child: list)
+          else
+            Flexible(child: list),
+        ],
       ),
     );
   }

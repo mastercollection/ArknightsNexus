@@ -6,6 +6,7 @@ import 'rd_tokens.dart';
 export 'rd_feedback.dart';
 export 'rd_layout.dart';
 export 'rd_media.dart';
+export 'rd_sheet.dart';
 export 'rd_tokens.dart';
 
 /// Card surface (`#0c1426`, 1px line, radius 20).

@@ -13,7 +13,6 @@ import '../../ui/nexus_ui.dart'
     show ItemIcon, NexusMessageType, showNexusMessage;
 import '../../ui/redesign/rd_widgets.dart';
 import 'item_format.dart';
-import 'item_overlays.dart';
 import 'owned_count_editor.dart';
 
 /// Port of `src/pages/items.vue`, laid out after the redesign canvas
@@ -243,39 +242,49 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
 
     _savingItemIds.addListener(onSavingChanged);
     try {
-      await showItemsDialog<void>(
+      await showRdSheet<void>(
         context: context,
-        title: item.name.isEmpty ? i18n.t('itemsPage.topBar.title') : item.name,
-        closeLabel: i18n.t('rd.items.close'),
+        barrierLabel: i18n.t('rd.items.close'),
         maxWidth: 420,
-        closeLocked: locked,
-        compactHeader: OwnedCountEditorHeader(
-          item: item,
-          currentCountLabel: i18n.t('itemsPage.editor.currentCount'),
+        enableDrag: false,
+        builder: (_) => RdSheetFrame(
+          title:
+              item.name.isEmpty ? i18n.t('itemsPage.topBar.title') : item.name,
+          closeLabel: i18n.t('rd.items.close'),
+          header: context.rdLayout == RdLayout.compact
+              ? OwnedCountEditorHeader(
+                  item: item,
+                  currentCountLabel: i18n.t('itemsPage.editor.currentCount'),
+                )
+              : null,
+          closeLocked: locked,
+          onCloseRequest: () async {
+            if (_isSaving(item.itemId)) {
+              closeQueued = true;
+              return false;
+            }
+            await _editorKey.currentState?.commit();
+            if (_isSaving(item.itemId)) {
+              closeQueued = true;
+              return false;
+            }
+            return true;
+          },
+          sheetMaxHeightFactor: 0.92,
+          child: Builder(
+            builder: (context) {
+              dialogContext = context;
+              return OwnedCountEditor(
+                key: _editorKey,
+                item: item,
+                currentCountLabel: i18n.t('itemsPage.editor.currentCount'),
+                savingItemIds: _savingItemIds,
+                showItemHeader: context.rdLayout != RdLayout.compact,
+                onCommit: (value) => _updateOwnedCount(item.itemId, value),
+              );
+            },
+          ),
         ),
-        onCloseRequest: () async {
-          if (_isSaving(item.itemId)) {
-            closeQueued = true;
-            return false;
-          }
-          await _editorKey.currentState?.commit();
-          if (_isSaving(item.itemId)) {
-            closeQueued = true;
-            return false;
-          }
-          return true;
-        },
-        builder: (context) {
-          dialogContext = context;
-          return OwnedCountEditor(
-            key: _editorKey,
-            item: item,
-            currentCountLabel: i18n.t('itemsPage.editor.currentCount'),
-            savingItemIds: _savingItemIds,
-            showItemHeader: context.rdLayout != RdLayout.compact,
-            onCommit: (value) => _updateOwnedCount(item.itemId, value),
-          );
-        },
       );
     } finally {
       _savingItemIds.removeListener(onSavingChanged);
@@ -286,51 +295,62 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
   Future<void> _openImportDialog() async {
     final i18n = ref.read(i18nProvider);
     final importing = ValueNotifier<bool>(false);
-    await showItemsDialog<void>(
+    await showRdSheet<void>(
       context: context,
-      title: i18n.t('itemsPage.importDialog.title'),
-      closeLabel: i18n.t('rd.items.close'),
+      barrierLabel: i18n.t('rd.items.close'),
       maxWidth: 560,
-      closeLocked: importing,
-      onCloseRequest: () async => !importing.value,
-      builder: (dialogContext) => _ItemCountImportForm(
-        importing: importing,
-        onCancel: () {
-          if (!importing.value) {
-            Navigator.of(dialogContext).pop();
-          }
-        },
-        onSubmit: (payload) async {
-          if (importing.value) {
-            return;
-          }
-          importing.value = true;
-          try {
-            final importedCount = await ref
-                .read(userDataServiceProvider)
-                .importUserItemCounts(payload);
-            await _loadItems();
-            if (dialogContext.mounted) {
-              Navigator.of(dialogContext).pop();
-            }
-            if (mounted) {
-              showNexusMessage(
-                context,
-                ref.read(i18nProvider).t(
-                  'itemsPage.messages.importSuccess',
-                  {'count': importedCount},
-                ),
-                type: NexusMessageType.success,
-              );
-            }
-          } catch (error) {
-            if (mounted) {
-              showNexusMessage(context, '$error', type: NexusMessageType.error);
-            }
-          } finally {
-            importing.value = false;
-          }
-        },
+      enableDrag: false,
+      builder: (_) => RdSheetFrame(
+        title: i18n.t('itemsPage.importDialog.title'),
+        closeLabel: i18n.t('rd.items.close'),
+        closeLocked: importing,
+        onCloseRequest: () async => !importing.value,
+        sheetMaxHeightFactor: 0.92,
+        child: Builder(
+          builder: (dialogContext) => _ItemCountImportForm(
+            importing: importing,
+            onCancel: () {
+              if (!importing.value) {
+                Navigator.of(dialogContext).pop();
+              }
+            },
+            onSubmit: (payload) async {
+              if (importing.value) {
+                return;
+              }
+              importing.value = true;
+              try {
+                final importedCount = await ref
+                    .read(userDataServiceProvider)
+                    .importUserItemCounts(payload);
+                await _loadItems();
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop();
+                }
+                if (mounted) {
+                  showNexusMessage(
+                    context,
+                    ref.read(i18nProvider).t(
+                      'itemsPage.messages.importSuccess',
+                      {'count': importedCount},
+                    ),
+                    type: NexusMessageType.success,
+                  );
+                }
+              } catch (error) {
+                if (mounted) {
+                  showNexusMessage(
+                    context,
+                    '$error',
+                    type: NexusMessageType.error,
+                  );
+                }
+              } finally {
+                importing.value = false;
+              }
+            },
+          ),
+        ),
       ),
     );
     importing.dispose();

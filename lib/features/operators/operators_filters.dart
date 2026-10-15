@@ -640,77 +640,15 @@ class OperatorsFilterChipRow extends ConsumerWidget {
   }
 }
 
-Future<void> _showSheet(BuildContext context, WidgetBuilder builder) {
-  return showModalBottomSheet<void>(
-    context: context,
-    useRootNavigator: true,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    barrierColor: RdColors.barrier,
-    constraints: const BoxConstraints(maxWidth: 640),
-    builder: builder,
-  );
-}
-
-/// Bottom sheet frame of the canvas (`#141414`, 22px top radius, handle).
-class OpSheetFrame extends StatelessWidget {
-  const OpSheetFrame({required this.child, this.label, super.key});
-
-  final Widget child;
-  final String? label;
-
-  @override
-  Widget build(BuildContext context) {
-    final maxHeight = MediaQuery.sizeOf(context).height * 0.85;
-    return Semantics(
-      scopesRoute: true,
-      namesRoute: true,
-      label: label,
-      explicitChildNodes: true,
-      child: Container(
-        constraints: BoxConstraints(maxHeight: maxHeight),
-        decoration: const BoxDecoration(
-          color: RdColors.sheet,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              16,
-              12,
-              16,
-              28 + MediaQuery.viewInsetsOf(context).bottom,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: RdColors.white20,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Flexible(child: child),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// The "all filters" sheet: one row per dimension with its current value,
 /// and the reset button.
 Future<void> showOperatorFiltersSheet(BuildContext context) {
-  return _showSheet(context, (sheetContext) => const _AllFiltersSheet());
+  return showRdSheet<void>(
+    context: context,
+    mode: RdSheetMode.sheet,
+    sheetMaxWidth: 640,
+    builder: (sheetContext) => const _AllFiltersSheet(),
+  );
 }
 
 class _AllFiltersSheet extends ConsumerWidget {
@@ -720,8 +658,9 @@ class _AllFiltersSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final i18n = ref.watch(i18nProvider);
     final list = ref.watch(operatorsListControllerProvider);
-    return OpSheetFrame(
-      label: i18n.t('operatorsList.filters.title'),
+    return RdSheetFrame(
+      semanticLabel: i18n.t('operatorsList.filters.title'),
+      scrollable: false,
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -827,9 +766,11 @@ Future<void> showOperatorFilterSheet(
   BuildContext context,
   OperatorFilterDimension dimension,
 ) {
-  return _showSheet(
-    context,
-    (sheetContext) => _DimensionSheet(dimension: dimension),
+  return showRdSheet<void>(
+    context: context,
+    mode: RdSheetMode.sheet,
+    sheetMaxWidth: 640,
+    builder: (sheetContext) => _DimensionSheet(dimension: dimension),
   );
 }
 
@@ -864,8 +805,9 @@ class _DimensionSheetState extends ConsumerState<_DimensionSheet> {
         : all;
     final selectedCount = all.where((o) => o.selected).length;
 
-    return OpSheetFrame(
-      label: title,
+    return RdSheetFrame(
+      semanticLabel: title,
+      scrollable: false,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -155,21 +155,3 @@ class _NexusMessageToastState extends State<_NexusMessageToast>
     );
   }
 }
-
-/// `ElMessageBox` overlay: a faded-in modal route over a 50% black barrier
-/// that dismisses on barrier tap; [builder] supplies the whole box.
-Future<T?> showNexusMessageBox<T>({
-  required BuildContext context,
-  required WidgetBuilder builder,
-}) {
-  return showGeneralDialog<T>(
-    context: context,
-    barrierDismissible: true,
-    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: const Color(0x80000000),
-    transitionDuration: const Duration(milliseconds: 200),
-    pageBuilder: (context, animation, secondaryAnimation) => builder(context),
-    transitionBuilder: (context, animation, secondaryAnimation, child) =>
-        FadeTransition(opacity: animation, child: child),
-  );
-}

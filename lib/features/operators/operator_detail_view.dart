@@ -1268,42 +1268,15 @@ Future<void> showOperatorTermSheet({
     i18n: i18n,
     compact: compact,
   );
-  if (compact) {
-    final height = MediaQuery.sizeOf(context).height;
-    return showModalBottomSheet<void>(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: RdColors.barrier,
-      constraints: BoxConstraints(maxHeight: height * 0.65),
-      builder: (context) => content,
-    );
-  }
-  return showGeneralDialog<void>(
+  final height = MediaQuery.sizeOf(context).height;
+  return showRdSheet<void>(
     context: context,
-    useRootNavigator: true,
-    barrierDismissible: true,
     barrierLabel: i18n.t('rd.operators.detail.closeTerm'),
-    barrierColor: RdColors.barrier,
-    transitionDuration: const Duration(milliseconds: 160),
-    transitionBuilder: (context, animation, secondary, child) =>
-        FadeTransition(opacity: animation, child: child),
-    pageBuilder: (context, animation, secondary) => SafeArea(
-      child: Align(
-        alignment: const Alignment(0, -0.6),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: 560,
-              maxHeight: MediaQuery.sizeOf(context).height * 0.7,
-            ),
-            child: content,
-          ),
-        ),
-      ),
-    ),
+    sheetMaxHeight: height * 0.65,
+    dialogMaxHeight: height * 0.7,
+    dialogAlignment: const Alignment(0, -0.6),
+    dialogPadding: const EdgeInsets.all(24),
+    builder: (context) => content,
   );
 }
 
