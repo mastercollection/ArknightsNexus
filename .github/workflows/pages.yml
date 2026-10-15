@@ -1,0 +1,155 @@
+name: Pages
+
+# Publishes the site (site/) and pre-normalized game data per region
+# (tool/build_snapshots.dart) to GitHub Pages. The hourly run only builds
+# when an upstream region's data_version.txt changed or the generator inputs
+# differ from the published manifest's fingerprint; pushes and manual runs
+# always build. Unchanged regions are copied from the published site.
+
+on:
+  schedule:
+    - cron: '23 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'tool/**'
+      - 'site/**'
+      - 'lib/core/errors/**'
+      - 'lib/core/hash/**'
+      - 'lib/core/http/**'
+      - 'lib/data_sources/**'
+      - 'lib/domain/**'
+      - 'lib/raw_models/**'
+      - 'lib/services/normalizers/**'
+      - 'lib/services/region_source.dart'
+      - 'pubspec.lock'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  FLUTTER_VERSION: '3.27.1'
+  # Must match the paths above: everything the generator and site are built
+  # from. The fingerprint is stored in the manifest.
+  FINGERPRINT_PATHS: >-
+    tool site lib/core/errors lib/core/hash lib/core/http lib/data_sources
+    lib/domain lib/raw_models lib/services/normalizers
+    lib/services/region_source.dart pubspec.lock .github/workflows/pages.yml
+  REGIONS: 'cn kr jp tw en'
+  UPSTREAM: 'https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/refs/heads/master'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.decide.outputs.build }}
+      fingerprint: ${{ steps.fingerprint.outputs.value }}
+      pages_url: ${{ steps.decide.outputs.pages_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Fingerprint generator inputs
+        id: fingerprint
+        # Git blob hashes, so line endings and checkout times do not matter.
+        run: |
+          value=$(git ls-files -s -- $FINGERPRINT_PATHS | sha256sum | cut -c1-64)
+          echo "value=$value" >> "$GITHUB_OUTPUT"
+          echo "Fingerprint: $value"
+
+      - name: Decide whether to build
+        id: decide
+        env:
+          EVENT: ${{ github.event_name }}
+          FINGERPRINT: ${{ steps.fingerprint.outputs.value }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+        run: |
+          pages_url="https://${OWNER,,}.github.io/${REPO}"
+          echo "pages_url=$pages_url" >> "$GITHUB_OUTPUT"
+
+          decide() {
+            echo "build=$1" >> "$GITHUB_OUTPUT"
+            echo "build=$1: $2"
+            exit 0
+          }
+
+          if [ "$EVENT" != "schedule" ]; then
+            decide true "$EVENT run"
+          fi
+          if ! curl -fsSL --retry 3 "$pages_url/data/manifest.json" -o manifest.json; then
+            decide true "no published manifest"
+          fi
+          published_fingerprint=$(jq -r '.fingerprint // ""' manifest.json) ||
+            decide true "unreadable manifest"
+          if [ "$published_fingerprint" != "$FINGERPRINT" ]; then
+            decide true "generator inputs changed"
+          fi
+          for region in $REGIONS; do
+            if ! text=$(curl -fsSL --retry 3 "$UPSTREAM/$region/gamedata/excel/data_version.txt"); then
+              echo "::warning::$region: data_version.txt unavailable; skipping it"
+              continue
+            fi
+            remote=$(printf '%s\n' "$text" | tr -d '\r' | sed -n 's/^VersionControl:[[:space:]]*//p' | head -n1 | xargs)
+            published=$(jq -r --arg r "$region" '.regions[$r].versionControl // ""' manifest.json)
+            if [ -n "$remote" ] && [ "$remote" != "$published" ]; then
+              decide true "$region changed: '$published' -> '$remote'"
+            fi
+          done
+          decide false "nothing changed"
+
+  build:
+    needs: check
+    if: needs.check.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Build snapshots
+        env:
+          FINGERPRINT: ${{ needs.check.outputs.fingerprint }}
+          PAGES_URL: ${{ needs.check.outputs.pages_url }}
+        run: |
+          flutter pub get
+          dart run tool/build_snapshots.dart \
+            --out build/site/data \
+            --fingerprint "$FINGERPRINT" \
+            --previous-manifest "$PAGES_URL/data/manifest.json"
+
+      - name: Assemble site
+        run: |
+          cp -R site/. build/site/
+          touch build/site/.nojekyll
+          find build/site -type f -printf '%8s %p\n'
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
