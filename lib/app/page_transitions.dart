@@ -79,19 +79,25 @@ class NexusPage<T> extends Page<T> {
 
   @override
   Route<T> createRoute(BuildContext context) {
+    final push = pushTransitionFor(defaultTargetPlatform);
     return _NexusPageRoute<T>(
       page: this,
-      transition: sectionSwitch.active
-          ? NexusPageTransition.none
-          : pushTransitionFor(defaultTargetPlatform),
+      push: push,
+      transition: sectionSwitch.active ? NexusPageTransition.none : push,
     );
   }
 }
 
 class _NexusPageRoute<T> extends PageRoute<T>
     with MaterialRouteTransitionMixin<T> {
-  _NexusPageRoute({required NexusPage<T> page, required this.transition})
-      : super(settings: page);
+  _NexusPageRoute({
+    required NexusPage<T> page,
+    required this.push,
+    required this.transition,
+  }) : super(settings: page);
+
+  /// The platform's push transition ([pushTransitionFor]).
+  final NexusPageTransition push;
 
   /// Fixed when the route is created: rebuilding the page list keeps the
   /// route, so a later navigation does not change how this page animated.
@@ -110,6 +116,16 @@ class _NexusPageRoute<T> extends PageRoute<T>
 
   @override
   String get debugLabel => '${super.debugLabel}(${_page.name})';
+
+  /// Only platform transitions hand an exit animation to the route below.
+  ///
+  /// The value also has to be the same for every page of a platform: when
+  /// the route above delegates a different transition, the route below wraps
+  /// its page in new transition widgets, and that change of structure
+  /// rebuilds the whole page underneath from scratch.
+  @override
+  DelegatedTransitionBuilder? get delegatedTransition =>
+      push == NexusPageTransition.platform ? super.delegatedTransition : null;
 
   @override
   Duration get transitionDuration => switch (transition) {
