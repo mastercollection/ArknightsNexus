@@ -301,6 +301,34 @@ void main() {
       );
     });
 
+    test("cost their items under the region's names", () async {
+      // CN calls the fixture material 30012 differently.
+      await registerRawFixtures(
+        http,
+        RegionCode.cn,
+        extraOperators: const [
+          ExtraOperator(
+            id: 'char_902_c',
+            name: 'C-CN',
+            itemId: '30012',
+            itemName: 'Oriron-CN',
+          ),
+        ],
+      );
+      await build('first', regions: [RegionCode.kr]);
+      final kr = await readSnapshot('first', RegionCode.kr);
+
+      final operator = kr.operators.first;
+      expect(operator.name, 'C-CN');
+      final cost = operator.eliteEvolveCosts.expand((costs) => costs).single;
+      expect(cost.id, '30012');
+      expect(cost.itemName, 'Oriron');
+      expect(
+        kr.items.where((item) => item.itemId == '30012').single.name,
+        'Oriron',
+      );
+    });
+
     test('regenerate a region when a source changed', () async {
       await build('first', fingerprint: 'f1');
       await serveAsPrevious('first');

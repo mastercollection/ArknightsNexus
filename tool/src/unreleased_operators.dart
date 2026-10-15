@@ -29,7 +29,10 @@ List<RegionCode> unreleasedSourcesFor(RegionCode region) {
 /// region's own operators in their order. Items their costs need and the
 /// terms (`<$ba.*>`) their texts and those terms refer to are copied too
 /// when the region lacks them, items marked [ItemEntry.unreleasedSource],
-/// taking each from the operator's source first, then [sources] in order.
+/// each from the first of [sources] that has it, like the operators.
+/// The item names, icons and rarities the added operators' costs carry are
+/// then the snapshot's, so costs read in the region's language wherever
+/// the region has the item.
 ///
 /// [RegionSnapshot.unreleasedSourceVersions] records every source's version
 /// even when nothing was added: the snapshot depends on them either way.
@@ -53,15 +56,6 @@ RegionSnapshot mergeUnreleasedOperators(
     for (final group in borrowedBySource.reversed) ...group,
   ];
 
-  final sourceByRegion = {
-    for (final source in sources) source.region.value: source,
-  };
-  List<RegionSnapshot> lookupOrder(String first) => [
-        if (sourceByRegion[first] != null) sourceByRegion[first]!,
-        for (final source in sources)
-          if (source.region.value != first) source,
-      ];
-
   final items = List.of(native.items);
   final itemIds = {for (final item in native.items) item.itemId};
   final terms = Map.of(native.terms);
@@ -76,12 +70,11 @@ RegionSnapshot mergeUnreleasedOperators(
       );
 
   for (final operator in borrowed) {
-    final origin = operator.unreleasedSource!;
     for (final id in _costItemIds(operator)) {
       if (!itemIds.add(id)) {
         continue;
       }
-      for (final source in lookupOrder(origin)) {
+      for (final source in sources) {
         final item = itemsOf(source)[id];
         if (item != null) {
           items.add(item.asUnreleased(source.region.value));
@@ -96,7 +89,7 @@ RegionSnapshot mergeUnreleasedOperators(
       if (terms.containsKey(key)) {
         continue;
       }
-      for (final source in lookupOrder(origin)) {
+      for (final source in sources) {
         final description = source.terms[key];
         if (description != null) {
           terms[key] = description;
@@ -107,6 +100,7 @@ RegionSnapshot mergeUnreleasedOperators(
     }
   }
 
+  final itemsById = {for (final item in items) item.itemId: item};
   return RegionSnapshot(
     schemaVersionValue: native.schemaVersionValue,
     region: native.region,
@@ -117,12 +111,47 @@ RegionSnapshot mergeUnreleasedOperators(
     terms: terms,
     items: items,
     buildingFormulas: native.buildingFormulas,
-    operators: [...borrowed, ...native.operators],
+    operators: [
+      for (final operator in borrowed) _withItemsOf(operator, itemsById),
+      ...native.operators,
+    ],
     unreleasedSourceVersions: {
       for (final source in sources)
         source.region.value: source.sourceVersion.versionControl,
     },
   );
+}
+
+/// [operator] with the item details of its costs taken from [items].
+///
+/// Costs sit in several nested structures (elite, skill, mastery and module
+/// costs); rewriting the JSON form reaches all of them in one place.
+OperatorDetail _withItemsOf(
+  OperatorDetail operator,
+  Map<String, ItemEntry> items,
+) {
+  void visit(Object? node) {
+    if (node is List) {
+      node.forEach(visit);
+    } else if (node is Map<String, Object?>) {
+      // Only `OperatorCost.toJson` has an `itemName`.
+      final item = node.containsKey('itemName') ? items[node['id']] : null;
+      if (item != null) {
+        node
+          ..['itemName'] = item.name
+          ..['itemRarity'] = item.rarity
+          ..['itemIconId'] = item.iconId
+          ..['itemType'] = item.itemType;
+        return;
+      }
+      node.values.forEach(visit);
+    }
+  }
+
+  final json =
+      jsonDecode(jsonEncode(operator.toJson())) as Map<String, Object?>;
+  visit(json);
+  return OperatorDetail.fromJson(json);
 }
 
 final _termPattern = RegExp(r'<\$([^<>]+)>');
