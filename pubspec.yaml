@@ -47,6 +47,8 @@ dependencies:
   flutter_svg: ^2.0.10
   file_picker: ^8.1.7
   crypto: ^3.0.7
+  # Browser APIs (localStorage, file download) for the web build only.
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:

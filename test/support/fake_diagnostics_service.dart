@@ -27,9 +27,9 @@ class FakeDiagnosticsService implements DiagnosticsService {
   Future<String> readRecentLog({int maxLines = 200}) async => recentLog;
 
   @override
-  Future<File> exportLog() async {
+  Future<String> exportLog() async {
     exportCalls += 1;
-    return File('${Directory.systemTemp.path}/diagnostics-export.log');
+    return '${Directory.systemTemp.path}/diagnostics-export.log';
   }
 
   @override

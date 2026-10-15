@@ -213,6 +213,37 @@ void main() {
       );
       await flushMessages(tester);
     });
+
+    testWidgets('the web build has no log file controls', (tester) async {
+      final web = FakeDiagnosticsService(
+        summary: const DiagnosticsSummary(
+          appVersion: '1.2.3',
+          platform: AppPlatform.web,
+          logFilePath: '',
+        ),
+      );
+      await _pumpApp(
+        tester,
+        regionSyncService,
+        userDataRepository,
+        diagnosticsService: web,
+      );
+      await openSettings(tester);
+
+      expect(find.byKey(const Key('diagnostics-logs-button')), findsNothing);
+      expect(find.text('로그 폴더'), findsNothing);
+      expect(
+        find.text('웹 버전은 로그 파일 없이 브라우저 개발자 도구의 콘솔에 기록합니다.'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('이 브라우저에 저장됩니다', findRichText: true),
+        findsOneWidget,
+      );
+      // The data buttons stay: export downloads, import picks a file.
+      expect(find.byKey(const Key('export-user-data-button')), findsOneWidget);
+      expect(find.byKey(const Key('import-user-data-button')), findsOneWidget);
+    });
   });
 }
 

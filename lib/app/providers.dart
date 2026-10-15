@@ -2,14 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/http/package_http_client.dart';
 import '../core/logging/app_logger.dart';
-import '../core/logging/file_app_logger.dart';
-import '../core/storage/app_directories.dart';
-import '../core/storage/flutter_app_directories.dart';
-import '../core/storage/legacy_tauri_paths.dart';
-import '../repositories/file_image_cache_repository.dart';
-import '../repositories/image_cache_repository.dart';
-import '../repositories/json_region_cache_repository.dart';
-import '../repositories/json_user_data_repository.dart';
 import '../repositories/region_cache_repository.dart';
 import '../repositories/user_data_repository.dart';
 import '../services/image_cache_service.dart';
@@ -23,29 +15,18 @@ import '../services/region_readiness.dart';
 import '../services/region_sync_service.dart';
 import '../services/user_data_file_service.dart';
 import '../services/user_data_service.dart';
+import 'platform_providers_web.dart'
+    if (dart.library.io) 'platform_providers_io.dart' as platform;
 
-final appDirectoriesProvider = Provider<AppDirectories>((ref) {
-  return FlutterAppDirectories();
-});
+final appLoggerProvider = Provider<AppLogger>(platform.createAppLogger);
 
-final fileAppLoggerProvider = Provider<FileAppLogger>((ref) {
-  return FileAppLogger(ref.watch(appDirectoriesProvider));
-});
+final regionCacheRepositoryProvider = Provider<RegionCacheRepository>(
+  platform.createRegionCacheRepository,
+);
 
-final appLoggerProvider = Provider<AppLogger>((ref) {
-  return ref.watch(fileAppLoggerProvider);
-});
-
-final regionCacheRepositoryProvider = Provider<RegionCacheRepository>((ref) {
-  return JsonRegionCacheRepository(ref.watch(appDirectoriesProvider));
-});
-
-final userDataRepositoryProvider = Provider<UserDataRepository>((ref) {
-  return JsonUserDataRepository(
-    ref.watch(appDirectoriesProvider),
-    legacyUserDataFiles: legacyTauriUserDataFiles,
-  );
-});
+final userDataRepositoryProvider = Provider<UserDataRepository>(
+  platform.createUserDataRepository,
+);
 
 final regionReadinessProvider = Provider<RegionReadiness>((ref) {
   return RegionReadiness(
@@ -80,7 +61,8 @@ final regionSyncServiceProvider = Provider<RegionSyncService>((ref) {
     httpClient: httpClient,
     cache: cache,
     logger: ref.watch(appLoggerProvider),
-    fallback: DartRegionSyncService(httpClient: httpClient, cache: cache),
+    baseUri: platform.publishedDataBaseUri(),
+    fallback: platform.createRawRegionSync(httpClient, cache),
   );
 });
 
@@ -92,17 +74,13 @@ final userDataServiceProvider = Provider<UserDataService>((ref) {
   return UserDataService(ref.watch(userDataRepositoryProvider));
 });
 
-final imageCacheRepositoryProvider = Provider<ImageCacheRepository>((ref) {
-  return FileImageCacheRepository(ref.watch(appDirectoriesProvider));
-});
-
 final imageCacheServiceProvider = Provider<ImageCacheService>((ref) {
   final httpClient = PackageHttpClient();
   ref.onDispose(httpClient.close);
-  return DartImageCacheService(
-    httpClient: httpClient,
-    repository: ref.watch(imageCacheRepositoryProvider),
-    logger: ref.watch(appLoggerProvider),
+  return platform.createImageCacheService(
+    ref,
+    httpClient,
+    ref.watch(appLoggerProvider),
   );
 });
 
@@ -112,16 +90,13 @@ final penguinStatsServiceProvider = Provider<PenguinStatsService>((ref) {
   return DartPenguinStatsService(httpClient: httpClient);
 });
 
-final diagnosticsServiceProvider = Provider<DiagnosticsService>((ref) {
-  return DartDiagnosticsService(
-    directories: ref.watch(appDirectoriesProvider),
-    logger: ref.watch(fileAppLoggerProvider),
-  );
-});
+final diagnosticsServiceProvider = Provider<DiagnosticsService>(
+  platform.createDiagnosticsService,
+);
 
 /// Bumped after a manual region sync so screens reload their cached data.
 final dataRevisionProvider = StateProvider<int>((ref) => 0);
 
 final userDataFileServiceProvider = Provider<UserDataFileService>((ref) {
-  return const FilePickerUserDataFileService();
+  return platform.createUserDataFileService();
 });

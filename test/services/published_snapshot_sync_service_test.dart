@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:arknight_nexus/core/errors/app_failure.dart';
 import 'package:arknight_nexus/core/logging/app_logger.dart';
 import 'package:arknight_nexus/data_sources/arknights_data_source.dart';
 import 'package:arknight_nexus/data_sources/published_data.dart';
@@ -8,6 +9,7 @@ import 'package:arknight_nexus/data_sources/region_code.dart';
 import 'package:arknight_nexus/domain/region_snapshot.dart';
 import 'package:arknight_nexus/domain/sync_status.dart';
 import 'package:arknight_nexus/repositories/json_region_cache_repository.dart';
+import 'package:arknight_nexus/repositories/memory_region_cache_repository.dart';
 import 'package:arknight_nexus/services/published_snapshot_sync_service.dart';
 import 'package:arknight_nexus/services/region_sync_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -331,6 +333,67 @@ void main() {
 
     expect(fallback.calls, ['sync kr']);
     expect(statuses.last.remoteVersion, 'fallback');
+  });
+
+  group('without a fallback (web build)', () {
+    late MemoryRegionCacheRepository memory;
+    late PublishedSnapshotSyncService webService;
+
+    setUp(() {
+      memory = MemoryRegionCacheRepository();
+      webService = PublishedSnapshotSyncService(
+        httpClient: pages,
+        cache: memory,
+        logger: logger,
+        baseUri: _base,
+      );
+    });
+
+    test('installs the published snapshot into the memory cache', () async {
+      await publish();
+
+      final result = await webService.ensureRegionFresh(RegionCode.kr);
+
+      expect(result.status, 'success');
+      expect((await memory.readSnapshot(RegionCode.kr))!.operators, isNotEmpty);
+      expect((await memory.readSummary(RegionCode.kr))!.operators, isNotEmpty);
+      expect((await memory.readStatus(RegionCode.kr))!.isReady, isTrue);
+      expect(await memory.readTerms(RegionCode.kr), isNotEmpty);
+
+      pages.requestedUris.clear();
+      expect(
+        (await webService.ensureRegionFresh(RegionCode.kr)).status,
+        'ready',
+      );
+      expect(pages.requestedUris, [_manifestUri]);
+    });
+
+    test('a missing manifest surfaces the network error', () async {
+      await expectLater(
+        webService.ensureRegionFresh(RegionCode.kr),
+        throwsA(isA<NetworkFailure>()),
+      );
+      await expectLater(
+        webService.syncRegion(RegionCode.kr).drain<void>(),
+        throwsA(isA<NetworkFailure>()),
+      );
+      expect(pages.requestedUris, [_manifestUri, _manifestUri]);
+      expect(logger.warnings.first, contains('manifest unavailable'));
+    });
+
+    test('a rejected snapshot surfaces the error and caches nothing', () async {
+      await publish();
+      pages
+        ..registerBytes(_snapshotUri, utf8.encode('{}'))
+        ..requestedUris.clear();
+
+      await expectLater(
+        webService.ensureRegionFresh(RegionCode.kr),
+        throwsA(isA<ValidationFailure>()),
+      );
+      expect(await memory.readSnapshot(RegionCode.kr), isNull);
+      expect(pages.requestedUris, [_manifestUri, _snapshotUri]);
+    });
   });
 }
 

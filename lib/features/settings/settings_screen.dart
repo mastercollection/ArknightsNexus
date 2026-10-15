@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 
 import '../../app/providers.dart';
 import '../../core/platform/app_platform.dart';
+import '../../core/platform/site_links.dart';
 import '../../domain/sync_status.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../services/diagnostics_service.dart';
@@ -46,6 +47,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   bool get _isAndroidPlatform =>
       _diagnosticsSummary?.platform == AppPlatform.android;
+
+  /// The web build keeps no log file: no path row and no log button.
+  bool get _isWebPlatform => _diagnosticsSummary?.platform == AppPlatform.web;
 
   String? get _logDir {
     final file = _diagnosticsSummary?.logFilePath;
@@ -184,7 +188,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           showNexusMessage(
             context,
             i18n.t('home.messages.logsExported', {
-              'file': p.basename(exported.path),
+              'file': p.basename(exported),
             }),
             type: NexusMessageType.success,
           );
@@ -267,6 +271,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       _syncCard(i18n, compact, statusAsync.valueOrNull, syncing, loading),
       _userDataCard(i18n, compact),
       _diagnosticsCard(i18n, compact),
+      if (SiteLinks.canOpen) _aboutCard(i18n, compact),
     ];
 
     final content = <Widget>[
@@ -437,7 +442,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Widget _userDataCard(NexusI18n i18n, bool compact) {
-    final description = i18n.t('home.settings.userDataDescription');
+    final description = i18n.t(
+      _isWebPlatform
+          ? 'rd.settings.userDataDescriptionWeb'
+          : 'home.settings.userDataDescription',
+    );
     const fileName = 'user_data.json';
     final split = description.indexOf(fileName);
     final style = _descriptionStyle(compact);
@@ -527,9 +536,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       gap: compact ? 12 : 14,
       title: i18n.t('home.settings.diagnosticsTitle'),
       description: Text(
-        _isAndroidPlatform
-            ? i18n.t('home.settings.diagnosticsDescriptionAndroid')
-            : i18n.t('home.settings.diagnosticsDescriptionDesktop'),
+        _isWebPlatform
+            ? i18n.t('rd.settings.diagnosticsDescriptionWeb')
+            : _isAndroidPlatform
+                ? i18n.t('home.settings.diagnosticsDescriptionAndroid')
+                : i18n.t('home.settings.diagnosticsDescriptionDesktop'),
         style: _descriptionStyle(compact),
       ),
       children: [
@@ -548,28 +559,79 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               i18n.t('home.settings.diagnosticsPlatformLabel'),
               summary?.platform.name ?? '...',
             ),
-            line(
-              i18n.t('home.settings.diagnosticsPathLabel'),
-              summary == null ? '...' : (_logDir ?? ''),
-              fontSize: compact ? 12 : 13,
-            ),
+            if (!_isWebPlatform)
+              line(
+                i18n.t('home.settings.diagnosticsPathLabel'),
+                summary == null ? '...' : (_logDir ?? ''),
+                fontSize: compact ? 12 : 13,
+              ),
           ],
         ),
-        RdButton(
-          key: const Key('diagnostics-logs-button'),
-          label: _diagnosticsBusy
-              ? i18n.t('rd.settings.diagnosticsBusy')
-              : _isAndroidPlatform
-                  ? i18n.t('home.settings.diagnosticsExportLogs')
-                  : i18n.t('home.settings.diagnosticsOpenLogs'),
-          onPressed: _diagnosticsBusy || _logDir == null
-              ? null
-              : _handleOpenDiagnosticsLogDir,
-          variant: RdButtonVariant.tonal,
-          height: compact ? 48 : 44,
-          expand: true,
-          maxLines: 3,
-        ),
+        if (!_isWebPlatform)
+          RdButton(
+            key: const Key('diagnostics-logs-button'),
+            label: _diagnosticsBusy
+                ? i18n.t('rd.settings.diagnosticsBusy')
+                : _isAndroidPlatform
+                    ? i18n.t('home.settings.diagnosticsExportLogs')
+                    : i18n.t('home.settings.diagnosticsOpenLogs'),
+            onPressed: _diagnosticsBusy || _logDir == null
+                ? null
+                : _handleOpenDiagnosticsLogDir,
+            variant: RdButtonVariant.tonal,
+            height: compact ? 48 : 44,
+            expand: true,
+            maxLines: 3,
+          ),
+      ],
+    );
+  }
+
+  /// Links to the project site's intro and privacy pages; on the web build
+  /// they sit next to the app.
+  Widget _aboutCard(NexusI18n i18n, bool compact) {
+    RdButton link(String key, String label, String page) {
+      return RdButton(
+        key: Key(key),
+        label: label,
+        icon: Icons.open_in_new,
+        onPressed: () => SiteLinks.open(page),
+        variant: RdButtonVariant.tonal,
+        height: compact ? 48 : 44,
+        expand: true,
+        maxLines: 3,
+      );
+    }
+
+    final about = link(
+      'settings-about-link',
+      i18n.t('rd.settings.aboutPage'),
+      SiteLinks.aboutPage,
+    );
+    final privacy = link(
+      'settings-privacy-link',
+      i18n.t('rd.settings.privacyPage'),
+      SiteLinks.privacyPage,
+    );
+    return _SettingsCard(
+      compact: compact,
+      title: i18n.t('rd.settings.aboutTitle'),
+      description: Text(
+        i18n.t('rd.settings.aboutDescription'),
+        style: _descriptionStyle(compact),
+      ),
+      children: [
+        if (compact) ...[
+          about,
+          privacy,
+        ] else
+          Row(
+            children: [
+              Expanded(child: about),
+              const SizedBox(width: 8),
+              Expanded(child: privacy),
+            ],
+          ),
       ],
     );
   }

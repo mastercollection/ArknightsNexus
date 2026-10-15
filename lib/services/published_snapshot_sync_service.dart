@@ -1,9 +1,10 @@
 import 'dart:convert';
-import 'dart:isolate';
 import 'dart:typed_data';
 
-import '../core/errors/app_failure.dart';
 import 'package:crypto/crypto.dart' as crypto;
+
+import '../core/concurrency/background.dart';
+import '../core/errors/app_failure.dart';
 import '../core/http/http_client.dart';
 import '../core/logging/app_logger.dart';
 import '../data_sources/published_data.dart';
@@ -25,11 +26,16 @@ import 'region_sync_service.dart';
 /// published copy is older than the cached snapshot (Pages lags upstream by
 /// up to the publishing interval, and a raw sync may have been newer).
 /// Every fallback is logged with its reason.
+///
+/// Without a [fallback] (the web build, where the raw tables are too large
+/// to download) the published copy is the only source: failures surface as
+/// errors and the age check against the cache is skipped, since the cache
+/// can only hold an earlier published copy.
 class PublishedSnapshotSyncService implements RegionSyncService {
   PublishedSnapshotSyncService({
     required NexusHttpClient httpClient,
     required RegionCacheRepository cache,
-    required RegionSyncService fallback,
+    RegionSyncService? fallback,
     required AppLogger logger,
     Uri? baseUri,
   })  : _httpClient = httpClient,
@@ -40,7 +46,7 @@ class PublishedSnapshotSyncService implements RegionSyncService {
 
   final NexusHttpClient _httpClient;
   final RegionCacheRepository _cache;
-  final RegionSyncService _fallback;
+  final RegionSyncService? _fallback;
   final AppLogger _logger;
   final Uri _baseUri;
 
@@ -51,25 +57,26 @@ class PublishedSnapshotSyncService implements RegionSyncService {
     try {
       published = await _fetchPublishedRegion(region);
     } catch (error, stackTrace) {
-      _logFallback(region, 'manifest unavailable', error, stackTrace);
-      return _fallback.ensureRegionFresh(region);
+      return _fallbackFor(region, 'manifest unavailable', error, stackTrace)
+          .ensureRegionFresh(region);
     }
 
     if (cached != null &&
         cached.sourceVersion.versionControl == published.versionControl) {
       return readyResult(cached);
     }
-    if (_isOlderThanCache(published, cached)) {
+    final fallback = _fallback;
+    if (fallback != null && _isOlderThanCache(published, cached)) {
       _logFallback(region, 'published snapshot is older than the cache');
-      return _fallback.ensureRegionFresh(region);
+      return fallback.ensureRegionFresh(region);
     }
 
     final NormalizedRegion normalized;
     try {
       normalized = await _download(region, published);
     } catch (error, stackTrace) {
-      _logFallback(region, 'snapshot download failed', error, stackTrace);
-      return _fallback.ensureRegionFresh(region);
+      return _fallbackFor(region, 'snapshot download failed', error, stackTrace)
+          .ensureRegionFresh(region);
     }
     await writeNormalizedRegion(_cache, normalized);
     return normalized.result;
@@ -83,15 +90,17 @@ class PublishedSnapshotSyncService implements RegionSyncService {
     try {
       published = await _fetchPublishedRegion(region);
     } catch (error, stackTrace) {
-      _logFallback(region, 'manifest unavailable', error, stackTrace);
-      yield* _fallback.syncRegion(region);
+      yield* _fallbackFor(region, 'manifest unavailable', error, stackTrace)
+          .syncRegion(region);
       return;
     }
-    if (cached != null &&
+    final fallback = _fallback;
+    if (fallback != null &&
+        cached != null &&
         cached.sourceVersion.versionControl != published.versionControl &&
         _isOlderThanCache(published, cached)) {
       _logFallback(region, 'published snapshot is older than the cache');
-      yield* _fallback.syncRegion(region);
+      yield* fallback.syncRegion(region);
       return;
     }
 
@@ -107,8 +116,8 @@ class PublishedSnapshotSyncService implements RegionSyncService {
         PublishedData.fileUri(_baseUri, published.snapshot.path),
       );
     } catch (error, stackTrace) {
-      _logFallback(region, 'snapshot download failed', error, stackTrace);
-      yield* _fallback.syncRegion(region);
+      yield* _fallbackFor(region, 'snapshot download failed', error, stackTrace)
+          .syncRegion(region);
       return;
     }
 
@@ -121,8 +130,8 @@ class PublishedSnapshotSyncService implements RegionSyncService {
     try {
       normalized = await _verifyAndDecode(region, published, bytes);
     } catch (error, stackTrace) {
-      _logFallback(region, 'snapshot rejected', error, stackTrace);
-      yield* _fallback.syncRegion(region);
+      yield* _fallbackFor(region, 'snapshot rejected', error, stackTrace)
+          .syncRegion(region);
       return;
     }
 
@@ -211,6 +220,27 @@ class PublishedSnapshotSyncService implements RegionSyncService {
     return normalized;
   }
 
+  /// The raw upstream sync to continue with after [reason]. Without one, logs
+  /// and rethrows [error], so callers show their error state.
+  RegionSyncService _fallbackFor(
+    RegionCode region,
+    String reason,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    final fallback = _fallback;
+    if (fallback == null) {
+      _logger.warning(
+        'Published snapshot unavailable for ${region.value} ($reason)',
+        error,
+        stackTrace,
+      );
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+    _logFallback(region, reason, error, stackTrace);
+    return fallback;
+  }
+
   void _logFallback(
     RegionCode region,
     String reason, [
@@ -235,7 +265,7 @@ Future<NormalizedRegion> _verifyAndDecode(
 ) {
   final expected = published.snapshot;
   final versionControl = published.versionControl;
-  return Isolate.run(
+  return runInBackground(
     () => verifyPublishedSnapshot(
       region: region,
       expected: expected,
