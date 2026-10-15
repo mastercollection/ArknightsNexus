@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/home/home_sidebar_panel.dart';
+import '../features/shared/region_sync.dart';
 import '../i18n/nexus_i18n.dart';
 import '../ui/redesign/rd_widgets.dart';
 
@@ -73,6 +74,8 @@ class NexusShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Starts the selected region's data check/download with the app.
+    ref.listen(regionEnsureProvider, (_, __) {});
     final i18n = ref.watch(i18nProvider);
     final section = NexusSection.of(location);
     final layout = context.rdLayout;

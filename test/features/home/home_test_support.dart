@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:arknight_nexus/app/providers.dart';
 import 'package:arknight_nexus/app/shell.dart';
 import 'package:arknight_nexus/app/theme.dart';
@@ -33,6 +35,7 @@ Future<GoRouter> pumpHomeArea(
   WidgetTester tester, {
   required Size size,
   HomeFakeRegionSyncService? regionSync,
+  bool settle = true,
   HomeFakeOperatorService? operators,
   HomeFakeItemService? items,
   HomeMemoryUserDataRepository? userData,
@@ -101,7 +104,9 @@ Future<GoRouter> pumpHomeArea(
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  if (settle) {
+    await tester.pumpAndSettle();
+  }
   return router;
 }
 
@@ -117,12 +122,23 @@ class _Stub extends StatelessWidget {
 
 class HomeFakeRegionSyncService implements RegionSyncService {
   int syncCalls = 0;
+  int ensureCalls = 0;
   bool ready = true;
+
+  /// When set, [ensureRegionFresh] waits for it and then marks the region
+  /// ready, like a first visit downloading the region.
+  Completer<void>? ensureGate;
   bool failSync = false;
   final statusRegions = <RegionCode>[];
 
   @override
   Future<SyncResult> ensureRegionFresh(RegionCode region) async {
+    ensureCalls += 1;
+    final gate = ensureGate;
+    if (gate != null) {
+      await gate.future;
+      ready = true;
+    }
     return SyncResult(
       region: region,
       sourceRevision: 'main',

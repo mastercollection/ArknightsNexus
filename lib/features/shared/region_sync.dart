@@ -6,12 +6,30 @@ import '../../domain/sync_status.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../ui/nexus_ui.dart' show NexusMessageType, showNexusMessage;
 
-/// Sync status of the selected region (Vue `index.vue` loads it next to the
-/// featured operators). Reloads on region change and after a manual sync.
-final regionSyncStatusProvider =
-    FutureProvider.autoDispose<RegionSyncStatus?>((ref) {
+/// Makes sure the selected region has data, downloading it on first use.
+///
+/// Watched by the shell so the download starts with the app instead of with
+/// the first data screen; the web build starts every visit without data.
+/// It shares [RegionReadiness]' once-per-session check with the data
+/// services, so whichever starts first, the other waits for the same work.
+final regionEnsureProvider = FutureProvider<void>((ref) {
   final region = ref.watch(regionProvider);
   ref.watch(dataRevisionProvider);
+  return ref.watch(regionReadinessProvider).ensure(region);
+});
+
+/// Sync status of the selected region, read once [regionEnsureProvider] is
+/// done (a failed ensure still shows the cached status). Reloads on region
+/// change and after a manual sync.
+final regionSyncStatusProvider =
+    FutureProvider.autoDispose<RegionSyncStatus?>((ref) async {
+  final region = ref.watch(regionProvider);
+  ref.watch(dataRevisionProvider);
+  try {
+    await ref.watch(regionEnsureProvider.future);
+  } catch (_) {
+    // Logged by RegionReadiness; the status below says what is cached.
+  }
   return ref.watch(regionSyncServiceProvider).getRegionSyncStatus(region);
 });
 

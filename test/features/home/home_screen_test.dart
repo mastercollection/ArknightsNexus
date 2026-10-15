@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:arknight_nexus/data_sources/region_code.dart';
 import 'package:arknight_nexus/domain/user_data.dart';
 import 'package:arknight_nexus/features/home/home_sidebar_panel.dart';
@@ -138,6 +140,29 @@ void main() {
       expect(find.text('EN · English'), findsOneWidget);
       expect(find.text('Ready · 415 operators'), findsOneWidget);
       expect(sync.statusRegions.last, RegionCode.en);
+    });
+
+    testWidgets('downloads the region on start and shows it as syncing',
+        (tester) async {
+      final sync = HomeFakeRegionSyncService()
+        ..ready = false
+        ..ensureGate = Completer<void>();
+      await pumpHomeArea(
+        tester,
+        size: desktopSize,
+        regionSync: sync,
+        settle: false,
+      );
+      await tester.pump();
+
+      expect(sync.ensureCalls, 1);
+      expect(find.text('동기화 중…'), findsOneWidget);
+
+      sync.ensureGate!.complete();
+      await tester.pumpAndSettle();
+
+      expect(find.text('준비됨 · 415명'), findsOneWidget);
+      expect(sync.ensureCalls, 1);
     });
 
     testWidgets('force sync runs and shows its error', (tester) async {

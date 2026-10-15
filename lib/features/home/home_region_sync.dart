@@ -16,7 +16,8 @@ class HomeSyncView {
   final int operatorCount;
 
   static HomeSyncView watch(WidgetRef ref) {
-    if (ref.watch(regionSyncControllerProvider)) {
+    if (ref.watch(regionSyncControllerProvider) ||
+        ref.watch(regionEnsureProvider).isLoading) {
       return const HomeSyncView(HomeSyncState.syncing, 0);
     }
     return ref.watch(regionSyncStatusProvider).when(

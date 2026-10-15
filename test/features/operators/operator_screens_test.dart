@@ -431,14 +431,14 @@ Future<void> _pumpApp(
   RegionSyncService regionSyncService,
   UserDataRepository userDataRepository,
 ) async {
+  // One readiness for the services and the shell, as in the app.
+  final readiness = RegionReadiness(regionSyncService, NoopAppLogger());
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        regionReadinessProvider.overrideWithValue(readiness),
         operatorServiceProvider.overrideWithValue(
-          EnsuringOperatorService(
-            operatorService,
-            RegionReadiness(regionSyncService, NoopAppLogger()),
-          ),
+          EnsuringOperatorService(operatorService, readiness),
         ),
         regionSyncServiceProvider.overrideWithValue(regionSyncService),
         userDataServiceProvider.overrideWithValue(
