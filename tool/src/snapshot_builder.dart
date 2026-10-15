@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:arknight_nexus/core/hash/sha256.dart';
+import 'package:crypto/crypto.dart' as crypto;
 import 'package:arknight_nexus/core/http/http_client.dart';
 import 'package:arknight_nexus/data_sources/published_data.dart';
 import 'package:arknight_nexus/data_sources/region_code.dart';
@@ -173,7 +173,7 @@ class SnapshotBuilder {
           operatorCount: snapshot.operators.length,
           snapshot: PublishedFile(
             path: path,
-            sha256: sha256Hex(bytes),
+            sha256: crypto.sha256.convert(bytes).toString(),
             bytes: bytes.length,
           ),
         ),
@@ -231,7 +231,8 @@ class SnapshotBuilder {
       // Manifest paths are relative to the manifest itself.
       previousManifestUri.resolve(file.path),
     );
-    if (bytes.length != file.bytes || sha256Hex(bytes) != file.sha256) {
+    if (bytes.length != file.bytes ||
+        crypto.sha256.convert(bytes).toString() != file.sha256) {
       throw StateError('${file.path} does not match the previous manifest');
     }
     await _writeFile(file.path, bytes);

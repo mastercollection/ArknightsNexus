@@ -3,7 +3,7 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import '../core/errors/app_failure.dart';
-import '../core/hash/sha256.dart';
+import 'package:crypto/crypto.dart' as crypto;
 import '../core/http/http_client.dart';
 import '../core/logging/app_logger.dart';
 import '../data_sources/published_data.dart';
@@ -259,7 +259,7 @@ NormalizedRegion verifyPublishedSnapshot({
       'the manifest says ${expected.bytes}',
     );
   }
-  final actual = sha256Hex(bytes);
+  final actual = crypto.sha256.convert(bytes).toString();
   if (actual != expected.sha256) {
     throw ValidationFailure(
       'Published snapshot SHA-256 $actual does not match ${expected.sha256}',

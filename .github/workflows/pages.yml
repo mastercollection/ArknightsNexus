@@ -15,7 +15,6 @@ on:
       - 'tool/**'
       - 'site/**'
       - 'lib/core/errors/**'
-      - 'lib/core/hash/**'
       - 'lib/core/http/**'
       - 'lib/data_sources/**'
       - 'lib/domain/**'
@@ -40,7 +39,7 @@ env:
   # Must match the paths above: everything the generator and site are built
   # from. The fingerprint is stored in the manifest.
   FINGERPRINT_PATHS: >-
-    tool site lib/core/errors lib/core/hash lib/core/http lib/data_sources
+    tool site lib/core/errors lib/core/http lib/data_sources
     lib/domain lib/raw_models lib/services/normalizers
     lib/services/region_source.dart pubspec.lock .github/workflows/pages.yml
   REGIONS: 'cn kr jp tw en'

@@ -46,6 +46,7 @@ dependencies:
   package_info_plus: ^9.0.1
   flutter_svg: ^2.0.10
   file_picker: ^8.1.7
+  crypto: ^3.0.7
 
 dev_dependencies:
   flutter_test:
