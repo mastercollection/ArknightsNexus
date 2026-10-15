@@ -305,6 +305,36 @@ void main() {
       expect(find.text('Op 0'), findsNothing);
     });
 
+    testWidgets('reopening the section shows the loaded list at once',
+        (tester) async {
+      await _pumpApp(
+        tester,
+        operatorService,
+        regionSyncService,
+        userDataRepository,
+      );
+      await tester.tap(find.byKey(const Key('rail-operators')));
+      await tester.pumpAndSettle();
+      expect(find.text('Amiya'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('rail-home')));
+      await tester.pumpAndSettle();
+      expect(find.byType(OperatorsScreen), findsNothing);
+
+      await tester.tap(find.byKey(const Key('rail-operators')));
+      await tester.pump();
+      // First frame: the tiles, not the loading state.
+      expect(find.text('Amiya'), findsOneWidget);
+      expect(operatorService.requestedRegions, [RegionCode.kr]);
+
+      // A sync (new data revision) loads the list again.
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(OperatorsScreen)),
+      );
+      container.read(dataRevisionProvider.notifier).state++;
+      await tester.pumpAndSettle();
+      expect(operatorService.requestedRegions, [RegionCode.kr, RegionCode.kr]);
+    });
+
     testWidgets('phone layout pushes the detail page', (tester) async {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1;
