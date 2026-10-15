@@ -18,9 +18,8 @@ import '../../ui/redesign/rd_widgets.dart';
 import 'plan_auto_persist.dart';
 import 'plan_materials_grid.dart';
 import 'plan_widgets.dart';
+import 'plan_totals.dart';
 
-const _expItemId = '5001';
-const _lmdItemId = '4001';
 const _autosaveDelay = Duration(milliseconds: 400);
 const _toastDuration = Duration(seconds: 3);
 
@@ -876,16 +875,19 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
     UserPlanOperator plan,
     bool compact,
   ) {
-    final costService = ref.read(planCostServiceProvider);
-    final breakdown =
-        costService.calculatePlanCostsWithItems(operator, plan, _itemsById);
-    final farming = costService.estimatePlanFarming(breakdown);
-    final showExp = farming.exp > 0;
-    final showLmd = farming.lmd > 0;
+    final totals = PlanTotals.single(
+      ref.read(planCostServiceProvider),
+      operator,
+      plan,
+      _itemsById,
+    );
+    final breakdown = totals.breakdown;
+    final farming = totals.farming;
+    final showExp = totals.showExp;
+    final showLmd = totals.showLmd;
     final showOverview = showExp || showLmd;
-    final lmdItemId = farming.lmdItem?.id ?? _lmdItemId;
-    final lmdShortage =
-        planShortage(farming.lmd, _itemsById[lmdItemId]?.ownedCount);
+    final lmdItemId = totals.lmdId;
+    final lmdShortage = totals.lmdShortage;
     final expLabel = i18n.t('planPage.summary.expLabel');
     final lmdLabel = i18n.t('planPage.summary.lmdLabel');
 
@@ -908,15 +910,15 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
                   PlanResourceCard(
                     inset: true,
                     label: expLabel,
-                    itemId: _expItemId,
-                    iconId: _itemsById[_expItemId]?.iconId,
-                    itemName: _itemsById[_expItemId]?.name ?? expLabel,
+                    itemId: expItemId,
+                    iconId: _itemsById[expItemId]?.iconId,
+                    itemName: _itemsById[expItemId]?.name ?? expLabel,
                     value: formatPlanNumber(farming.exp),
                     tint: PlanColors.expTint,
                     linkLabel: i18n.t('rd.plan.itemDetail', {
-                      'name': _itemsById[_expItemId]?.name ?? expLabel,
+                      'name': _itemsById[expItemId]?.name ?? expLabel,
                     }),
-                    onOpenItem: () => context.push('/items/$_expItemId'),
+                    onOpenItem: () => context.push('/items/$expItemId'),
                   ),
                 if (showLmd)
                   PlanResourceCard(

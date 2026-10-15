@@ -1,10 +1,11 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../ui/nexus_media.dart';
 import '../../ui/redesign/rd_widgets.dart';
+
+export '../shared/number_format.dart' show formatPlanNumber;
 
 /// Colours of the redesigned plan pages that `RdColors` does not name.
 class PlanColors {
@@ -45,11 +46,6 @@ class PlanColors {
   static const expTint = Color(0x8CFFCF70);
   static const lmdTint = Color(0x8CC4A0FF);
 }
-
-final _numberFormat = NumberFormat('#,##0.###', 'en_US');
-
-/// `new Intl.NumberFormat('ko-KR').format(value)`.
-String formatPlanNumber(num value) => _numberFormat.format(value);
 
 /// `max(0, required - owned)`: owned counts come from the item inventory.
 double planShortage(num required, int? owned) =>

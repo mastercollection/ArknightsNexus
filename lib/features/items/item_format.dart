@@ -1,14 +1,14 @@
 import 'package:intl/intl.dart';
 
+import '../../domain/item.dart';
+
 /// Upper bound of the owned-count editor (`items.vue`).
 const maxOwnedCount = 9999999;
 
-/// LMD keeps a compact K/M notation in the list (`formatOwnedCount`).
-const lmdItemId = '4001';
-
 final _ownedCountFormatter = NumberFormat.decimalPattern();
 
-/// Port of `formatOwnedCount` from `items.vue`.
+/// Port of `formatOwnedCount` from `items.vue`; LMD keeps a compact K/M
+/// notation.
 String formatOwnedCount(num count, [String? itemId]) {
   final normalized = count < 0 ? 0 : count.truncate();
   if (itemId != lmdItemId) {

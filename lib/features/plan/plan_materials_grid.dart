@@ -25,7 +25,7 @@ class PlanMaterialsGrid extends ConsumerWidget {
     required this.emptyLabel,
     this.formulas,
     this.itemsById = const {},
-    this.excludeItemIds = const {'4001'},
+    this.excludeItemIds = const {lmdItemId},
     this.columns,
     this.expanded = false,
     this.showShortage = false,

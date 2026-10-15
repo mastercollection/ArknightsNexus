@@ -1,9 +1,6 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../app/providers.dart';
 import '../../domain/operator.dart';
@@ -13,15 +10,11 @@ import '../../services/item_service.dart';
 import '../../services/operator_service.dart';
 import '../../services/plan_cost_service.dart';
 import '../../ui/redesign/rd_widgets.dart';
-
-const _lmdItemId = '4001';
+import '../plan/plan_totals.dart';
+import '../shared/number_format.dart';
 
 /// How many planned operators the home cards list before "+N more".
 const _plannedPreviewCount = 3;
-
-final _numberFormat = NumberFormat('#,##0', 'en_US');
-
-String _formatNumber(num value) => _numberFormat.format(value.ceil());
 
 /// One operator of the plan as the home page lists it.
 class HomePlannedOperator {
@@ -84,31 +77,20 @@ final homePlanSummaryProvider =
   final items = await itemsFuture;
   final itemsById = {for (final item in items) item.itemId: item};
 
-  final entries = [
-    for (final detail in details)
-      PlanCostEntry(
-        detail: detail,
-        plan: costService.resolvePlanOperator(
-          detail,
-          costService.getPlanByOperatorId(plan, detail.id),
-        ),
-      ),
-  ];
+  final entries = resolvePlanEntries(costService, details, plan);
   if (entries.isEmpty) {
     return const HomePlanSummary();
   }
-  final totals = costService.aggregatePlanCostsWithItems(entries, itemsById);
-  final farming = costService.estimatePlanFarming(totals);
-  final owned = itemsById[farming.lmdItem?.id ?? _lmdItemId]?.ownedCount ?? 0;
+  final totals = PlanTotals.aggregate(costService, entries, itemsById);
 
   return HomePlanSummary(
     operators: [
       for (final entry in entries)
         HomePlannedOperator(summary: byId[entry.detail.id]!, plan: entry.plan),
     ],
-    totals: totals,
-    farming: farming,
-    lmdShortage: math.max(0, farming.lmd - owned),
+    totals: totals.breakdown,
+    farming: totals.farming,
+    lmdShortage: totals.lmdShortage,
   );
 });
 
@@ -191,15 +173,15 @@ class HomePlanSummaryCard extends ConsumerWidget {
           if (!compact)
             _Stat(
               label: i18n.t('rd.home.plan.statOperators'),
-              value: _formatNumber(totals.operatorCount),
+              value: formatWholeNumber(totals.operatorCount),
             ),
           _Stat(
             label: i18n.t('rd.home.plan.statExp'),
-            value: _formatNumber(farming.exp),
+            value: formatWholeNumber(farming.exp),
           ),
           _Stat(
             label: i18n.t('rd.home.plan.statLmd'),
-            value: _formatNumber(farming.lmd),
+            value: formatWholeNumber(farming.lmd),
           ),
         ];
         return [
@@ -227,20 +209,20 @@ class HomePlanSummaryCard extends ConsumerWidget {
               text: [
                 if (summary.lmdShortage > 0)
                   i18n.t('rd.home.plan.lmdShortage', {
-                    'count': _formatNumber(summary.lmdShortage),
+                    'count': formatWholeNumber(summary.lmdShortage),
                   }),
                 if (farming.lmdStage.runs > 0)
                   i18n.t('rd.home.plan.stageRuns', {
                     'stage': farming.lmdStage.code,
-                    'count': _formatNumber(farming.lmdStage.runs),
+                    'count': formatWholeNumber(farming.lmdStage.runs),
                   }),
                 if (farming.expStage.runs > 0)
                   i18n.t('rd.home.plan.stageRuns', {
                     'stage': farming.expStage.code,
-                    'count': _formatNumber(farming.expStage.runs),
+                    'count': formatWholeNumber(farming.expStage.runs),
                   }),
                 i18n.t('rd.home.plan.sanity', {
-                  'count': _formatNumber(farming.totalSanity),
+                  'count': formatWholeNumber(farming.totalSanity),
                 }),
               ].join(' · '),
             ),

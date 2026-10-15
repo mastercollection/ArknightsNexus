@@ -16,9 +16,7 @@ import 'plan_auto_persist.dart';
 import 'plan_materials_grid.dart';
 import 'plan_picker.dart';
 import 'plan_widgets.dart';
-
-const _expItemId = '5001';
-const _lmdItemId = '4001';
+import 'plan_totals.dart';
 
 enum _PlanTab { operators, summary }
 
@@ -542,6 +540,37 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     );
   }
 
+  ({
+    List<OperatorDetail> details,
+    UserPlan plan,
+    Map<String, ItemEntry> items,
+    PlanTotals<PlanAggregateBreakdown>? totals,
+  })? _summaryMemo;
+
+  /// Summary totals, recomputed only when the loaded details, the plan or
+  /// the item references change (not on every rebuild of the tab).
+  PlanTotals<PlanAggregateBreakdown>? _summaryTotals() {
+    final memo = _summaryMemo;
+    if (memo != null &&
+        identical(memo.details, _summaryDetails) &&
+        identical(memo.plan, _userPlan) &&
+        identical(memo.items, _itemsById)) {
+      return memo.totals;
+    }
+    final costService = ref.read(planCostServiceProvider);
+    final entries = resolvePlanEntries(costService, _summaryDetails, _userPlan);
+    final totals = entries.isEmpty
+        ? null
+        : PlanTotals.aggregate(costService, entries, _itemsById);
+    _summaryMemo = (
+      details: _summaryDetails,
+      plan: _userPlan,
+      items: _itemsById,
+      totals: totals,
+    );
+    return totals;
+  }
+
   Widget _buildSummaryTab(NexusI18n i18n, bool compact) {
     if (_summaryErrorMessage.isNotEmpty) {
       return RdStatePanel(
@@ -555,18 +584,8 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
       return _SummarySkeleton(label: i18n.t('rd.plan.loading'));
     }
 
-    final costService = ref.read(planCostServiceProvider);
-    final entries = [
-      for (final detail in _summaryDetails)
-        PlanCostEntry(
-          detail: detail,
-          plan: costService.resolvePlanOperator(
-            detail,
-            costService.getPlanByOperatorId(_userPlan, detail.id),
-          ),
-        ),
-    ];
-    if (entries.isEmpty) {
+    final totals = _summaryTotals();
+    if (totals == null) {
       return RdStatePanel(
         kind: RdStateKind.empty,
         layout: RdStateLayout.left,
@@ -576,21 +595,21 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
       );
     }
 
-    final totals = costService.aggregatePlanCostsWithItems(entries, _itemsById);
-    final farming = costService.estimatePlanFarming(totals);
-    final showExp = farming.exp > 0;
-    final showLmd = farming.lmd > 0;
+    final entries = totals.entries;
+    final breakdown = totals.breakdown;
+    final farming = totals.farming;
+    final showExp = totals.showExp;
+    final showLmd = totals.showLmd;
     final showOverview = showExp || showLmd;
-    final lmdItemId = farming.lmdItem?.id ?? _lmdItemId;
-    final lmdShortage =
-        planShortage(farming.lmd, _itemsById[lmdItemId]?.ownedCount);
+    final lmdItemId = totals.lmdId;
+    final lmdShortage = totals.lmdShortage;
     final expLabel = i18n.t('planPage.summary.expLabel');
     final lmdLabel = i18n.t('planPage.summary.lmdLabel');
     final gap = compact ? 10.0 : 14.0;
 
     final countCard = _CountCard(
       label: i18n.t('planPage.summary.operators'),
-      value: formatPlanNumber(totals.operatorCount),
+      value: formatPlanNumber(breakdown.operatorCount),
       compact: compact,
     );
 
@@ -601,15 +620,15 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
         if (showExp)
           PlanResourceCard(
             label: expLabel,
-            itemId: _expItemId,
-            iconId: _itemsById[_expItemId]?.iconId,
-            itemName: _itemsById[_expItemId]?.name ?? expLabel,
+            itemId: expItemId,
+            iconId: _itemsById[expItemId]?.iconId,
+            itemName: _itemsById[expItemId]?.name ?? expLabel,
             value: formatPlanNumber(farming.exp),
             tint: PlanColors.expTint,
             linkLabel: i18n.t('rd.plan.itemDetail', {
-              'name': _itemsById[_expItemId]?.name ?? expLabel,
+              'name': _itemsById[expItemId]?.name ?? expLabel,
             }),
-            onOpenItem: () => context.push('/items/$_expItemId'),
+            onOpenItem: () => context.push('/items/$expItemId'),
           ),
         if (showLmd)
           PlanResourceCard(
@@ -677,11 +696,11 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
       ),
     );
 
-    final validation = totals.errors.isEmpty
+    final validation = breakdown.errors.isEmpty
         ? null
         : PlanValidationBox(
             title: i18n.t('planPage.summary.validationTitle'),
-            messages: totals.errors,
+            messages: breakdown.errors,
           );
 
     final materialsHeading = RdHeading(
@@ -692,7 +711,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
           compact ? RdText.caption : RdText.caption.copyWith(fontSize: 13),
     );
     final materialsGrid = PlanMaterialsGrid(
-      materials: totals.materials,
+      materials: breakdown.materials,
       emptyLabel: i18n.t('planPage.detail.noMaterials'),
       itemsById: _itemsById,
       formulas: _buildingFormulas,
