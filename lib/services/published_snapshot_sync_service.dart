@@ -61,8 +61,7 @@ class PublishedSnapshotSyncService implements RegionSyncService {
           .ensureRegionFresh(region);
     }
 
-    if (cached != null &&
-        cached.sourceVersion.versionControl == published.versionControl) {
+    if (cached != null && _isCurrent(published, cached)) {
       return readyResult(cached);
     }
     final fallback = _fallback;
@@ -97,7 +96,7 @@ class PublishedSnapshotSyncService implements RegionSyncService {
     final fallback = _fallback;
     if (fallback != null &&
         cached != null &&
-        cached.sourceVersion.versionControl != published.versionControl &&
+        !_isCurrent(published, cached) &&
         _isOlderThanCache(published, cached)) {
       _logFallback(region, 'published snapshot is older than the cache');
       yield* fallback.syncRegion(region);
@@ -175,6 +174,17 @@ class PublishedSnapshotSyncService implements RegionSyncService {
     } catch (_) {
       return null;
     }
+  }
+
+  /// The cached snapshot is the published one: same region version and same
+  /// versions of the regions its unreleased operators come from. A raw sync
+  /// has none of those, so a newer published copy that has them replaces
+  /// it.
+  bool _isCurrent(PublishedRegion published, RegionSnapshot cached) {
+    return published.matchesVersions(
+      cached.sourceVersion.versionControl,
+      cached.unreleasedSourceVersions,
+    );
   }
 
   /// Version strings are not ordered, so the snapshots' `fetchedAt` decides:

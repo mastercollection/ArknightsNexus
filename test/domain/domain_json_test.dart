@@ -373,5 +373,76 @@ void main() {
         ..remove('releaseOrder');
       expect(OperatorSummary.fromJson(json).releaseOrder, 0);
     });
+
+    test('round trips the unreleased source and defaults it to null', () {
+      const summary = OperatorSummary(
+        id: 'char_900_new',
+        name: 'New',
+        rarity: 6,
+        profession: 'CASTER',
+        branch: 'Core Caster',
+        thumbnailHue: 210,
+        unreleasedSource: 'cn',
+      );
+      expect(OperatorSummary.fromJson(summary.toJson()).unreleasedSource, 'cn');
+      expect(OperatorSummary.fromJson(summary.toJson()).isUnreleased, isTrue);
+      final native = summary.toJson()..remove('unreleasedSource');
+      expect(OperatorSummary.fromJson(native).unreleasedSource, isNull);
+
+      const detail = OperatorDetail(
+        id: 'char_900_new',
+        name: 'New',
+        codename: 'New',
+        rarity: 6,
+        profession: 'CASTER',
+        branch: 'Core Caster',
+        thumbnailHue: 210,
+        releaseOrder: 5,
+        quote: '',
+        archetypeDescription: '',
+      );
+      expect(detail.toJson().containsKey('unreleasedSource'), isFalse);
+      final borrowed = detail.asUnreleased('en');
+      expect(borrowed.releaseOrder, 5);
+      expect(OperatorDetail.fromJson(borrowed.toJson()).unreleasedSource, 'en');
+
+      const item = ItemEntry(
+        itemId: '39001',
+        name: 'Stone',
+        description: '',
+        rarity: 'TIER_3',
+        iconId: 'stone',
+        sortId: 1,
+        usage: '',
+        obtainApproach: '',
+        classifyType: 'MATERIAL',
+        itemType: 'MATERIAL',
+        stageDropList: [ItemStageDrop(stageId: 's', occPer: 'ALWAYS')],
+      );
+      expect(ItemEntry.fromJson(item.toJson()).unreleasedSource, isNull);
+      final borrowedItem = ItemEntry.fromJson(item.asUnreleased('cn').toJson());
+      expect(borrowedItem.unreleasedSource, 'cn');
+      expect(borrowedItem.stageDropList, isEmpty);
+      expect(borrowedItem.copyWith(ownedCount: 3).unreleasedSource, 'cn');
+    });
+
+    test('reads a snapshot without unreleased source versions as empty', () {
+      final json = RegionSnapshot(
+        schemaVersionValue: RegionSnapshot.schemaVersion,
+        region: RegionCode.kr,
+        sourceRevision: 'etag',
+        sourceVersion: const DataVersion(versionControl: '68.2.0'),
+        fetchedAt: DateTime.utc(2026, 5, 17),
+        unreleasedSourceVersions: const {'en': '1', 'cn': '2'},
+      ).toJson();
+      expect(
+        RegionSnapshot.fromJson(
+          jsonDecode(jsonEncode(json)) as Map<String, Object?>,
+        ).unreleasedSourceVersions,
+        {'en': '1', 'cn': '2'},
+      );
+      json.remove('unreleasedSourceVersions');
+      expect(RegionSnapshot.fromJson(json).unreleasedSourceVersions, isEmpty);
+    });
   });
 }

@@ -38,6 +38,9 @@ void main() {
     tempRoot = await Directory.systemTemp.createTemp('published-sync-test-');
     upstream = FakeHttpClient();
     await registerRawFixtures(upstream, RegionCode.kr);
+    // The generator also reads the regions unreleased operators come from.
+    await registerRawFixtures(upstream, RegionCode.en);
+    await registerRawFixtures(upstream, RegionCode.cn);
     pages = FakeHttpClient();
     cache = JsonRegionCacheRepository(
       FakeAppDirectories(Directory('${tempRoot.path}/app')),
@@ -110,17 +113,24 @@ void main() {
     final publishedJson =
         jsonDecode(await published.readAsString()) as Map<String, Object?>;
     final rawSnapshot = (await rawCache.readSnapshot(RegionCode.kr))!;
+    // Every region has the same operators here, so nothing is borrowed; the
+    // published copy only records the versions of EN and CN it checked.
+    expect(publishedJson['unreleasedSourceVersions'], {
+      'en': '68.2.0',
+      'cn': '68.2.0',
+    });
+    expect(rawSnapshot.unreleasedSourceVersions, isEmpty);
     expect(
-      _withoutFetchedAt(publishedJson),
-      _withoutFetchedAt(_roundTrip(rawSnapshot.toJson())),
+      _withoutVersionStamps(publishedJson),
+      _withoutVersionStamps(_roundTrip(rawSnapshot.toJson())),
     );
 
     // The app's published path derives the same cache files.
     await service.ensureRegionFresh(RegionCode.kr);
     final snapshot = (await cache.readSnapshot(RegionCode.kr))!;
     expect(
-      _withoutFetchedAt(_roundTrip(snapshot.toJson())),
-      _withoutFetchedAt(_roundTrip(rawSnapshot.toJson())),
+      _withoutVersionStamps(_roundTrip(snapshot.toJson())),
+      _withoutVersionStamps(_roundTrip(rawSnapshot.toJson())),
     );
     expect(
       _withoutFetchedAt(
@@ -204,6 +214,35 @@ void main() {
     expect(
       (await cache.readSnapshot(RegionCode.kr))!.sourceVersion.versionControl,
       '68.3.0',
+    );
+    expect(fallback.calls, isEmpty);
+  });
+
+  test('a new version of an unreleased operator source replaces the cache',
+      () async {
+    await publish();
+    await service.ensureRegionFresh(RegionCode.kr);
+
+    await registerRawFixtures(
+      upstream,
+      RegionCode.cn,
+      versionControl: '70.0.0',
+      extraOperators: const [ExtraOperator(id: 'char_900_new', name: 'New')],
+    );
+    await publish();
+    final result = await service.ensureRegionFresh(RegionCode.kr);
+
+    expect(result.status, 'success');
+    final snapshot = (await cache.readSnapshot(RegionCode.kr))!;
+    expect(snapshot.sourceVersion.versionControl, '68.2.0');
+    expect(snapshot.unreleasedSourceVersions['cn'], '70.0.0');
+    expect(snapshot.operators.first.name, 'New');
+    expect(
+      (await cache.readSummary(RegionCode.kr))!
+          .operators
+          .first
+          .unreleasedSource,
+      'cn',
     );
     expect(fallback.calls, isEmpty);
   });
@@ -402,6 +441,11 @@ Map<String, Object?> _roundTrip(Map<String, Object?> json) =>
 
 Map<String, Object?> _withoutFetchedAt(Map<String, Object?> json) =>
     {...json}..remove('fetchedAt');
+
+/// Also without the versions of the unreleased operator sources, which only
+/// the published copy has.
+Map<String, Object?> _withoutVersionStamps(Map<String, Object?> json) =>
+    _withoutFetchedAt(json)..remove('unreleasedSourceVersions');
 
 class _RecordingFallback implements RegionSyncService {
   final calls = <String>[];

@@ -30,6 +30,11 @@ import 'normalizers/operator_normalizer.dart';
 /// Shared by the app's raw sync path and `tool/build_snapshots.dart`, which
 /// publishes the same snapshots on GitHub Pages; this file and its imports
 /// must stay free of Flutter so the tool runs on the plain Dart VM.
+///
+/// The snapshot holds only the region's own operators. The published
+/// snapshots also carry the operators the region has not released yet,
+/// copied from other regions' tables by the tool; the raw sync, a fallback
+/// that downloads only the selected region, does not have those.
 class RegionSource {
   const RegionSource({
     required NexusHttpClient httpClient,
@@ -274,6 +279,7 @@ OperatorSummary _summary(OperatorDetail detail) {
     baTags: detail.baTags,
     thumbnailHue: detail.thumbnailHue,
     releaseOrder: detail.releaseOrder,
+    unreleasedSource: detail.unreleasedSource,
   );
 }
 

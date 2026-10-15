@@ -120,6 +120,7 @@ class PublishedRegion {
     required this.fetchedAt,
     required this.operatorCount,
     required this.snapshot,
+    this.unreleasedSourceVersions = const {},
   });
 
   /// `RegionSnapshot.schemaVersion` of the published snapshot.
@@ -134,8 +135,30 @@ class PublishedRegion {
   final int operatorCount;
   final PublishedFile snapshot;
 
+  /// `VersionControl` per region code whose unreleased operators the
+  /// snapshot includes (`RegionSnapshot.unreleasedSourceVersions`). The
+  /// snapshot changes when any of them does, even if [versionControl]
+  /// does not.
+  final Map<String, String> unreleasedSourceVersions;
+
+  /// Whether a snapshot built from [versionControl] plus [sourceVersions]
+  /// is this entry's content.
+  bool matchesVersions(
+    String versionControl,
+    Map<String, String> sourceVersions,
+  ) {
+    if (versionControl != this.versionControl ||
+        sourceVersions.length != unreleasedSourceVersions.length) {
+      return false;
+    }
+    return sourceVersions.entries.every(
+      (entry) => unreleasedSourceVersions[entry.key] == entry.value,
+    );
+  }
+
   factory PublishedRegion.fromJson(Map<String, Object?> json) {
     final files = Map<String, Object?>.from(json['files'] as Map);
+    final sources = json['unreleasedSourceVersions'];
     return PublishedRegion(
       schemaVersion: (json['schemaVersion'] as num).toInt(),
       versionControl: json['versionControl'] as String,
@@ -145,6 +168,12 @@ class PublishedRegion {
       snapshot: PublishedFile.fromJson(
         Map<String, Object?>.from(files['snapshot'] as Map),
       ),
+      unreleasedSourceVersions: sources is Map
+          ? {
+              for (final MapEntry(:key, :value) in sources.entries)
+                key as String: value as String,
+            }
+          : const {},
     );
   }
 
@@ -155,6 +184,7 @@ class PublishedRegion {
       'sourceRevision': sourceRevision,
       'fetchedAt': fetchedAt.toIso8601String(),
       'operatorCount': operatorCount,
+      'unreleasedSourceVersions': unreleasedSourceVersions,
       'files': {'snapshot': snapshot.toJson()},
     };
   }

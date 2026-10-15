@@ -42,6 +42,38 @@ void main() {
     expect(kr.snapshot.bytes, 10);
   });
 
+  test('reads unreleased source versions, empty when missing', () {
+    final kr =
+        PublishedManifest.fromJson(manifestJson()).regions[RegionCode.kr]!;
+    expect(kr.unreleasedSourceVersions, isEmpty);
+    expect(kr.matchesVersions('52.0.0', const {}), isTrue);
+
+    final json = manifestJson();
+    ((json['regions']! as Map)['kr'] as Map)['unreleasedSourceVersions'] = {
+      'en': '51.0.0',
+      'cn': '53.0.0',
+    };
+    final withSources =
+        PublishedManifest.fromJson(json).regions[RegionCode.kr]!;
+    expect(withSources.unreleasedSourceVersions, {
+      'en': '51.0.0',
+      'cn': '53.0.0',
+    });
+    expect(
+      withSources.matchesVersions('52.0.0', {'cn': '53.0.0', 'en': '51.0.0'}),
+      isTrue,
+    );
+    expect(withSources.matchesVersions('52.0.0', const {}), isFalse);
+    expect(
+      withSources.matchesVersions('52.0.0', {'en': '51.0.0', 'cn': '54.0.0'}),
+      isFalse,
+    );
+    expect(
+      withSources.matchesVersions('52.1.0', {'en': '51.0.0', 'cn': '53.0.0'}),
+      isFalse,
+    );
+  });
+
   test('round-trips through JSON', () {
     final manifest = PublishedManifest.fromJson(manifestJson());
     final again = PublishedManifest.fromJson(manifest.toJson());

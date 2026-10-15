@@ -19,6 +19,7 @@ class ItemEntry {
     this.ownedCount = 0,
     this.stageDropList = const [],
     this.buildingProductList = const [],
+    this.unreleasedSource,
   });
 
   final String itemId;
@@ -34,6 +35,31 @@ class ItemEntry {
   final int ownedCount;
   final List<ItemStageDrop> stageDropList;
   final List<ItemBuildingProduct> buildingProductList;
+
+  /// Region code (`en` or `cn`) this item was copied from because an
+  /// unreleased operator of the snapshot needs it and the snapshot's own
+  /// region does not have it yet; null for the region's own items. Such an
+  /// item has no stage drops or building products: those refer to the
+  /// source region's stages and formulas.
+  final String? unreleasedSource;
+
+  /// This item copied from [source]; see [unreleasedSource].
+  ItemEntry asUnreleased(String source) {
+    return ItemEntry(
+      itemId: itemId,
+      name: name,
+      description: description,
+      rarity: rarity,
+      iconId: iconId,
+      sortId: sortId,
+      usage: usage,
+      obtainApproach: obtainApproach,
+      classifyType: classifyType,
+      itemType: itemType,
+      ownedCount: ownedCount,
+      unreleasedSource: source,
+    );
+  }
 
   factory ItemEntry.fromJson(Map<String, Object?> json) {
     return ItemEntry(
@@ -56,6 +82,7 @@ class ItemEntry {
         json['buildingProductList'],
         (value) => ItemBuildingProduct.fromJson(_map(value)),
       ),
+      unreleasedSource: json['unreleasedSource'] as String?,
     );
   }
 
@@ -75,6 +102,7 @@ class ItemEntry {
       'stageDropList': stageDropList.map((entry) => entry.toJson()).toList(),
       'buildingProductList':
           buildingProductList.map((entry) => entry.toJson()).toList(),
+      if (unreleasedSource != null) 'unreleasedSource': unreleasedSource,
     };
   }
 
@@ -93,6 +121,7 @@ class ItemEntry {
       ownedCount: ownedCount ?? this.ownedCount,
       stageDropList: stageDropList,
       buildingProductList: buildingProductList,
+      unreleasedSource: unreleasedSource,
     );
   }
 }

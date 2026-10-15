@@ -17,6 +17,7 @@ class RegionSnapshot {
     this.items = const [],
     this.buildingFormulas = const BuildingFormulaBundle(),
     this.operators = const [],
+    this.unreleasedSourceVersions = const {},
   });
 
   /// Bump whenever the normalizer output changes. A cached snapshot with a
@@ -27,7 +28,9 @@ class RegionSnapshot {
   /// 2: full Rust-parity operator normalization (traits/talents/potentials,
   /// ba tags, humanized profession/branch, cost item info, etc.).
   /// 3: operators carry `releaseOrder` and are sorted newest release first.
-  static const schemaVersion = 3;
+  /// 4: published snapshots add operators (and the items and terms they
+  /// need) the region has not released yet, marked `unreleasedSource`.
+  static const schemaVersion = 4;
 
   final int schemaVersionValue;
   final RegionCode region;
@@ -39,6 +42,13 @@ class RegionSnapshot {
   final List<ItemEntry> items;
   final BuildingFormulaBundle buildingFormulas;
   final List<OperatorDetail> operators;
+
+  /// `VersionControl` per source region code of the unreleased operators
+  /// merged into this snapshot (see [OperatorDetail.unreleasedSource]);
+  /// empty for a snapshot normalized from the region's own tables only.
+  /// The snapshot is current only while both its own version and these
+  /// match the published manifest.
+  final Map<String, String> unreleasedSourceVersions;
 
   factory RegionSnapshot.fromJson(Map<String, Object?> json) {
     final schemaVersionValue = (json['schemaVersion'] as num?)?.toInt() ?? 0;
@@ -63,6 +73,7 @@ class RegionSnapshot {
         json['operators'],
         (value) => OperatorDetail.fromJson(_map(value)),
       ),
+      unreleasedSourceVersions: _stringMap(json['unreleasedSourceVersions']),
     );
   }
 
@@ -72,6 +83,7 @@ class RegionSnapshot {
       'region': region.toJson(),
       'sourceRevision': sourceRevision,
       'sourceVersion': sourceVersion.toJson(),
+      'unreleasedSourceVersions': unreleasedSourceVersions,
       'fetchedAt': fetchedAt.toIso8601String(),
       'stageCodeMap': stageCodeMap,
       'terms': terms,

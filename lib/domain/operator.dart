@@ -11,6 +11,7 @@ class OperatorSummary {
     this.baTags = const [],
     required this.thumbnailHue,
     this.releaseOrder = 0,
+    this.unreleasedSource,
   });
 
   final String id;
@@ -28,8 +29,17 @@ class OperatorSummary {
   /// `handbookDict`, counted from 1, whose key order is the order operators
   /// were released in that region; higher is newer. 0 when the operator is
   /// not in the handbook. The snapshot keeps operators sorted by this,
-  /// newest first.
+  /// newest first. For an unreleased operator (see [unreleasedSource]) it
+  /// is the position in the source region's handbook instead.
   final int releaseOrder;
+
+  /// Region code (`en` or `cn`) whose official data this operator was
+  /// copied from because the snapshot's own region has not released it yet;
+  /// null for the region's own operators. Only the published snapshots
+  /// (`tool/build_snapshots.dart`) contain such operators.
+  final String? unreleasedSource;
+
+  bool get isUnreleased => unreleasedSource != null;
 
   factory OperatorSummary.fromJson(Map<String, Object?> json) {
     return OperatorSummary(
@@ -44,6 +54,7 @@ class OperatorSummary {
       baTags: _strings(json['baTags']),
       thumbnailHue: _int(json['thumbnailHue']),
       releaseOrder: _optionalInt(json['releaseOrder']),
+      unreleasedSource: json['unreleasedSource'] as String?,
     );
   }
 
@@ -60,6 +71,7 @@ class OperatorSummary {
       'baTags': baTags,
       'thumbnailHue': thumbnailHue,
       'releaseOrder': releaseOrder,
+      if (unreleasedSource != null) 'unreleasedSource': unreleasedSource,
     };
   }
 }
@@ -78,6 +90,7 @@ class OperatorDetail {
     this.baTags = const [],
     required this.thumbnailHue,
     this.releaseOrder = 0,
+    this.unreleasedSource,
     required this.quote,
     this.tags = const [],
     this.traits = const [],
@@ -110,6 +123,11 @@ class OperatorDetail {
   /// Release position; see [OperatorSummary.releaseOrder].
   final int releaseOrder;
 
+  /// See [OperatorSummary.unreleasedSource].
+  final String? unreleasedSource;
+
+  bool get isUnreleased => unreleasedSource != null;
+
   final String quote;
   final List<String> tags;
   final List<OperatorTrait> traits;
@@ -126,6 +144,41 @@ class OperatorDetail {
   final List<OperatorStatProgression> stats;
   final List<OperatorSkill> skills;
 
+  /// This operator marked as copied from [source]'s data; see
+  /// [unreleasedSource].
+  OperatorDetail asUnreleased(String source) {
+    return OperatorDetail(
+      id: id,
+      name: name,
+      codename: codename,
+      rarity: rarity,
+      profession: profession,
+      branch: branch,
+      teams: teams,
+      nations: nations,
+      groups: groups,
+      baTags: baTags,
+      thumbnailHue: thumbnailHue,
+      releaseOrder: releaseOrder,
+      unreleasedSource: source,
+      quote: quote,
+      tags: tags,
+      traits: traits,
+      talents: talents,
+      potentials: potentials,
+      modules: modules,
+      archetypeDescription: archetypeDescription,
+      eliteCaps: eliteCaps,
+      eliteExpCosts: eliteExpCosts,
+      eliteUpgradeGoldCosts: eliteUpgradeGoldCosts,
+      eliteEvolveGoldCosts: eliteEvolveGoldCosts,
+      eliteEvolveCosts: eliteEvolveCosts,
+      allSkillLevelUpCosts: allSkillLevelUpCosts,
+      stats: stats,
+      skills: skills,
+    );
+  }
+
   factory OperatorDetail.fromJson(Map<String, Object?> json) {
     return OperatorDetail(
       id: json['id'] as String,
@@ -140,6 +193,7 @@ class OperatorDetail {
       baTags: _strings(json['baTags']),
       thumbnailHue: _int(json['thumbnailHue']),
       releaseOrder: _optionalInt(json['releaseOrder']),
+      unreleasedSource: json['unreleasedSource'] as String?,
       quote: json['quote'] as String,
       tags: _strings(json['tags']),
       traits:
@@ -192,6 +246,7 @@ class OperatorDetail {
       'baTags': baTags,
       'thumbnailHue': thumbnailHue,
       'releaseOrder': releaseOrder,
+      if (unreleasedSource != null) 'unreleasedSource': unreleasedSource,
       'quote': quote,
       'tags': tags,
       'traits': traits.map((entry) => entry.toJson()).toList(),
