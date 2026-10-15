@@ -84,6 +84,8 @@ void main() {
   });
 
   test('copies an unchanged region from the previous site', () async {
+    final snapshotPath =
+        PublishedData.snapshotPath(RegionSnapshot.schemaVersion, RegionCode.kr);
     final first = await build('first', fingerprint: 'f1');
     await serveAsPrevious('first');
     http.requestedUris.clear();
@@ -97,8 +99,8 @@ void main() {
       first.manifest.regions[RegionCode.kr]!.toJson(),
     );
     expect(
-      await File('${tempRoot.path}/second/v2/kr/snapshot.json').readAsBytes(),
-      await File('${tempRoot.path}/first/v2/kr/snapshot.json').readAsBytes(),
+      await File('${tempRoot.path}/second/$snapshotPath').readAsBytes(),
+      await File('${tempRoot.path}/first/$snapshotPath').readAsBytes(),
     );
   });
 

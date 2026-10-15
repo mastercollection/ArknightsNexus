@@ -26,7 +26,8 @@ class RegionSnapshot {
   ///
   /// 2: full Rust-parity operator normalization (traits/talents/potentials,
   /// ba tags, humanized profession/branch, cost item info, etc.).
-  static const schemaVersion = 2;
+  /// 3: operators carry `releaseOrder` and are sorted newest release first.
+  static const schemaVersion = 3;
 
   final int schemaVersionValue;
   final RegionCode region;
