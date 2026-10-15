@@ -1,8 +1,6 @@
 class ArknightsDataSource {
   const ArknightsDataSource._();
 
-  static const dataVersionFile = 'data_version.txt';
-
   static const requiredTableFiles = [
     characterTableFile,
     skillTableFile,

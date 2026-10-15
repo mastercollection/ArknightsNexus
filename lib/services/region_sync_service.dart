@@ -22,7 +22,6 @@ import '../repositories/region_cache_repository.dart';
 import 'normalizers/building_formula_normalizer.dart';
 import 'normalizers/item_normalizer.dart';
 import 'normalizers/operator_normalizer.dart';
-import 'normalizers/term_normalizer.dart';
 
 abstract interface class RegionSyncService {
   Stream<SyncStatus> syncRegion(RegionCode region);
@@ -43,20 +42,17 @@ class DartRegionSyncService implements RegionSyncService {
     ItemNormalizer itemNormalizer = const ItemNormalizer(),
     BuildingFormulaNormalizer buildingFormulaNormalizer =
         const BuildingFormulaNormalizer(),
-    TermNormalizer termNormalizer = const TermNormalizer(),
     OperatorNormalizer operatorNormalizer = const OperatorNormalizer(),
   })  : _httpClient = httpClient,
         _cache = cache,
         _itemNormalizer = itemNormalizer,
         _buildingFormulaNormalizer = buildingFormulaNormalizer,
-        _termNormalizer = termNormalizer,
         _operatorNormalizer = operatorNormalizer;
 
   final NexusHttpClient _httpClient;
   final RegionCacheRepository _cache;
   final ItemNormalizer _itemNormalizer;
   final BuildingFormulaNormalizer _buildingFormulaNormalizer;
-  final TermNormalizer _termNormalizer;
   final OperatorNormalizer _operatorNormalizer;
 
   @override
@@ -191,7 +187,7 @@ class DartRegionSyncService implements RegionSyncService {
     final buildingFormulas = _buildingFormulaNormalizer.normalize(raw.building);
     final items =
         _itemNormalizer.normalize(raw.items, raw.stages, raw.building);
-    final terms = _termNormalizer.normalize(raw.constants);
+    final terms = raw.constants.termDescriptions();
     final operators = _operatorNormalizer.normalize(
       region: region,
       characters: raw.characters,

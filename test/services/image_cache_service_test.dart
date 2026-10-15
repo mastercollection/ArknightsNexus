@@ -33,11 +33,6 @@ void main() {
       }
     });
 
-    test('isValidImageId mirrors normalization', () {
-      expect(service.isValidImageId('char_002_amiya'), isTrue);
-      expect(service.isValidImageId('../escape'), isFalse);
-    });
-
     test('downloads, caches, and returns a ready file', () async {
       const id = 'char_002_amiya';
       final url = Uri.parse(
@@ -112,20 +107,6 @@ void main() {
 
       expect(result.status, ImageStatus.missing);
       expect(httpClient.requestedUris, isEmpty);
-    });
-
-    test('clearCache removes cached files and memory entries', () async {
-      const id = 'char_002_amiya';
-      final url = Uri.parse('$imageRemoteBaseUrl/avatar/ASSISTANT/$id.png');
-      httpClient.registerBytes(url, [1]);
-
-      await service.resolve(
-        const ImageRequest(kind: CachedImageKind.portrait, id: id),
-      );
-      await service.clearCache();
-
-      final cached = await repository.fileFor('images/portraits/$id.png');
-      expect(await cached.exists(), isFalse);
     });
   });
 }

@@ -2,16 +2,15 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:arknight_nexus/raw_models/gamedata_const.dart';
-import 'package:arknight_nexus/services/normalizers/term_normalizer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('TermNormalizer', () {
+  group('RawGameDataConst.termDescriptions', () {
     test('extracts trimmed term descriptions and drops blank ones', () async {
       final constants =
           RawGameDataConst.fromJson(await _fixture('gamedata_const.json'));
 
-      expect(const TermNormalizer().normalize(constants), {
+      expect(constants.termDescriptions(), {
         'atk': 'Attack',
         'ba.stun': 'Cannot act',
         'ba.sluggish': 'Movement speed reduced',

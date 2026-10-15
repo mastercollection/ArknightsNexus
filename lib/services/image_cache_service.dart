@@ -24,16 +24,11 @@ class ResolvedImage {
 }
 
 abstract interface class ImageCacheService {
-  bool isValidImageId(String imageId);
-
   /// Resolves an image to a local file, downloading and caching it if needed.
   Future<ResolvedImage> resolve(ImageRequest request);
 
   /// Resolves multiple images concurrently, ignoring individual failures.
   Future<void> prefetch(List<ImageRequest> requests);
-
-  /// Clears the on-disk image cache and in-memory resolution cache.
-  Future<void> clearCache();
 }
 
 /// Dart port of the Tauri `resolveImageSource` flow. Downloads images to a
@@ -53,9 +48,6 @@ class DartImageCacheService implements ImageCacheService {
   final AppLogger? _logger;
 
   final Map<String, ResolvedImage> _resolved = {};
-
-  @override
-  bool isValidImageId(String imageId) => normalizeImageId(imageId) != null;
 
   @override
   Future<ResolvedImage> resolve(ImageRequest request) async {
@@ -127,11 +119,5 @@ class DartImageCacheService implements ImageCacheService {
         }
       }),
     );
-  }
-
-  @override
-  Future<void> clearCache() async {
-    await _repository.removeIfExists('images');
-    _resolved.clear();
   }
 }

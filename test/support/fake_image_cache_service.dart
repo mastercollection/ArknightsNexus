@@ -6,10 +6,6 @@ import 'package:arknight_nexus/services/image_cache_service.dart';
 /// their placeholders.
 class FakeImageCacheService implements ImageCacheService {
   final requestedIds = <String>[];
-  int clearCacheCalls = 0;
-
-  @override
-  bool isValidImageId(String imageId) => normalizeImageId(imageId) != null;
 
   @override
   Future<ResolvedImage> resolve(ImageRequest request) async {
@@ -19,9 +15,4 @@ class FakeImageCacheService implements ImageCacheService {
 
   @override
   Future<void> prefetch(List<ImageRequest> requests) async {}
-
-  @override
-  Future<void> clearCache() async {
-    clearCacheCalls += 1;
-  }
 }
