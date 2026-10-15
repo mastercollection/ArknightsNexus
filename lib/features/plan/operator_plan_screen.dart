@@ -319,11 +319,17 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
 
     final Widget body;
     if (_errorMessage.isNotEmpty) {
-      body = PlanErrorPanel(
+      body = RdStatePanel(
+        kind: RdStateKind.error,
+        layout: RdStateLayout.left,
         title: i18n.t('planPage.detail.errorTitle'),
-        message: _errorMessage,
-        retryLabel: i18n.t('planPage.actions.retry'),
-        onRetry: _loadDetailPage,
+        detail: _errorMessage,
+        action: RdButton(
+          label: i18n.t('planPage.actions.retry'),
+          onPressed: _loadDetailPage,
+          variant: RdButtonVariant.tonal,
+          height: context.rdLayout == RdLayout.compact ? 44 : 40,
+        ),
       );
     } else if (!ready) {
       body = _DetailSkeleton(label: i18n.t('rd.plan.loading'));

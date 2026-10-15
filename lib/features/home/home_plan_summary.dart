@@ -155,7 +155,9 @@ class HomePlanSummaryCard extends ConsumerWidget {
       // tests on real file services) an endless animation would keep every
       // `pumpAndSettle` on the app's start page from settling.
       loading: () => [
-        _InlineState(
+        RdStatePanel(
+          kind: RdStateKind.loading,
+          layout: RdStateLayout.inline,
           leading: const Icon(
             Icons.hourglass_empty_rounded,
             size: 16,
@@ -165,17 +167,20 @@ class HomePlanSummaryCard extends ConsumerWidget {
         ),
       ],
       error: (error, _) => [
-        _InlineState(
+        RdStatePanel(
+          kind: RdStateKind.error,
+          layout: RdStateLayout.inline,
           title: i18n.t('rd.home.plan.errorTitle'),
           message: '$error',
-          error: true,
         ),
       ],
       data: (summary) {
         if (summary.isEmpty) {
           return [
             // The header's "open plan" link is the way to add operators.
-            _InlineState(
+            RdStatePanel(
+              kind: RdStateKind.empty,
+              layout: RdStateLayout.inline,
               title: i18n.t('rd.home.plan.emptyTitle'),
               message: i18n.t('rd.home.plan.emptyDescription'),
             ),
@@ -211,10 +216,15 @@ class HomePlanSummaryCard extends ConsumerWidget {
             ],
           ),
           if (!totals.valid)
-            _Notice(text: i18n.t('rd.home.plan.invalid'))
+            RdNotice(
+              tone: RdNoticeTone.warn,
+              text: i18n.t('rd.home.plan.invalid'),
+            )
           else if (farming.totalSanity > 0)
-            _Notice(
-              warn: summary.lmdShortage > 0,
+            RdNotice(
+              tone: summary.lmdShortage > 0
+                  ? RdNoticeTone.warn
+                  : RdNoticeTone.info,
               text: [
                 if (summary.lmdShortage > 0)
                   i18n.t('rd.home.plan.lmdShortage', {
@@ -452,100 +462,6 @@ class _StatTile extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-/// Farming / shortage line (amber when something is short).
-class _Notice extends StatelessWidget {
-  const _Notice({required this.text, this.warn = true});
-
-  final String text;
-  final bool warn;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = warn ? RdColors.warnText : RdColors.secondary;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: warn ? RdColors.warnBg : RdColors.soft2,
-        borderRadius: BorderRadius.circular(RdRadii.inner),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            warn ? Icons.warning_amber_rounded : Icons.info_outline,
-            size: 18,
-            color: color,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(fontSize: 14, height: 1.4, color: color),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Loading / empty / error line inside the summary card. Kept to a couple of
-/// lines so the shortcuts below stay in view on short windows.
-class _InlineState extends StatelessWidget {
-  const _InlineState({
-    required this.title,
-    this.message,
-    this.leading,
-    this.error = false,
-  });
-
-  final String title;
-  final String? message;
-  final Widget? leading;
-  final bool error;
-
-  @override
-  Widget build(BuildContext context) {
-    final content = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: error ? RdColors.dangerText : RdColors.secondary,
-          ),
-        ),
-        if (message != null && message!.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          Text(
-            message!,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 13,
-              height: 1.5,
-              color: RdColors.muted,
-            ),
-          ),
-        ],
-      ],
-    );
-    final row = Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (leading != null) ...[
-          Padding(padding: const EdgeInsets.only(top: 3), child: leading),
-          const SizedBox(width: 10),
-        ],
-        Expanded(child: content),
-      ],
-    );
-    return error ? Semantics(liveRegion: true, child: row) : row;
   }
 }
 

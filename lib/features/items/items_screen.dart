@@ -14,7 +14,6 @@ import '../../ui/nexus_ui.dart'
 import '../../ui/redesign/rd_widgets.dart';
 import 'item_format.dart';
 import 'item_overlays.dart';
-import 'item_widgets.dart';
 import 'owned_count_editor.dart';
 
 /// Port of `src/pages/items.vue`, laid out after the redesign canvas
@@ -409,10 +408,11 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
   Widget _buildContent(NexusI18n i18n, bool compact) {
     if (_errorMessage.isNotEmpty) {
       return SliverToBoxAdapter(
-        child: ItemsStatePanel(
+        child: RdStatePanel(
+          kind: RdStateKind.error,
+          layout: RdStateLayout.left,
           title: i18n.t('itemsPage.states.error'),
           message: _errorMessage,
-          alert: true,
         ),
       );
     }
@@ -426,7 +426,11 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
     }
     if (_filteredItems.isEmpty) {
       return SliverToBoxAdapter(
-        child: ItemsStatePanel(title: i18n.t('itemsPage.states.empty')),
+        child: RdStatePanel(
+          kind: RdStateKind.empty,
+          layout: RdStateLayout.left,
+          title: i18n.t('itemsPage.states.empty'),
+        ),
       );
     }
     return SliverLayoutBuilder(

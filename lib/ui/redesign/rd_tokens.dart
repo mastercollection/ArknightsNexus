@@ -23,6 +23,9 @@ class RdColors {
 
   static const text = Color(0xFFF5F7FF);
 
+  /// First line of left-aligned state panels (`#dbe2f0`).
+  static const stateTitle = Color(0xFFDBE2F0);
+
   /// Headings of the operator detail panels (`#ecf0fa`).
   static const heading = Color(0xFFECF0FA);
   static const secondary = Color(0xFFC9D6EE);

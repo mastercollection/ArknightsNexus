@@ -419,11 +419,17 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
 
     final Widget body;
     if (_errorMessage.isNotEmpty) {
-      body = PlanErrorPanel(
+      body = RdStatePanel(
+        kind: RdStateKind.error,
+        layout: RdStateLayout.left,
         title: i18n.t('planPage.states.errorTitle'),
-        message: _errorMessage,
-        retryLabel: i18n.t('planPage.actions.retry'),
-        onRetry: _loadPlanOperators,
+        detail: _errorMessage,
+        action: RdButton(
+          label: i18n.t('planPage.actions.retry'),
+          onPressed: _loadPlanOperators,
+          variant: RdButtonVariant.tonal,
+          height: context.rdLayout == RdLayout.compact ? 44 : 40,
+        ),
       );
     } else if (_isLoading) {
       body = _OperatorsSkeleton(label: i18n.t('rd.plan.loading'));
@@ -504,9 +510,12 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
           ),
       ]);
     } else {
-      content = PlanEmptyBox(
+      content = RdStatePanel(
+        kind: RdStateKind.empty,
+        layout: RdStateLayout.left,
+        surface: RdStateSurface.inset,
         title: i18n.t('planPage.states.emptyTitle'),
-        description: i18n.t('planPage.states.emptyDescription'),
+        message: i18n.t('planPage.states.emptyDescription'),
       );
     }
 
@@ -537,9 +546,11 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
 
   Widget _buildSummaryTab(NexusI18n i18n, bool compact) {
     if (_summaryErrorMessage.isNotEmpty) {
-      return PlanErrorPanel(
+      return RdStatePanel(
+        kind: RdStateKind.error,
+        layout: RdStateLayout.left,
         title: i18n.t('planPage.summary.errorTitle'),
-        message: _summaryErrorMessage,
+        detail: _summaryErrorMessage,
       );
     }
     if (_summaryLoading) {
@@ -558,9 +569,12 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
         ),
     ];
     if (entries.isEmpty) {
-      return PlanEmptyBox(
+      return RdStatePanel(
+        kind: RdStateKind.empty,
+        layout: RdStateLayout.left,
+        surface: RdStateSurface.inset,
         title: i18n.t('planPage.summary.emptyTitle'),
-        description: i18n.t('planPage.summary.emptyDescription'),
+        message: i18n.t('planPage.summary.emptyDescription'),
       );
     }
 

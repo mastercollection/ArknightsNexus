@@ -11,9 +11,6 @@ import '../../ui/redesign/rd_widgets.dart';
 class PlanColors {
   const PlanColors._();
 
-  /// `#dbe2f0`: first line of state panels, tier labels.
-  static const stateTitle = Color(0xFFDBE2F0);
-
   /// `#ffb3b3`: shortage counts.
   static const shortage = Color(0xFFFFB3B3);
 
@@ -136,93 +133,6 @@ class PlanPageFrame extends StatelessWidget {
           Positioned.fill(child: body),
           if (overlay != null) overlay!,
         ],
-      ),
-    );
-  }
-}
-
-/// Empty state block (`rgba(255,255,255,0.03)`, radius 16).
-class PlanEmptyBox extends StatelessWidget {
-  const PlanEmptyBox({
-    required this.title,
-    required this.description,
-    super.key,
-  });
-
-  final String title;
-  final String description;
-
-  @override
-  Widget build(BuildContext context) {
-    return RdInset(
-      padding: EdgeInsets.all(_isCompact(context) ? 16 : 18),
-      radius: 16,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 15, color: PlanColors.stateTitle),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            description,
-            style: const TextStyle(fontSize: 13, color: RdColors.secondary2),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Error state with the raw error message and an optional retry button.
-class PlanErrorPanel extends StatelessWidget {
-  const PlanErrorPanel({
-    required this.title,
-    required this.message,
-    this.retryLabel,
-    this.onRetry,
-    super.key,
-  });
-
-  final String title;
-  final String message;
-  final String? retryLabel;
-  final VoidCallback? onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      liveRegion: true,
-      child: RdCard.tile(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 15,
-                color: PlanColors.stateTitle,
-              ),
-            ),
-            const SizedBox(height: 10),
-            SelectableText(
-              message,
-              style: planMono(13, color: RdColors.secondary2),
-            ),
-            if (onRetry != null && retryLabel != null) ...[
-              const SizedBox(height: 10),
-              RdButton(
-                label: retryLabel!,
-                onPressed: onRetry,
-                variant: RdButtonVariant.tonal,
-                height: _isCompact(context) ? 44 : 40,
-              ),
-            ],
-          ],
-        ),
       ),
     );
   }

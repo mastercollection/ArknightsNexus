@@ -97,7 +97,7 @@ class PlanMaterialsGrid extends ConsumerWidget {
                         tiers[index] > 0
                             ? 'T${tiers[index]}'
                             : i18n.t('planPage.summary.miscTier'),
-                        style: planMono(13, color: PlanColors.stateTitle),
+                        style: planMono(13, color: RdColors.stateTitle),
                       ),
                     ),
                     if (canExpandRecipes && index == 0)
@@ -176,7 +176,7 @@ class _ExpandToggle extends StatelessWidget {
                   label,
                   style: const TextStyle(
                     fontSize: 12,
-                    color: PlanColors.stateTitle,
+                    color: RdColors.stateTitle,
                   ),
                 ),
                 const SizedBox(width: 10),

@@ -276,13 +276,16 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         child: const _DetailLoading(),
       );
     } else if (_errorMessage.isNotEmpty) {
-      body = ItemsStatePanel(
+      body = RdStatePanel(
+        kind: RdStateKind.error,
+        layout: RdStateLayout.left,
         title: i18n.t('itemsDetail.states.error'),
         message: _errorMessage,
-        alert: true,
       );
     } else if (item == null) {
-      body = ItemsStatePanel(
+      body = RdStatePanel(
+        kind: RdStateKind.empty,
+        layout: RdStateLayout.left,
         title: i18n.t('itemsDetail.states.notFound'),
         message: i18n.t('itemsDetail.states.notFoundDescription'),
         action: RdButton(
@@ -399,7 +402,10 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
           ),
           SizedBox(height: gap),
           if (_buildingFormulaErrorMessage.isNotEmpty)
-            ItemsInlineError(
+            RdStatePanel(
+              kind: RdStateKind.error,
+              layout: RdStateLayout.left,
+              surface: RdStateSurface.inner,
               title: i18n.t('itemsDetail.states.buildingFormulaError'),
               message: _buildingFormulaErrorMessage,
             )
@@ -462,7 +468,10 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         ),
       );
     } else if (_penguinErrorMessage.isNotEmpty) {
-      body = ItemsInlineError(
+      body = RdStatePanel(
+        kind: RdStateKind.error,
+        layout: RdStateLayout.left,
+        surface: RdStateSurface.inner,
         title: i18n.t('itemsDetail.states.penguinError'),
         message: _penguinErrorMessage,
         color: RdColors.card,

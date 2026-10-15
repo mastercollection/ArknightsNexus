@@ -300,7 +300,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       if (_errorMessage.isNotEmpty) ...[
         SizedBox(height: compact ? 14 : 22),
-        _ErrorBanner(message: _errorMessage, compact: compact),
+        RdNotice(
+          text: _errorMessage,
+          tone: RdNoticeTone.danger,
+          showIcon: false,
+        ),
       ],
     ];
 
@@ -757,39 +761,6 @@ class _SettingsCard extends StatelessWidget {
             child,
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({required this.message, required this.compact});
-
-  final String message;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      liveRegion: true,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: compact ? 14 : 16,
-          vertical: 12,
-        ),
-        decoration: BoxDecoration(
-          color: RdColors.dangerFill,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: RdColors.dangerBorder),
-        ),
-        child: Text(
-          message,
-          style: TextStyle(
-            fontSize: compact ? 13 : 14,
-            height: 1.5,
-            color: RdColors.dangerText,
-          ),
-        ),
       ),
     );
   }

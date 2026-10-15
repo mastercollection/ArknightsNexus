@@ -7,7 +7,6 @@ import '../../domain/operator.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../ui/nexus_media.dart';
 import '../../ui/redesign/rd_widgets.dart';
-import 'plan_widgets.dart';
 
 /// Lets the plan page refresh or close the open picker.
 class PlanPickerController {
@@ -185,9 +184,12 @@ class _PlanOperatorPickerState extends ConsumerState<PlanOperatorPicker> {
     );
 
     final Widget list = operators.isEmpty
-        ? PlanEmptyBox(
+        ? RdStatePanel(
+            kind: RdStateKind.empty,
+            layout: RdStateLayout.left,
+            surface: RdStateSurface.inset,
             title: i18n.t('planPage.picker.emptyTitle'),
-            description: i18n.t('planPage.picker.emptyDescription'),
+            message: i18n.t('planPage.picker.emptyDescription'),
           )
         : ListView.separated(
             shrinkWrap: !compact,
