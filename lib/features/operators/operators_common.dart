@@ -149,56 +149,6 @@ class OpChip extends StatelessWidget {
   }
 }
 
-/// Square outlined stepper button (`−` / `+` next to the range sliders).
-class OpStepButton extends StatelessWidget {
-  const OpStepButton({
-    required this.icon,
-    required this.tooltip,
-    required this.onPressed,
-    this.size = 40,
-    super.key,
-  });
-
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback? onPressed;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      waitDuration: const Duration(milliseconds: 400),
-      child: Semantics(
-        button: true,
-        enabled: onPressed != null,
-        label: tooltip,
-        excludeSemantics: true,
-        child: Material(
-          color: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(RdRadii.small),
-            side: const BorderSide(color: RdColors.white14),
-          ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(RdRadii.small),
-            onTap: onPressed,
-            child: SizedBox(
-              width: size,
-              height: size,
-              child: Icon(
-                icon,
-                size: 18,
-                color: onPressed == null ? RdColors.muted : RdColors.secondary,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// `− slider +` row with a monospace readout (level and skill level).
 class OpRangeControl extends StatelessWidget {
   const OpRangeControl({
@@ -230,10 +180,11 @@ class OpRangeControl extends StatelessWidget {
     final enabled = max > min;
     return Row(
       children: [
-        OpStepButton(
-          icon: Icons.remove,
+        RdStepButton(
+          increase: false,
           tooltip: decreaseTooltip,
-          size: buttonSize,
+          width: buttonSize,
+          height: buttonSize,
           onPressed: clamped > min ? () => onChanged(clamped - 1) : null,
         ),
         Expanded(
@@ -258,10 +209,11 @@ class OpRangeControl extends StatelessWidget {
             ),
           ),
         ),
-        OpStepButton(
-          icon: Icons.add,
+        RdStepButton(
+          increase: true,
           tooltip: increaseTooltip,
-          size: buttonSize,
+          width: buttonSize,
+          height: buttonSize,
           onPressed: clamped < max ? () => onChanged(clamped + 1) : null,
         ),
         const SizedBox(width: 8),

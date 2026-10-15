@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../../ui/nexus_media.dart';
@@ -951,15 +950,16 @@ class PlanLevelStepper extends StatelessWidget {
     final upper = math.max(1, max);
     return Row(
       children: [
-        _StepButton(
-          symbol: '−',
+        RdStepButton(
+          increase: false,
           tooltip: decreaseLabel,
           width: compact ? 44 : 40,
+          height: 44,
           onPressed: value > 1 ? () => onChanged(math.max(1, value - 1)) : null,
         ),
         const SizedBox(width: 6),
         Expanded(
-          child: PlanNumberInput(
+          child: RdNumberInput(
             key: inputKey,
             value: value,
             min: 1,
@@ -969,10 +969,11 @@ class PlanLevelStepper extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 6),
-        _StepButton(
-          symbol: '+',
+        RdStepButton(
+          increase: true,
           tooltip: increaseLabel,
           width: compact ? 44 : 40,
+          height: 44,
           onPressed: value < upper
               ? () => onChanged(math.min(upper, value + 1))
               : null,
@@ -987,186 +988,6 @@ class PlanLevelStepper extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _StepButton extends StatelessWidget {
-  const _StepButton({
-    required this.symbol,
-    required this.tooltip,
-    required this.width,
-    required this.onPressed,
-  });
-
-  final String symbol;
-  final String tooltip;
-  final double width;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onPressed != null;
-    return Tooltip(
-      message: tooltip,
-      child: Semantics(
-        button: true,
-        enabled: enabled,
-        label: tooltip,
-        excludeSemantics: true,
-        child: Material(
-          color: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(RdRadii.small),
-            side: const BorderSide(color: RdColors.white14),
-          ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(RdRadii.small),
-            onTap: onPressed,
-            child: SizedBox(
-              width: width,
-              height: 44,
-              child: Center(
-                child: Text(
-                  symbol,
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: enabled ? RdColors.secondary : RdColors.placeholder,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Centered integer input that clamps to [min]..[max] while typing and
-/// restores the display value on blur (`el-input-number :controls=false`).
-class PlanNumberInput extends StatefulWidget {
-  const PlanNumberInput({
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.onChanged,
-    this.semanticLabel,
-    super.key,
-  });
-
-  final int value;
-  final int min;
-  final int max;
-  final ValueChanged<int> onChanged;
-  final String? semanticLabel;
-
-  @override
-  State<PlanNumberInput> createState() => _PlanNumberInputState();
-}
-
-class _PlanNumberInputState extends State<PlanNumberInput> {
-  late final TextEditingController _controller =
-      TextEditingController(text: '${widget.value}');
-  final _focusNode = FocusNode();
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(_handleFocus);
-  }
-
-  @override
-  void didUpdateWidget(PlanNumberInput oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final text = '${widget.value}';
-    if (_controller.text == text) {
-      return;
-    }
-    // Stepper taps change the value while the field may still hold focus;
-    // a field being edited (empty, or over the cap) is left alone.
-    final parsed = int.tryParse(_controller.text.trim());
-    if (!_focusNode.hasFocus ||
-        (parsed != null && _clamp(parsed) != widget.value)) {
-      _controller.value = TextEditingValue(
-        text: text,
-        selection: TextSelection.collapsed(offset: text.length),
-      );
-    }
-  }
-
-  @override
-  void dispose() {
-    _focusNode.removeListener(_handleFocus);
-    _focusNode.dispose();
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _handleFocus() {
-    if (!_focusNode.hasFocus) {
-      _restoreDisplay();
-    }
-    setState(() {});
-  }
-
-  void _restoreDisplay() {
-    final text = '${_clamp(widget.value)}';
-    if (_controller.text != text) {
-      _controller.text = text;
-    }
-  }
-
-  int _clamp(int value) {
-    final upper = math.max(widget.min, widget.max);
-    return value.clamp(widget.min, upper);
-  }
-
-  void _handleChanged(String text) {
-    final parsed = int.tryParse(text.trim());
-    if (parsed == null) {
-      return;
-    }
-    final next = _clamp(parsed);
-    if (next != widget.value) {
-      widget.onChanged(next);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final focused = _focusNode.hasFocus;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      height: 44,
-      alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: RdColors.segmentTrack,
-        borderRadius: BorderRadius.circular(RdRadii.small),
-        border: Border.all(
-          color: focused ? RdColors.accent : RdColors.white14,
-        ),
-      ),
-      child: Semantics(
-        label: widget.semanticLabel,
-        textField: true,
-        child: TextField(
-          controller: _controller,
-          focusNode: _focusNode,
-          textAlign: TextAlign.center,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          onChanged: _handleChanged,
-          onSubmitted: (_) => _restoreDisplay(),
-          cursorColor: RdColors.accent,
-          style: planMono(15),
-          decoration: const InputDecoration(
-            isCollapsed: true,
-            border: InputBorder.none,
-          ),
-        ),
-      ),
     );
   }
 }
