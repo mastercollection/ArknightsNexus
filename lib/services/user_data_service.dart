@@ -5,8 +5,14 @@ import '../core/errors/app_failure.dart';
 import '../domain/user_data.dart';
 import '../repositories/user_data_repository.dart';
 
+/// Validated access to `user_data.json`.
+///
+/// Every operation runs through one queue, so the read-modify-write of one
+/// save never interleaves with another (two item counts saved at once, or a
+/// favorite toggle racing the plan autosave, would otherwise drop one of the
+/// updates). Reads queue too, so they observe all earlier saves.
 class UserDataService {
-  const UserDataService(this._repository);
+  UserDataService(this._repository);
 
   static const maxUserDataImportBytes = 1024 * 1024;
   static const _maxElite = 2;
@@ -16,12 +22,37 @@ class UserDataService {
 
   final UserDataRepository _repository;
 
-  Future<List<String>> getFavorites() async {
+  /// Completes when the last queued operation has finished; null when the
+  /// queue is idle.
+  Future<void>? _tail;
+
+  /// Runs [operation] after every previously queued one has finished. An
+  /// idle queue starts it right away.
+  Future<T> _serialized<T>(Future<T> Function() operation) {
+    final previous = _tail;
+    final result =
+        previous == null ? operation() : previous.then((_) => operation());
+    final tail = result.then<void>((_) {}, onError: (Object _) {});
+    _tail = tail;
+    tail.whenComplete(() {
+      if (identical(_tail, tail)) {
+        _tail = null;
+      }
+    });
+    return result;
+  }
+
+  Future<List<String>> getFavorites() => _serialized(_getFavorites);
+
+  Future<List<String>> _getFavorites() async {
     final data = await _repository.read();
     return _sanitizeIds(data.favorites);
   }
 
-  Future<bool> toggleOperatorFavorite(String operatorId) async {
+  Future<bool> toggleOperatorFavorite(String operatorId) =>
+      _serialized(() => _toggleOperatorFavorite(operatorId));
+
+  Future<bool> _toggleOperatorFavorite(String operatorId) async {
     final normalizedId = _sanitizeId(operatorId);
     if (normalizedId.isEmpty) {
       return false;
@@ -44,7 +75,9 @@ class UserDataService {
     return !removed;
   }
 
-  Future<UserPlan> getUserPlan() async {
+  Future<UserPlan> getUserPlan() => _serialized(_getUserPlan);
+
+  Future<UserPlan> _getUserPlan() async {
     final data = await _repository.read();
     final normalized = _normalizeUserData(data);
     return UserPlan(
@@ -53,13 +86,18 @@ class UserDataService {
     );
   }
 
-  Future<String> exportUserData() async {
+  Future<String> exportUserData() => _serialized(_exportUserData);
+
+  Future<String> _exportUserData() async {
     final data = _normalizeUserData(await _repository.read());
     const encoder = JsonEncoder.withIndent('  ');
     return encoder.convert(data.toJson());
   }
 
-  Future<void> importUserData(String content) async {
+  Future<void> importUserData(String content) =>
+      _serialized(() => _importUserData(content));
+
+  Future<void> _importUserData(String content) async {
     final trimmed = _validateImportContent(content);
     final parsed = _parseUserData(trimmed);
     final normalized = _normalizeUserData(parsed);
@@ -67,7 +105,10 @@ class UserDataService {
     await _repository.write(normalized);
   }
 
-  Future<List<String>> saveUserPlanSelection(List<String> operatorIds) async {
+  Future<List<String>> saveUserPlanSelection(List<String> operatorIds) =>
+      _serialized(() => _saveUserPlanSelection(operatorIds));
+
+  Future<List<String>> _saveUserPlanSelection(List<String> operatorIds) async {
     final data = await _repository.read();
     final selectedOperatorIds = _sanitizeIds(operatorIds);
     final operatorPlans = data.operatorPlans
@@ -83,7 +124,10 @@ class UserDataService {
     return selectedOperatorIds;
   }
 
-  Future<UserPlanOperator> saveUserPlanOperator(UserPlanOperator plan) async {
+  Future<UserPlanOperator> saveUserPlanOperator(UserPlanOperator plan) =>
+      _serialized(() => _saveUserPlanOperator(plan));
+
+  Future<UserPlanOperator> _saveUserPlanOperator(UserPlanOperator plan) async {
     final data = await _repository.read();
     final validated = _validatePlan(plan);
     final plans = <UserPlanOperator>[
@@ -107,7 +151,10 @@ class UserDataService {
     return validated;
   }
 
-  Future<bool> removeUserPlanOperator(String operatorId) async {
+  Future<bool> removeUserPlanOperator(String operatorId) =>
+      _serialized(() => _removeUserPlanOperator(operatorId));
+
+  Future<bool> _removeUserPlanOperator(String operatorId) async {
     final normalizedId = _sanitizeId(operatorId);
     if (normalizedId.isEmpty) {
       return false;
@@ -133,7 +180,10 @@ class UserDataService {
     return changed;
   }
 
-  Future<int> saveUserItemCount(String itemId, int count) async {
+  Future<int> saveUserItemCount(String itemId, int count) =>
+      _serialized(() => _saveUserItemCount(itemId, count));
+
+  Future<int> _saveUserItemCount(String itemId, int count) async {
     final normalizedId = _sanitizeId(itemId);
     if (normalizedId.isEmpty) {
       throw const InvalidInputFailure('itemId');
@@ -156,7 +206,10 @@ class UserDataService {
     return count;
   }
 
-  Future<int> importUserItemCounts(String content) async {
+  Future<int> importUserItemCounts(String content) =>
+      _serialized(() => _importUserItemCounts(content));
+
+  Future<int> _importUserItemCounts(String content) async {
     final trimmed = _validateImportContent(content);
     final parsed = jsonDecode(trimmed);
     if (parsed is! Map) {

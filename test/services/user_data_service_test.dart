@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:arknight_nexus/core/errors/app_failure.dart';
 import 'package:arknight_nexus/domain/user_data.dart';
 import 'package:arknight_nexus/repositories/json_user_data_repository.dart';
+import 'package:arknight_nexus/repositories/user_data_repository.dart';
 import 'package:arknight_nexus/services/user_data_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -231,6 +232,76 @@ void main() {
       );
     });
   });
+
+  group('UserDataService concurrency', () {
+    test('overlapping saves keep every update', () async {
+      final repository = _SlowMemoryRepository();
+      final service = UserDataService(repository);
+
+      await Future.wait<Object?>([
+        for (var i = 1; i <= 10; i++) service.saveUserItemCount('item_$i', i),
+        service.toggleOperatorFavorite('char_002_amiya'),
+        service.saveUserPlanOperator(_plan('char_003_kalts')),
+        service.saveUserPlanSelection(['char_003_kalts', 'char_017_huang']),
+        service.toggleOperatorFavorite('char_017_huang'),
+      ]);
+
+      final stored = repository.data;
+      expect(stored.itemCounts, {for (var i = 1; i <= 10; i++) 'item_$i': i});
+      expect(stored.favorites, ['char_002_amiya', 'char_017_huang']);
+      expect(stored.selectedOperatorIds, ['char_003_kalts', 'char_017_huang']);
+      expect(stored.operatorPlans.single.operatorId, 'char_003_kalts');
+      expect(repository.maxConcurrentWrites, 1);
+    });
+
+    test('a failed save does not block later ones', () async {
+      final repository = _SlowMemoryRepository()..failNextWrite = true;
+      final service = UserDataService(repository);
+
+      final failing = service.saveUserItemCount('item_1', 1);
+      final next = service.saveUserItemCount('item_2', 2);
+
+      await expectLater(failing, throwsA(isA<CacheFailure>()));
+      expect(await next, 2);
+      expect(repository.data.itemCounts, {'item_2': 2});
+    });
+  });
+}
+
+/// In-memory repository whose reads and writes take a few event-loop turns,
+/// so unserialized read-modify-write cycles would interleave.
+class _SlowMemoryRepository implements UserDataRepository {
+  UserData data = const UserData();
+  bool failNextWrite = false;
+  int _activeWrites = 0;
+  int maxConcurrentWrites = 0;
+
+  @override
+  Future<UserData> read() async {
+    await Future<void>.delayed(const Duration(milliseconds: 2));
+    return data;
+  }
+
+  @override
+  Future<void> write(UserData value) async {
+    _activeWrites++;
+    if (_activeWrites > maxConcurrentWrites) {
+      maxConcurrentWrites = _activeWrites;
+    }
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 2));
+      if (failNextWrite) {
+        failNextWrite = false;
+        throw const CacheFailure('disk full');
+      }
+      data = value;
+    } finally {
+      _activeWrites--;
+    }
+  }
+
+  @override
+  Future<void> backup() async {}
 }
 
 const _rawPlanWithMissingSkillLevels = UserPlanOperator(
