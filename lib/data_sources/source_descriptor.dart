@@ -1,3 +1,4 @@
+import 'arknights_data_source.dart';
 import 'region_code.dart';
 
 class SourceDescriptor {
@@ -23,7 +24,7 @@ class SourceDescriptor {
 
   factory SourceDescriptor.forRegion(RegionCode region) {
     final tableUris = <String, Uri>{};
-    for (final fileName in _requiredTableFiles) {
+    for (final fileName in ArknightsDataSource.requiredTableFiles) {
       tableUris[fileName] = _rawUri(region, fileName);
     }
 
@@ -31,7 +32,7 @@ class SourceDescriptor {
       region: region,
       repositoryUri: Uri.parse(repository),
       branch: defaultBranch,
-      dataVersionUri: _rawUri(region, 'data_version.txt'),
+      dataVersionUri: _rawUri(region, ArknightsDataSource.dataVersionFile),
       tableUris: Map.unmodifiable(tableUris),
     );
   }
@@ -47,17 +48,3 @@ class SourceDescriptor {
     );
   }
 }
-
-const _requiredTableFiles = [
-  'character_table.json',
-  'skill_table.json',
-  'gamedata_const.json',
-  'uniequip_table.json',
-  'handbook_team_table.json',
-  'range_table.json',
-  'item_table.json',
-  'stage_table.json',
-  'building_data.json',
-  'battle_equip_table.json',
-  'favor_table.json',
-];

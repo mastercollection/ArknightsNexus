@@ -7,12 +7,15 @@ import '../../raw_models/stage_table.dart';
 class ItemNormalizer {
   const ItemNormalizer();
 
+  /// [stageCodes] is [stageCodeMap] of [stageTable], passed in when the
+  /// caller already built it.
   List<ItemEntry> normalize(
     RawItemTable itemTable,
     RawStageTable stageTable,
-    RawBuildingData _,
-  ) {
-    final stageCodes = stageCodeMap(stageTable);
+    RawBuildingData _, {
+    Map<String, String>? stageCodes,
+  }) {
+    final codes = stageCodes ?? stageCodeMap(stageTable);
 
     final items = itemTable.items.values.map((raw) {
       return ItemEntry(
@@ -30,7 +33,7 @@ class ItemNormalizer {
             .map(
               (entry) => ItemStageDrop(
                 stageId: entry.stageId,
-                stageCode: stageCodes[entry.stageId],
+                stageCode: codes[entry.stageId],
                 occPer: entry.occPer,
               ),
             )

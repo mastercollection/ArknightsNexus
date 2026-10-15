@@ -72,6 +72,25 @@ void main() {
       }
     });
 
+    test('a sync replaces the in-memory snapshot readers get', () async {
+      await service.syncRegion(RegionCode.kr).drain<void>();
+      final first = await cache.readSnapshot(RegionCode.kr);
+      expect(identical(first, await cache.readSnapshot(RegionCode.kr)), isTrue);
+
+      http.registerText(
+        RegionCode.kr.descriptor.dataVersionUri,
+        'Stream://torappu-data/v068/rel68.0\n'
+        'Change:100034 on 2025/12/16\n'
+        'VersionControl:68.3.0\n',
+      );
+      await service.ensureRegionFresh(RegionCode.kr);
+      final second = await cache.readSnapshot(RegionCode.kr);
+
+      expect(identical(first, second), isFalse);
+      expect(second!.sourceVersion.versionControl, '68.3.0');
+      expect(first!.sourceVersion.versionControl, '68.2.0');
+    });
+
     test('records table revisions as the source revision like Rust', () async {
       final descriptor = RegionCode.kr.descriptor;
       await service.syncRegion(RegionCode.kr).drain<void>();

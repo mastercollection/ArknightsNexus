@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:isolate';
 
 import '../core/http/http_client.dart';
 import '../data_sources/arknights_data_source.dart';
@@ -69,14 +70,15 @@ class DartRegionSyncService implements RegionSyncService {
       phase: SyncPhase.downloading,
       remoteVersion: version.versionControl,
     );
-    final raw = await _fetchRawTables(region);
+    final downloaded = await _downloadTables(region);
 
     yield SyncStatus(
       region: region,
       phase: SyncPhase.normalizing,
       remoteVersion: version.versionControl,
     );
-    final normalized = _normalize(region, version, raw);
+    final normalized =
+        await _normalizeInBackground(region, version, downloaded);
 
     yield SyncStatus(
       region: region,
@@ -109,8 +111,9 @@ class DartRegionSyncService implements RegionSyncService {
       );
     }
 
-    final raw = await _fetchRawTables(region);
-    final normalized = _normalize(region, remoteVersion, raw);
+    final downloaded = await _downloadTables(region);
+    final normalized =
+        await _normalizeInBackground(region, remoteVersion, downloaded);
     await _write(region, normalized);
     return normalized.result;
   }
@@ -135,122 +138,58 @@ class DartRegionSyncService implements RegionSyncService {
     return DataVersion.parse(body);
   }
 
-  Future<_RawTables> _fetchRawTables(RegionCode region) async {
+  /// Downloads every required table, a few at a time.
+  Future<_DownloadedTables> _downloadTables(RegionCode region) async {
     final descriptor = region.descriptor;
-    final payloads = <String, Map<String, Object?>>{};
+    final bodies = <String, String>{};
     final revisions = <String, String>{};
-    for (final file in ArknightsDataSource.requiredTableFiles) {
-      final response =
-          await _httpClient.getTextWithRevision(descriptor.tableUri(file));
-      payloads[file] = jsonDecode(response.body) as Map<String, Object?>;
-      final revision = response.revision;
-      if (revision != null) {
-        revisions[file] = revision;
+    final pending = List.of(ArknightsDataSource.requiredTableFiles);
+
+    Future<void> worker() async {
+      while (pending.isNotEmpty) {
+        final file = pending.removeAt(0);
+        final HttpTextResponse response;
+        try {
+          response =
+              await _httpClient.getTextWithRevision(descriptor.tableUri(file));
+        } catch (_) {
+          // The sync fails anyway; do not start the remaining downloads.
+          pending.clear();
+          rethrow;
+        }
+        bodies[file] = response.body;
+        final revision = response.revision;
+        if (revision != null) {
+          revisions[file] = revision;
+        }
       }
     }
 
-    return _RawTables(
-      revisions: revisions,
-      characters: RawCharacterTable.fromJson(
-        payloads[ArknightsDataSource.characterTableFile]!,
-      ),
-      skills:
-          RawSkillTable.fromJson(payloads[ArknightsDataSource.skillTableFile]!),
-      constants: RawGameDataConst.fromJson(
-        payloads[ArknightsDataSource.gamedataConstFile]!,
-      ),
-      uniequip: RawUniequipTable.fromJson(
-        payloads[ArknightsDataSource.uniequipTableFile]!,
-      ),
-      handbook: RawHandbookTeamTable.fromJson(
-        payloads[ArknightsDataSource.handbookTeamTableFile]!,
-      ),
-      ranges:
-          RawRangeTable.fromJson(payloads[ArknightsDataSource.rangeTableFile]!),
-      items:
-          RawItemTable.fromJson(payloads[ArknightsDataSource.itemTableFile]!),
-      stages:
-          RawStageTable.fromJson(payloads[ArknightsDataSource.stageTableFile]!),
-      building: RawBuildingData.fromJson(
-        payloads[ArknightsDataSource.buildingDataFile]!,
-      ),
-      battleEquip: RawBattleEquipTable.fromJson(
-        payloads[ArknightsDataSource.battleEquipTableFile]!,
-      ),
-      favor:
-          RawFavorTable.fromJson(payloads[ArknightsDataSource.favorTableFile]!),
+    await Future.wait(
+      [for (var i = 0; i < _maxConcurrentDownloads; i++) worker()],
     );
+    return _DownloadedTables(bodies: bodies, revisions: revisions);
   }
 
-  _NormalizedRegion _normalize(
+  /// Decodes and normalizes on a background isolate: the tables are about
+  /// 80 MB of JSON, which would otherwise freeze the UI for seconds.
+  Future<_NormalizedRegion> _normalizeInBackground(
     RegionCode region,
     DataVersion version,
-    _RawTables raw,
+    _DownloadedTables downloaded,
   ) {
-    final stageCodes = _itemNormalizer.stageCodeMap(raw.stages);
-    final buildingFormulas = _buildingFormulaNormalizer.normalize(raw.building);
-    final items =
-        _itemNormalizer.normalize(raw.items, raw.stages, raw.building);
-    final terms = _termNormalizer.normalize(raw.constants);
-    final operators = _operatorNormalizer.normalize(
-      region: region,
-      characters: raw.characters,
-      skills: raw.skills,
-      constants: raw.constants,
-      ranges: raw.ranges,
-      uniequip: raw.uniequip,
-      battleEquip: raw.battleEquip,
-      favor: raw.favor,
-      items: raw.items,
-      handbook: raw.handbook,
-    );
-    final fetchedAt = DateTime.now().toUtc();
-    final sourceRevision = _sourceRevision(region, raw.revisions);
-    final summaryOperators = operators.map(_summary).toList();
-
-    final snapshot = RegionSnapshot(
-      schemaVersionValue: RegionSnapshot.schemaVersion,
-      region: region,
-      sourceRevision: sourceRevision,
-      sourceVersion: version,
-      fetchedAt: fetchedAt,
-      stageCodeMap: stageCodes,
-      terms: terms,
-      items: items,
-      buildingFormulas: buildingFormulas,
-      operators: operators,
-    );
-    final summary = RegionSummarySnapshot(
-      schemaVersionValue: RegionSnapshot.schemaVersion,
-      region: region,
-      sourceRevision: sourceRevision,
-      sourceVersion: version,
-      fetchedAt: fetchedAt,
-      operators: summaryOperators,
-    );
-    final status = RegionSyncStatus(
-      region: region,
-      sourceRevision: sourceRevision,
-      sourceVersion: version.versionControl,
-      fetchedAt: fetchedAt.toIso8601String(),
-      operatorCount: operators.length,
-      isReady: true,
-    );
-    final result = SyncResult(
-      region: region,
-      sourceRevision: sourceRevision,
-      sourceVersion: version.versionControl,
-      updatedAt: fetchedAt.toIso8601String(),
-      operatorCount: operators.length,
-      status: 'success',
-    );
-
-    return _NormalizedRegion(
-      snapshot: snapshot,
-      summary: summary,
-      status: status,
-      terms: terms,
-      result: result,
+    return _runNormalizeJob(
+      _NormalizeJob(
+        region: region,
+        version: version,
+        downloaded: downloaded,
+        normalizers: _Normalizers(
+          item: _itemNormalizer,
+          buildingFormula: _buildingFormulaNormalizer,
+          term: _termNormalizer,
+          operator: _operatorNormalizer,
+        ),
+      ),
     );
   }
 
@@ -260,36 +199,156 @@ class DartRegionSyncService implements RegionSyncService {
     await _cache.writeStatus(normalized.status);
     await _cache.writeTerms(region, normalized.terms);
   }
+}
 
-  OperatorSummary _summary(OperatorDetail detail) {
-    return OperatorSummary(
-      id: detail.id,
-      name: detail.name,
-      rarity: detail.rarity,
-      profession: detail.profession,
-      branch: detail.branch,
-      teams: detail.teams,
-      nations: detail.nations,
-      groups: detail.groups,
-      baTags: detail.baTags,
-      thumbnailHue: detail.thumbnailHue,
-    );
-  }
+const _maxConcurrentDownloads = 4;
+
+/// Everything the background isolate needs; all of it is plain data.
+class _NormalizeJob {
+  const _NormalizeJob({
+    required this.region,
+    required this.version,
+    required this.downloaded,
+    required this.normalizers,
+  });
+
+  final RegionCode region;
+  final DataVersion version;
+  final _DownloadedTables downloaded;
+  final _Normalizers normalizers;
+}
+
+class _Normalizers {
+  const _Normalizers({
+    required this.item,
+    required this.buildingFormula,
+    required this.term,
+    required this.operator,
+  });
+
+  final ItemNormalizer item;
+  final BuildingFormulaNormalizer buildingFormula;
+  final TermNormalizer term;
+  final OperatorNormalizer operator;
+}
+
+class _DownloadedTables {
+  const _DownloadedTables({required this.bodies, required this.revisions});
+
+  /// Response body per table file.
+  final Map<String, String> bodies;
+
+  /// Response revision per table file.
+  final Map<String, String> revisions;
+}
+
+// Top-level so the closure handed to `Isolate.run` captures only the job,
+// not the service and its HTTP client.
+Future<_NormalizedRegion> _runNormalizeJob(_NormalizeJob job) =>
+    Isolate.run(() => _decodeAndNormalize(job));
+
+_NormalizedRegion _decodeAndNormalize(_NormalizeJob job) {
+  final raw = _RawTables.decode(job.downloaded);
+  return _normalize(job.region, job.version, raw, job.normalizers);
+}
+
+_NormalizedRegion _normalize(
+  RegionCode region,
+  DataVersion version,
+  _RawTables raw,
+  _Normalizers normalizers,
+) {
+  final stageCodes = normalizers.item.stageCodeMap(raw.stages);
+  final buildingFormulas = normalizers.buildingFormula.normalize(raw.building);
+  final items = normalizers.item.normalize(
+    raw.items,
+    raw.stages,
+    raw.building,
+    stageCodes: stageCodes,
+  );
+  final terms = normalizers.term.normalize(raw.constants);
+  final operators = normalizers.operator.normalize(
+    region: region,
+    characters: raw.characters,
+    skills: raw.skills,
+    constants: raw.constants,
+    ranges: raw.ranges,
+    uniequip: raw.uniequip,
+    battleEquip: raw.battleEquip,
+    favor: raw.favor,
+    items: raw.items,
+    handbook: raw.handbook,
+  );
+  final fetchedAt = DateTime.now().toUtc();
+  final sourceRevision = _sourceRevision(region, raw.revisions);
+  final summaryOperators = operators.map(_summary).toList();
+
+  final snapshot = RegionSnapshot(
+    schemaVersionValue: RegionSnapshot.schemaVersion,
+    region: region,
+    sourceRevision: sourceRevision,
+    sourceVersion: version,
+    fetchedAt: fetchedAt,
+    stageCodeMap: stageCodes,
+    terms: terms,
+    items: items,
+    buildingFormulas: buildingFormulas,
+    operators: operators,
+  );
+  final summary = RegionSummarySnapshot(
+    schemaVersionValue: RegionSnapshot.schemaVersion,
+    region: region,
+    sourceRevision: sourceRevision,
+    sourceVersion: version,
+    fetchedAt: fetchedAt,
+    operators: summaryOperators,
+  );
+  final status = RegionSyncStatus(
+    region: region,
+    sourceRevision: sourceRevision,
+    sourceVersion: version.versionControl,
+    fetchedAt: fetchedAt.toIso8601String(),
+    operatorCount: operators.length,
+    isReady: true,
+  );
+  final result = SyncResult(
+    region: region,
+    sourceRevision: sourceRevision,
+    sourceVersion: version.versionControl,
+    updatedAt: fetchedAt.toIso8601String(),
+    operatorCount: operators.length,
+    status: 'success',
+  );
+
+  return _NormalizedRegion(
+    snapshot: snapshot,
+    summary: summary,
+    status: status,
+    terms: terms,
+    result: result,
+  );
+}
+
+OperatorSummary _summary(OperatorDetail detail) {
+  return OperatorSummary(
+    id: detail.id,
+    name: detail.name,
+    rarity: detail.rarity,
+    profession: detail.profession,
+    branch: detail.branch,
+    teams: detail.teams,
+    nations: detail.nations,
+    groups: detail.groups,
+    baTags: detail.baTags,
+    thumbnailHue: detail.thumbnailHue,
+  );
 }
 
 /// Rust `sync_region_data`: table revisions joined in this order (game data
 /// constants are not part of it), or the branch when none were reported.
-const _revisionTableOrder = [
-  ArknightsDataSource.characterTableFile,
-  ArknightsDataSource.skillTableFile,
-  ArknightsDataSource.uniequipTableFile,
-  ArknightsDataSource.handbookTeamTableFile,
-  ArknightsDataSource.rangeTableFile,
-  ArknightsDataSource.itemTableFile,
-  ArknightsDataSource.stageTableFile,
-  ArknightsDataSource.buildingDataFile,
-  ArknightsDataSource.battleEquipTableFile,
-  ArknightsDataSource.favorTableFile,
+final _revisionTableOrder = [
+  for (final file in ArknightsDataSource.requiredTableFiles)
+    if (file != ArknightsDataSource.gamedataConstFile) file,
 ];
 
 String _sourceRevision(RegionCode region, Map<String, String> revisions) {
@@ -315,6 +374,38 @@ class _RawTables {
     required this.battleEquip,
     required this.favor,
   });
+
+  factory _RawTables.decode(_DownloadedTables downloaded) {
+    Map<String, Object?> table(String file) =>
+        jsonDecode(downloaded.bodies[file]!) as Map<String, Object?>;
+
+    return _RawTables(
+      revisions: downloaded.revisions,
+      characters: RawCharacterTable.fromJson(
+        table(ArknightsDataSource.characterTableFile),
+      ),
+      skills: RawSkillTable.fromJson(table(ArknightsDataSource.skillTableFile)),
+      constants: RawGameDataConst.fromJson(
+        table(ArknightsDataSource.gamedataConstFile),
+      ),
+      uniequip: RawUniequipTable.fromJson(
+        table(ArknightsDataSource.uniequipTableFile),
+      ),
+      handbook: RawHandbookTeamTable.fromJson(
+        table(ArknightsDataSource.handbookTeamTableFile),
+      ),
+      ranges: RawRangeTable.fromJson(table(ArknightsDataSource.rangeTableFile)),
+      items: RawItemTable.fromJson(table(ArknightsDataSource.itemTableFile)),
+      stages: RawStageTable.fromJson(table(ArknightsDataSource.stageTableFile)),
+      building: RawBuildingData.fromJson(
+        table(ArknightsDataSource.buildingDataFile),
+      ),
+      battleEquip: RawBattleEquipTable.fromJson(
+        table(ArknightsDataSource.battleEquipTableFile),
+      ),
+      favor: RawFavorTable.fromJson(table(ArknightsDataSource.favorTableFile)),
+    );
+  }
 
   /// Response revision per table file.
   final Map<String, String> revisions;
