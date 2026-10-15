@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:arknight_nexus/data_sources/arknights_data_source.dart';
 import 'package:arknight_nexus/data_sources/published_data.dart';
 import 'package:arknight_nexus/data_sources/region_code.dart';
+import 'package:arknight_nexus/domain/building_formula.dart';
 import 'package:arknight_nexus/domain/region_snapshot.dart';
+import 'package:arknight_nexus/services/plan_cost_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../tool/src/snapshot_builder.dart';
@@ -21,6 +24,8 @@ void main() {
     tempRoot = await Directory.systemTemp.createTemp('snapshot-builder-test-');
     http = FakeHttpClient();
     await registerRawFixtures(http, RegionCode.kr);
+    await registerRawFixtures(http, RegionCode.en);
+    await registerRawFixtures(http, RegionCode.cn);
   });
 
   tearDown(() async {
@@ -29,13 +34,27 @@ void main() {
     }
   });
 
-  Future<SnapshotBuildResult> build(String name, {String? fingerprint}) {
+  Future<SnapshotBuildResult> build(
+    String name, {
+    String? fingerprint,
+    List<RegionCode> regions = const [RegionCode.kr],
+  }) {
     return SnapshotBuilder(
       httpClient: http,
       outDir: Directory('${tempRoot.path}/$name'),
       fingerprint: fingerprint,
       log: (_) {},
-    ).build(regions: [RegionCode.kr], previousManifestUri: _previousManifest);
+    ).build(regions: regions, previousManifestUri: _previousManifest);
+  }
+
+  Future<RegionSnapshot> readSnapshot(String name, RegionCode region) async {
+    final file = File(
+      '${tempRoot.path}/$name/'
+      '${PublishedData.snapshotPath(RegionSnapshot.schemaVersion, region)}',
+    );
+    return RegionSnapshot.fromJson(
+      jsonDecode(await file.readAsString()) as Map<String, Object?>,
+    );
   }
 
   /// Serves the output of [name] as the previously published site.
@@ -60,10 +79,9 @@ void main() {
     }
   }
 
-  bool requestedTables() => http.requestedUris.contains(
-        RegionCode.kr.descriptor.tableUri(
-          ArknightsDataSource.characterTableFile,
-        ),
+  bool requestedTables([RegionCode region = RegionCode.kr]) =>
+      http.requestedUris.contains(
+        region.descriptor.tableUri(ArknightsDataSource.characterTableFile),
       );
 
   test('generates every region without a previous manifest', () async {
@@ -160,5 +178,180 @@ void main() {
     expect(result.regions.single.outcome, RegionBuildOutcome.failed);
     expect(result.hasFailures, isTrue);
     expect(result.manifest.regions, isEmpty);
+  });
+
+  group('unreleased operators', () {
+    setUp(() async {
+      // A (older) is out on EN and CN, B (newer) only on CN; KR has neither.
+      await registerRawFixtures(
+        http,
+        RegionCode.cn,
+        extraOperators: const [
+          ExtraOperator(
+            id: 'char_900_a',
+            name: 'A-CN',
+            itemId: '39001',
+            itemName: 'Stone-CN',
+          ),
+          ExtraOperator(
+            id: 'char_901_b',
+            name: 'B-CN',
+            itemId: '39002',
+            itemName: 'Gem-CN',
+          ),
+        ],
+      );
+      await registerRawFixtures(
+        http,
+        RegionCode.en,
+        extraOperators: const [
+          ExtraOperator(
+            id: 'char_900_a',
+            name: 'A-EN',
+            itemId: '39001',
+            itemName: 'Stone-EN',
+          ),
+        ],
+      );
+    });
+
+    test('are added from EN before CN, newest first', () async {
+      final result = await build(
+        'first',
+        regions: [RegionCode.cn, RegionCode.kr, RegionCode.en],
+      );
+      expect(result.hasFailures, isFalse);
+
+      final kr = await readSnapshot('first', RegionCode.kr);
+      expect(
+        kr.operators.map((o) => '${o.name}:${o.unreleasedSource}'),
+        [
+          'B-CN:cn',
+          'A-EN:en',
+          'Bravo:null',
+          'Amiya:null',
+          'Alpha:null',
+        ],
+      );
+      expect(kr.unreleasedSourceVersions, {'en': '68.2.0', 'cn': '68.2.0'});
+      expect(
+        result.manifest.regions[RegionCode.kr]!.unreleasedSourceVersions,
+        {'en': '68.2.0', 'cn': '68.2.0'},
+      );
+
+      // EN borrows only from CN; CN has nothing to borrow.
+      final en = await readSnapshot('first', RegionCode.en);
+      expect(
+        en.operators.map((o) => '${o.name}:${o.unreleasedSource}').take(2),
+        ['B-CN:cn', 'A-EN:null'],
+      );
+      expect(en.unreleasedSourceVersions, {'cn': '68.2.0'});
+      final cn = await readSnapshot('first', RegionCode.cn);
+      expect(cn.operators.where((o) => o.isUnreleased), isEmpty);
+      expect(cn.unreleasedSourceVersions, isEmpty);
+      expect(
+        [for (final report in result.regions) report.unreleasedCounts],
+        [
+          <String, int>{},
+          {'cn': 1, 'en': 1},
+          {'cn': 1},
+        ],
+      );
+    });
+
+    test('bring the items and terms they need', () async {
+      await build('first', regions: [RegionCode.kr]);
+      final kr = await readSnapshot('first', RegionCode.kr);
+
+      final items = {for (final item in kr.items) item.itemId: item};
+      expect(items['39001']!.name, 'Stone-EN');
+      expect(items['39001']!.unreleasedSource, 'en');
+      expect(items['39002']!.name, 'Gem-CN');
+      expect(items['39002']!.unreleasedSource, 'cn');
+      for (final id in ['39001', '39002']) {
+        expect(items[id]!.stageDropList, isEmpty);
+        expect(items[id]!.buildingProductList, isEmpty);
+      }
+      expect(items['30012']!.unreleasedSource, isNull);
+      expect(items['30012']!.stageDropList, isNotEmpty);
+
+      // The trait's term and the term that one links, from the source.
+      expect(kr.terms['ba.char_900_a'], 'Like <\$ba.char_900_a.more>more</>');
+      expect(kr.terms['ba.char_900_a.more'], 'Even more');
+      expect(kr.terms['ba.char_901_b.more'], 'Even more');
+
+      // Plan costs of a borrowed operator resolve the borrowed item.
+      const costs = DartPlanCostService();
+      final operator = kr.operators.firstWhere((o) => o.id == 'char_900_a');
+      final plan = costs.createDefaultPlanOperator(operator);
+      final breakdown = costs.calculatePlanCostsWithItems(
+        operator,
+        plan,
+        items,
+      );
+      expect(breakdown.valid, isTrue);
+      final expanded = costs.expandPlanMaterials(
+        breakdown.materials,
+        const BuildingFormulaBundle(),
+        items,
+      );
+      expect(
+        expanded.where((m) => m.id == '39001').map((m) => m.name),
+        ['Stone-EN'],
+      );
+    });
+
+    test('regenerate a region when a source changed', () async {
+      await build('first', fingerprint: 'f1');
+      await serveAsPrevious('first');
+      await registerRawFixtures(
+        http,
+        RegionCode.en,
+        versionControl: '68.9.0',
+      );
+      http.requestedUris.clear();
+
+      final second = await build('second', fingerprint: 'f1');
+
+      expect(second.regions.single.outcome, RegionBuildOutcome.generated);
+      final entry = second.manifest.regions[RegionCode.kr]!;
+      expect(entry.versionControl, '68.2.0');
+      expect(entry.unreleasedSourceVersions, {'en': '68.9.0', 'cn': '68.2.0'});
+      // A from CN now: the new EN data does not have it.
+      final kr = await readSnapshot('second', RegionCode.kr);
+      expect(
+        kr.operators.where((o) => o.isUnreleased).map((o) => o.name),
+        ['B-CN', 'A-CN'],
+      );
+    });
+
+    test('read unchanged sources from the previous site', () async {
+      await build(
+        'first',
+        fingerprint: 'f1',
+        regions: [RegionCode.cn, RegionCode.kr, RegionCode.en],
+      );
+      await serveAsPrevious('first');
+      http
+        ..registerText(
+          RegionCode.kr.descriptor.dataVersionUri,
+          'VersionControl:68.3.0\n',
+        )
+        ..requestedUris.clear();
+
+      final second = await build('second', fingerprint: 'f1');
+
+      expect(second.regions.single.outcome, RegionBuildOutcome.generated);
+      expect(requestedTables(RegionCode.kr), isTrue);
+      expect(requestedTables(RegionCode.en), isFalse);
+      expect(requestedTables(RegionCode.cn), isFalse);
+      final kr = await readSnapshot('second', RegionCode.kr);
+      expect(
+        kr.operators
+            .where((o) => o.isUnreleased)
+            .map((o) => '${o.name}:${o.unreleasedSource}'),
+        ['B-CN:cn', 'A-EN:en'],
+      );
+    });
   });
 }

@@ -5,10 +5,15 @@
 ///   [--regions kr,en] [--previous-manifest URL] [--fingerprint HASH]
 /// ```
 ///
+/// Every snapshot also lists the operators its region has not released yet,
+/// taken from EN, then CN (see `src/unreleased_operators.dart`), so EN and
+/// CN are read even when `--regions` leaves them out.
+///
 /// `--previous-manifest` points at the currently published `manifest.json`.
-/// A region whose upstream `VersionControl` and schema are unchanged is then
-/// copied from the published site (after checking its SHA-256) instead of
-/// being regenerated, but only when `--fingerprint` equals the previous
+/// A region whose upstream `VersionControl`, schema and unreleased operator
+/// sources' `VersionControl`s are unchanged is then copied from the
+/// published site (after checking its SHA-256) instead of being
+/// regenerated, but only when `--fingerprint` equals the previous
 /// manifest's fingerprint, i.e. the generator inputs did not change. When a
 /// region fails to generate, its previous copy is kept; without one the tool
 /// exits with code 1 so the workflow does not deploy a site missing it.
