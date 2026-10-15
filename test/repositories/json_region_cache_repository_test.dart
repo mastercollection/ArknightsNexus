@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:arknight_nexus/core/errors/app_failure.dart';
@@ -95,6 +96,75 @@ void main() {
 
     test('returns empty terms map when terms cache is missing', () async {
       expect(await repository.readTerms(RegionCode.kr), isEmpty);
+    });
+
+    test('decodes the snapshot once and shares it between readers', () async {
+      await repository.writeSnapshot(_snapshot());
+
+      final concurrent = await Future.wait([
+        repository.readSnapshot(RegionCode.kr),
+        repository.readSnapshot(RegionCode.kr),
+      ]);
+      final later = await repository.readSnapshot(RegionCode.kr);
+
+      expect(concurrent.first, isNotNull);
+      expect(identical(concurrent.first, concurrent.last), isTrue);
+      expect(identical(concurrent.first, later), isTrue);
+    });
+
+    test('a new snapshot replaces the cached one', () async {
+      await repository.writeSnapshot(_snapshot());
+      final before = await repository.readSnapshot(RegionCode.kr);
+
+      final updated = RegionSnapshot(
+        schemaVersionValue: RegionSnapshot.schemaVersion,
+        region: RegionCode.kr,
+        sourceRevision: 'etag-2',
+        sourceVersion: const DataVersion(versionControl: '68.3.0'),
+        fetchedAt: DateTime.utc(2026, 6, 1),
+      );
+      await repository.writeSnapshot(updated);
+      final after = await repository.readSnapshot(RegionCode.kr);
+
+      expect(identical(before, after), isFalse);
+      expect(after!.sourceVersion.versionControl, '68.3.0');
+      expect(after.operators, isEmpty);
+      // Other regions are unaffected and still missing.
+      expect(await repository.readSnapshot(RegionCode.en), isNull);
+    });
+
+    test('caches status and terms until they are rewritten', () async {
+      await repository.writeTerms(RegionCode.kr, const {'atk': 'Attack'});
+      final terms = await repository.readTerms(RegionCode.kr);
+      terms['atk'] = 'changed by a caller';
+      expect(await repository.readTerms(RegionCode.kr), {'atk': 'Attack'});
+
+      await repository.writeTerms(RegionCode.kr, const {'def': 'Defense'});
+      expect(await repository.readTerms(RegionCode.kr), {'def': 'Defense'});
+    });
+
+    test('writes compact JSON and still reads pretty-printed files', () async {
+      await repository.writeSnapshot(_snapshot());
+      final file = File.fromUri(
+        tempRoot.uri.resolve('cache/regions/kr/operators.snapshot.json'),
+      );
+      final compact = await file.readAsString();
+      expect(compact, isNot(contains('\n')));
+
+      final pretty = File.fromUri(
+        tempRoot.uri.resolve('cache/regions/en/operators.snapshot.json'),
+      );
+      await pretty.parent.create(recursive: true);
+      final json = (jsonDecode(compact) as Map<String, Object?>)
+        ..['region'] = 'en';
+      await pretty.writeAsString(
+        const JsonEncoder.withIndent('  ').convert(json),
+      );
+      final en = JsonRegionCacheRepository(FakeAppDirectories(tempRoot));
+      expect(
+        (await en.readSnapshot(RegionCode.en))!.operators.single.id,
+        'char_002_amiya',
+      );
     });
   });
 }
