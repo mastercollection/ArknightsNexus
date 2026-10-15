@@ -1,0 +1,50 @@
+/// Redesign strings for the app shell (icon rail, sidebar, bottom tabs) that
+/// `src/i18n.ts` does not have. Keys are looked up after
+/// `nexus_messages.g.dart`; give every key a value for all five locales.
+const Map<String, Map<String, String>> shellExtraMessages = {
+  'kr': {
+    'shell.nav.label': '주 메뉴',
+    'shell.nav.home': '홈',
+    'shell.nav.operators': '오퍼레이터',
+    'shell.nav.plan': '육성 계획',
+    'shell.nav.planShort': '계획',
+    'shell.nav.items': '아이템',
+    'shell.nav.settings': '설정',
+  },
+  'cn': {
+    'shell.nav.label': '主菜单',
+    'shell.nav.home': '首页',
+    'shell.nav.operators': '干员',
+    'shell.nav.plan': '培养计划',
+    'shell.nav.planShort': '计划',
+    'shell.nav.items': '道具',
+    'shell.nav.settings': '设置',
+  },
+  'jp': {
+    'shell.nav.label': 'メインメニュー',
+    'shell.nav.home': 'ホーム',
+    'shell.nav.operators': 'オペレーター',
+    'shell.nav.plan': '育成計画',
+    'shell.nav.planShort': '計画',
+    'shell.nav.items': 'アイテム',
+    'shell.nav.settings': '設定',
+  },
+  'tw': {
+    'shell.nav.label': '主選單',
+    'shell.nav.home': '首頁',
+    'shell.nav.operators': '幹員',
+    'shell.nav.plan': '培養計畫',
+    'shell.nav.planShort': '計畫',
+    'shell.nav.items': '道具',
+    'shell.nav.settings': '設定',
+  },
+  'en': {
+    'shell.nav.label': 'Main menu',
+    'shell.nav.home': 'Home',
+    'shell.nav.operators': 'Operators',
+    'shell.nav.plan': 'Plan',
+    'shell.nav.planShort': 'Plan',
+    'shell.nav.items': 'Items',
+    'shell.nav.settings': 'Settings',
+  },
+};

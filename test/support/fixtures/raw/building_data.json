@@ -1,0 +1,32 @@
+{
+  "manufactFormulas": {
+    "manufact_1": {
+      "formulaId": "manufact_1",
+      "itemId": "30012",
+      "count": 1,
+      "weight": 100,
+      "costPoint": 60,
+      "formulaType": "NORMAL",
+      "buffType": "NONE",
+      "costs": [{ "id": "gold", "count": 100, "type": "GOLD" }],
+      "requireRooms": [{ "roomId": "MANUFACTURE", "roomLevel": 1, "roomCount": 1 }]
+    }
+  },
+  "workshopFormulas": {
+    "workshop_1": {
+      "sortId": 1,
+      "formulaId": "workshop_1",
+      "rarity": 3,
+      "itemId": "30013",
+      "count": 1,
+      "goldCost": 200,
+      "apCost": 0,
+      "formulaType": "NORMAL",
+      "buffType": "NONE",
+      "extraOutcomeRate": 0.1,
+      "extraOutcomeGroup": [{ "weight": 1, "itemId": "30012", "itemCount": 1 }],
+      "costs": [{ "id": "30012", "count": 2, "type": "MATERIAL" }],
+      "requireRooms": [{ "roomId": "WORKSHOP", "roomLevel": 2, "roomCount": 1 }]
+    }
+  }
+}

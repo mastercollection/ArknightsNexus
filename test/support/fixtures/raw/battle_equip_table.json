@@ -1,0 +1,55 @@
+{
+  "uniequip_002": {
+    "phases": [
+      {
+        "equipLevel": 1,
+        "parts": [
+          {
+            "target": "TRAIT",
+            "addOrOverrideTalentDataBundle": { "candidates": null },
+            "overrideTraitDataBundle": {
+              "candidates": [
+                {
+                  "additionalDescription": "  Improved trait <@ba.sluggish>slow</>  ",
+                  "unlockCondition": { "phase": "PHASE_2", "level": 1 },
+                  "requiredPotentialRank": 0,
+                  "blackboard": [{ "key": "atk", "value": 0.05, "valueStr": null }],
+                  "overrideDescripton": null,
+                  "prefabKey": null,
+                  "rangeId": "range_1"
+                },
+                {
+                  "additionalDescription": "   ",
+                  "unlockCondition": { "phase": "PHASE_2", "level": 1 },
+                  "requiredPotentialRank": 0,
+                  "blackboard": []
+                }
+              ]
+            }
+          },
+          {
+            "target": "TALENT",
+            "addOrOverrideTalentDataBundle": {
+              "candidates": [
+                {
+                  "displayRangeId": false,
+                  "upgradeDescription": "Talent upgraded",
+                  "talentIndex": 0,
+                  "unlockCondition": { "phase": "PHASE_2", "level": 1 },
+                  "requiredPotentialRank": 2.4,
+                  "prefabKey": "1",
+                  "name": "  ",
+                  "description": null,
+                  "rangeId": null,
+                  "blackboard": {}
+                }
+              ]
+            },
+            "overrideTraitDataBundle": { "candidates": {} }
+          }
+        ],
+        "attributeBlackboard": [{ "key": "atk", "value": 40, "valueStr": null }, { "key": " ", "value": 1 }]
+      }
+    ]
+  }
+}

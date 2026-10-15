@@ -1,0 +1,13 @@
+{
+  "power_ri": {
+    "powerId": "power_ri",
+    "orderNum": 1,
+    "powerLevel": 2,
+    "powerName": " Rhodes Island ",
+    "powerCode": "RHODES ISLAND",
+    "color": "ffffff",
+    "isLimited": false,
+    "isRaw": true
+  },
+  "blank_power": { "powerId": "blank_power", "powerName": "  " }
+}

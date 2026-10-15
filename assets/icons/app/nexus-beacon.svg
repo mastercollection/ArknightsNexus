@@ -1,0 +1,39 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="32" y1="24" x2="220" y2="232" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0D1730"/>
+      <stop offset="1" stop-color="#050914"/>
+    </linearGradient>
+    <linearGradient id="hex" x1="74" y1="59" x2="182" y2="197" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8BD6FF"/>
+      <stop offset="1" stop-color="#5D87FF"/>
+    </linearGradient>
+    <radialGradient id="core" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(128 128) rotate(90) scale(34)">
+      <stop stop-color="#F4FBFF"/>
+      <stop offset="0.38" stop-color="#B9EAFF"/>
+      <stop offset="1" stop-color="#5EAFFF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="55" y="40" width="146" height="176" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+      <feGaussianBlur stdDeviation="8" result="effect1_foregroundBlur_1_2"/>
+    </filter>
+  </defs>
+  <rect x="16" y="16" width="224" height="224" rx="56" fill="url(#bg)"/>
+  <rect x="16.5" y="16.5" width="223" height="223" rx="55.5" stroke="#FFFFFF" stroke-opacity="0.08"/>
+  <circle cx="128" cy="128" r="84" fill="#09101E" fill-opacity="0.72"/>
+  <circle cx="128" cy="128" r="84" stroke="url(#hex)" stroke-opacity="0.16" stroke-width="2"/>
+  <g filter="url(#glow)">
+    <path d="M128 57L188 92V164L128 199L68 164V92L128 57Z" stroke="url(#hex)" stroke-width="10" stroke-linejoin="round"/>
+    <path d="M128 83V111" stroke="url(#hex)" stroke-width="8" stroke-linecap="round"/>
+    <path d="M104 142L84 154" stroke="url(#hex)" stroke-width="8" stroke-linecap="round"/>
+    <path d="M152 142L172 154" stroke="url(#hex)" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <path d="M128 57L188 92V164L128 199L68 164V92L128 57Z" stroke="#F5F7FF" stroke-opacity="0.22" stroke-width="2" stroke-linejoin="round"/>
+  <circle cx="128" cy="128" r="34" fill="url(#core)"/>
+  <circle cx="128" cy="128" r="18" fill="#C6F0FF"/>
+  <circle cx="128" cy="128" r="8" fill="#F9FDFF"/>
+  <circle cx="128" cy="111" r="6" fill="#8BD6FF"/>
+  <circle cx="84" cy="154" r="6" fill="#8BD6FF"/>
+  <circle cx="172" cy="154" r="6" fill="#8BD6FF"/>
+</svg>

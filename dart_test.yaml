@@ -1,0 +1,3 @@
+tags:
+  network:
+    skip: "Hits live Arknights/Penguin endpoints; run with --tags network"

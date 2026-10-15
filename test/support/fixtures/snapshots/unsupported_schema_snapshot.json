@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 999,
+  "region": "kr",
+  "sourceRevision": "etag",
+  "sourceVersion": { "versionControl": "68.2.0" },
+  "fetchedAt": "2026-05-17T00:00:00.000Z",
+  "stageCodeMap": {},
+  "terms": {},
+  "items": [],
+  "buildingFormulas": { "manufactFormulas": [], "workshopFormulas": [] },
+  "operators": []
+}

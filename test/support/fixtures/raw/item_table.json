@@ -1,0 +1,32 @@
+{
+  "items": {
+    "30012": {
+      "itemId": "30012",
+      "name": "Oriron",
+      "description": "Material",
+      "rarity": "TIER_3",
+      "iconId": "MTL_SL_Orirock",
+      "sortId": 10,
+      "usage": "Upgrade",
+      "obtainApproach": "Stage",
+      "classifyType": "MATERIAL",
+      "itemType": "MATERIAL",
+      "stageDropList": [{ "stageId": "main_01-07", "occPer": "ALWAYS" }],
+      "buildingProductList": [{ "roomType": "WORKSHOP", "formulaId": "workshop_1" }]
+    },
+    "mod_unlock_token": {
+      "itemId": "mod_unlock_token",
+      "name": "Module Data Block",
+      "description": null,
+      "rarity": 4,
+      "iconId": "mod_unlock_token",
+      "sortId": 10,
+      "usage": null,
+      "obtainApproach": null,
+      "classifyType": "MATERIAL",
+      "itemType": 7,
+      "stageDropList": {},
+      "buildingProductList": {}
+    }
+  }
+}

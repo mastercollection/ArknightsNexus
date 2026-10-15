@@ -1,0 +1,54 @@
+{
+  "subProfDict": {
+    "caster_core": { "subProfessionId": "caster_core", "subProfessionName": " Core Caster " },
+    "blank_branch": { "subProfessionId": "blank_branch", "subProfessionName": "" }
+  },
+  "equipDict": {
+    "uniequip_002": {
+      "uniEquipId": "uniequip_002",
+      "uniEquipName": "Module",
+      "uniEquipIcon": "module_icon",
+      "uniEquipDesc": "Module desc",
+      "typeIcon": "X",
+      "typeName1": "CCR",
+      "typeName2": "X",
+      "equipShiningColor": "red",
+      "showEvolvePhase": "PHASE_2",
+      "unlockEvolvePhase": "PHASE_2",
+      "charId": "char_002_amiya",
+      "tmplId": null,
+      "showLevel": 40,
+      "unlockLevel": 40,
+      "unlockFavorPoint": 0,
+      "missionList": ["mission"],
+      "unlockFavors": { "1": 4800, "2": 2000, "3": 0 },
+      "itemCost": {
+        "1": [
+          { "id": "30012", "count": 2, "type": "MATERIAL" },
+          { "id": "mod_unlock_token", "count": 1, "type": "MATERIAL" }
+        ],
+        "2": {}
+      },
+      "isSpecialEquip": false,
+      "specialEquipDesc": null,
+      "uniEquipGetTime": 0,
+      "charEquipOrder": 1
+    },
+    "uniequip_001": {
+      "uniEquipId": "uniequip_001",
+      "uniEquipName": "Original",
+      "uniEquipIcon": "original",
+      "uniEquipDesc": "Original desc",
+      "typeIcon": "original",
+      "unlockEvolvePhase": "PHASE_0",
+      "charId": " char_002_amiya ",
+      "unlockLevel": 1,
+      "missionList": {},
+      "unlockFavors": null,
+      "itemCost": null,
+      "isSpecialEquip": true,
+      "specialEquipDesc": "Special <$ba.stun>stun</>",
+      "charEquipOrder": 0
+    }
+  }
+}

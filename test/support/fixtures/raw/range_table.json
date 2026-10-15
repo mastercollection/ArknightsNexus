@@ -1,0 +1,7 @@
+{
+  "range_1": {
+    "id": "range_1",
+    "direction": 1,
+    "grids": [{ "row": 0, "col": 1 }]
+  }
+}

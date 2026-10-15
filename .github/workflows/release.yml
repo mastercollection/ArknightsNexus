@@ -1,0 +1,141 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  FLUTTER_VERSION: '3.27.1'
+  JAVA_VERSION: '17'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Release already exists for ${GITHUB_REF_NAME}"
+          else
+            gh release create "${GITHUB_REF_NAME}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --title "Arknights Nexus ${GITHUB_REF_NAME}" \
+              --generate-notes
+          fi
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Analyze and test
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test
+
+  build-windows:
+    needs: [create-release, test]
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Build Windows release
+        run: flutter build windows --release
+
+      - name: Upload Windows bundle to release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $archive = "ArknightsNexus-${env:GITHUB_REF_NAME}-windows-x64.zip"
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath $archive
+          gh release upload "${env:GITHUB_REF_NAME}" --repo "${env:GITHUB_REPOSITORY}" --clobber $archive
+
+  build-android:
+    needs: [create-release, test]
+    runs-on: ubuntu-latest
+    environment: Android
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Restore Android signing keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/android-keystore"
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/android-keystore/release.jks"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/android-keystore/release.jks" >> "$GITHUB_ENV"
+          echo "ANDROID_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "ANDROID_KEY_ALIAS=$ANDROID_KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "ANDROID_KEY_PASSWORD=$ANDROID_KEY_PASSWORD" >> "$GITHUB_ENV"
+
+      - name: Build Android artifacts
+        run: |
+          flutter build apk --release
+          flutter build appbundle --release
+
+      - name: Upload Android artifacts to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mapfile -t artifacts < <(find build/app/outputs \
+            \( -name '*-release.apk' -o -name '*-release.aab' \) \
+            -type f)
+
+          if [ "${#artifacts[@]}" -eq 0 ]; then
+            echo "No Android artifacts were produced."
+            exit 1
+          fi
+
+          gh release upload "${GITHUB_REF_NAME}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --clobber \
+            "${artifacts[@]}"

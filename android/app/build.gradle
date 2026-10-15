@@ -1,0 +1,65 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+// Release signing from the same environment variables the Tauri release
+// workflow restores (ANDROID_KEYSTORE_PATH/PASSWORD, ANDROID_KEY_ALIAS/PASSWORD).
+def androidKeystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+def androidKeystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+def androidKeyAlias = System.getenv("ANDROID_KEY_ALIAS")
+def androidKeyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+def hasReleaseSigning = [
+    androidKeystorePath,
+    androidKeystorePassword,
+    androidKeyAlias,
+    androidKeyPassword,
+].every { it != null && !it.trim().isEmpty() }
+
+android {
+    namespace = "com.arknightnexus.arknight_nexus"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8
+    }
+
+    if (hasReleaseSigning) {
+        signingConfigs {
+            release {
+                storeFile = file(androidKeystorePath)
+                storePassword = androidKeystorePassword
+                keyAlias = androidKeyAlias
+                keyPassword = androidKeyPassword
+            }
+        }
+    }
+
+    defaultConfig {
+        // Same id as the Tauri app so the Flutter build updates it in place.
+        applicationId = "com.nexus.arknights"
+        minSdk = 24
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
+
+    buildTypes {
+        release {
+            // Unsigned local release builds fall back to the debug key.
+            signingConfig = hasReleaseSigning ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+}
+
+flutter {
+    source = "../.."
+}

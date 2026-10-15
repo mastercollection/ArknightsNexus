@@ -1,0 +1,232 @@
+{
+  "char_002_amiya": {
+    "name": "Amiya",
+    "description": "Deals <$ba.stun>stun</> damage @ba.unknown",
+    "canUseGeneralPotentialItem": true,
+    "isNotObtainable": false,
+    "isSpChar": false,
+    "profession": "CASTER",
+    "subProfessionId": "caster_core",
+    "rarity": "TIER_5",
+    "position": "RANGED",
+    "appellation": "Amiya-RI",
+    "tagList": ["DPS", "  ", "Support"],
+    "itemUsage": "Leader",
+    "itemDesc": "Rhodes Island leader",
+    "itemObtainApproach": "Starter",
+    "displayNumber": "R001",
+    "groupId": "  ",
+    "nationId": "unknown_nation",
+    "teamId": "power_ri",
+    "mainPower": { "nationId": null, "groupId": null, "teamId": null },
+    "trait": {
+      "candidates": [
+        {
+          "unlockCondition": { "phase": "PHASE_0", "level": 1 },
+          "requiredPotentialRank": 0,
+          "blackboard": [],
+          "overrideDescripton": null,
+          "prefabKey": null,
+          "rangeId": null
+        },
+        {
+          "unlockCondition": { "phase": "PHASE_1", "level": 1 },
+          "requiredPotentialRank": 0,
+          "blackboard": [{ "key": " atk_scale ", "value": 1.2, "valueStr": null }, { "key": "", "value": 1 }],
+          "overrideDescripton": "  Deals Arts damage  ",
+          "prefabKey": "",
+          "rangeId": null
+        }
+      ]
+    },
+    "phases": [
+      {
+        "characterPrefabKey": "char_002_amiya",
+        "rangeId": "range_1",
+        "maxLevel": 45,
+        "attributesKeyFrames": [
+          {
+            "level": 1,
+            "data": {
+              "maxHp": 100.4, "atk": 30, "def": 20, "magicResistance": 10, "cost": 18, "blockCnt": 1,
+              "moveSpeed": 1, "attackSpeed": 100, "baseAttackTime": 1.6, "respawnTime": 70,
+              "hpRecoveryPerSec": 0, "spRecoveryPerSec": 1, "maxDeployCount": 1, "maxDeckStackCnt": 0,
+              "tauntLevel": 0, "massLevel": 0, "baseForceLevel": 0, "stunImmune": false,
+              "silenceImmune": false, "sleepImmune": false, "frozenImmune": false,
+              "levitateImmune": false, "disarmedCombatImmune": false
+            }
+          },
+          {
+            "level": 50,
+            "data": {
+              "maxHp": 200.5, "atk": 60, "def": 40, "magicResistance": 10, "cost": 18, "blockCnt": 1,
+              "moveSpeed": 1, "attackSpeed": 100, "baseAttackTime": 1.6, "respawnTime": 70,
+              "hpRecoveryPerSec": 0.5, "spRecoveryPerSec": 1, "maxDeployCount": 1, "maxDeckStackCnt": 0,
+              "tauntLevel": 0, "massLevel": 0, "baseForceLevel": 0, "stunImmune": false,
+              "silenceImmune": false, "sleepImmune": false, "frozenImmune": false,
+              "levitateImmune": false, "disarmedCombatImmune": false
+            }
+          }
+        ],
+        "evolveCost": null
+      },
+      {
+        "characterPrefabKey": "char_002_amiya",
+        "rangeId": "range_missing",
+        "maxLevel": 70,
+        "attributesKeyFrames": [
+          {
+            "level": 1,
+            "data": {
+              "maxHp": 300, "atk": 90, "def": 50, "magicResistance": 15, "cost": 20, "blockCnt": 1,
+              "baseAttackTime": 1.6, "respawnTime": 70, "hpRecoveryPerSec": 0
+            }
+          }
+        ],
+        "evolveCost": [{ "id": "30012", "count": 3, "type": "MATERIAL" }]
+      },
+      {
+        "characterPrefabKey": "char_002_amiya",
+        "rangeId": null,
+        "maxLevel": 80,
+        "attributesKeyFrames": [],
+        "evolveCost": {}
+      }
+    ],
+    "skills": [
+      {
+        "skillId": "skchr_amiya_1",
+        "overridePrefabKey": null,
+        "overrideTokenKey": null,
+        "levelUpCostCond": [
+          {
+            "unlockCond": { "phase": "PHASE_2", "level": 1 },
+            "lvlUpTime": 28800,
+            "levelUpCost": [{ "id": "30012", "count": 2, "type": "MATERIAL" }]
+          }
+        ],
+        "unlockCond": { "phase": "PHASE_0", "level": 1 }
+      },
+      {
+        "skillId": "skchr_amiya_2",
+        "levelUpCostCond": {},
+        "unlockCond": { "phase": "PHASE_1", "level": "1" }
+      },
+      { "skillId": null, "levelUpCostCond": [], "unlockCond": { "phase": 0, "level": 1 } },
+      { "skillId": "skchr_missing", "levelUpCostCond": [], "unlockCond": { "phase": 0, "level": 1 } },
+      { "skillId": "skchr_empty", "levelUpCostCond": [], "unlockCond": { "phase": 0, "level": 1 } }
+    ],
+    "talents": [
+      {
+        "candidates": [
+          {
+            "unlockCondition": { "phase": "PHASE_1", "level": 1 },
+            "requiredPotentialRank": 0,
+            "prefabKey": "1",
+            "name": " Spirit Siphon ",
+            "description": "Recovers SP, applies <$ba.sluggish>slow</> and <$ba.stun>stun</>",
+            "rangeId": null,
+            "blackboard": [{ "key": " sp ", "value": 2, "valueStr": null }, { "key": "", "value": 1 }],
+            "isHideTalent": false,
+            "tokenKey": null
+          },
+          {
+            "unlockCondition": { "phase": "PHASE_2", "level": 1 },
+            "requiredPotentialRank": 4.6,
+            "prefabKey": "1",
+            "name": "Spirit Siphon",
+            "description": "   ",
+            "rangeId": null,
+            "blackboard": {},
+            "isHideTalent": false,
+            "tokenKey": null
+          }
+        ]
+      },
+      { "candidates": null },
+      {
+        "candidates": [
+          {
+            "unlockCondition": { "phase": "PHASE_0", "level": 1 },
+            "requiredPotentialRank": 0,
+            "prefabKey": null,
+            "name": "Echo",
+            "description": null,
+            "blackboard": []
+          },
+          {
+            "unlockCondition": { "phase": "PHASE_0", "level": 1 },
+            "requiredPotentialRank": 0,
+            "prefabKey": null,
+            "name": "  ",
+            "description": "hidden",
+            "blackboard": []
+          }
+        ]
+      }
+    ],
+    "potentialRanks": [
+      { "type": "BUFF", "description": "Deployment cost -1", "buff": null, "equivalentCost": null },
+      { "type": 1, "description": "   ", "buff": null, "equivalentCost": null },
+      { "type": "CUSTOM", "description": " ATK +25 ", "buff": null, "equivalentCost": null }
+    ],
+    "favorKeyFrames": [],
+    "allSkillLvlup": [
+      {
+        "unlockCond": { "phase": "PHASE_0", "level": 1 },
+        "lvlUpCost": [{ "id": "3301", "count": 5, "type": "MATERIAL" }]
+      },
+      { "unlockCond": { "phase": "PHASE_1", "level": 1 }, "lvlUpCost": null }
+    ]
+  },
+  "char_101_bravo": {
+    "name": "Bravo",
+    "description": null,
+    "profession": "PIONEER",
+    "subProfessionId": "pioneer_unknown",
+    "rarity": 3,
+    "appellation": "  ",
+    "itemDesc": null,
+    "phases": [],
+    "skills": {},
+    "talents": null,
+    "trait": null,
+    "potentialRanks": {},
+    "allSkillLvlup": {}
+  },
+  "char_100_alpha": {
+    "name": "Alpha",
+    "description": "",
+    "profession": "WARRIOR",
+    "subProfessionId": "",
+    "rarity": "TIER_3",
+    "appellation": "Alpha",
+    "itemDesc": "Quote only",
+    "phases": [],
+    "skills": [],
+    "potentialRanks": [],
+    "allSkillLvlup": []
+  },
+  "char_hidden": {
+    "name": "Hidden",
+    "profession": "CASTER",
+    "rarity": 6,
+    "isNotObtainable": true,
+    "phases": [],
+    "skills": []
+  },
+  "char_token": {
+    "name": "Token",
+    "profession": "TOKEN",
+    "rarity": 1,
+    "phases": [],
+    "skills": []
+  },
+  "trap_001": {
+    "name": "Trap",
+    "profession": "TRAP",
+    "rarity": 1,
+    "phases": [],
+    "skills": []
+  }
+}

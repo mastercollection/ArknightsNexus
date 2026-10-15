@@ -1,0 +1,12 @@
+{
+  "maxLevel": [[30], [30], [40, 55], [45, 60, 70], [50, 70, 80], [50, 80, 90]],
+  "characterExpMap": [[100, 117, -1, -1], [120, 172, -1], [191, -1]],
+  "characterUpgradeCostMap": [[30, 36, -1], [48, -1], [76, -1]],
+  "evolveGoldCost": [[-1, -1], [-1, -1], [10000, -1], [15000, 60000], [20000, 120000], [30000, 180000]],
+  "termDescriptionDict": {
+    "atk": { "termId": "atk", "termName": "ATK", "description": "Attack" },
+    "ba.stun": { "termId": "ba.stun", "termName": "Stun", "description": "  Cannot act  " },
+    "ba.sluggish": { "termId": "ba.sluggish", "termName": "Slow", "description": "Movement speed reduced" },
+    "ba.blank": { "termId": "ba.blank", "termName": "  ", "description": "   " }
+  }
+}
