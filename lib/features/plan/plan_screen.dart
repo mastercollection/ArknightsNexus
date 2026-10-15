@@ -457,7 +457,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     final favoriteOperators = _favoriteOperators;
     final hasSelected = selectedOperators.isNotEmpty;
 
-    PlanGrid grid(List<Widget> tiles) => PlanGrid(
+    RdAutoGrid grid(List<Widget> tiles) => RdAutoGrid(
           columns: compact ? 3 : null,
           minTileWidth: compact ? null : 132,
           gap: compact ? 10 : 12,
@@ -579,7 +579,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
       compact: compact,
     );
 
-    final resources = PlanGrid(
+    final resources = RdAutoGrid(
       columns: 2,
       gap: compact ? 10 : 12,
       children: [
@@ -909,13 +909,13 @@ class _OperatorsSkeleton extends StatelessWidget {
       label: label,
       container: true,
       child: PlanCard(
-        child: PlanPulse(
+        child: RdPulse(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const PlanSkeletonBlock(height: 20, widthFactor: 0.36),
+              const RdSkeleton(height: 20, widthFactor: 0.36),
               const SizedBox(height: 14),
-              PlanGrid(
+              RdAutoGrid(
                 columns: compact ? 2 : null,
                 minTileWidth: compact ? null : 132,
                 gap: compact ? 10 : 12,
@@ -929,14 +929,14 @@ class _OperatorsSkeleton extends StatelessWidget {
                       ),
                       child: const Column(
                         children: [
-                          PlanSkeletonBlock(
+                          RdSkeleton(
                             width: 84,
                             height: 84,
                             radius: 24,
                             color: RdColors.soft,
                           ),
                           SizedBox(height: 10),
-                          PlanSkeletonBlock(widthFactor: 0.72),
+                          RdSkeleton(widthFactor: 0.72),
                         ],
                       ),
                     ),
@@ -958,7 +958,7 @@ class _SummarySkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final compact = context.rdLayout == RdLayout.compact;
-    const block = PlanSkeletonBlock(
+    const block = RdSkeleton(
       height: 96,
       radius: 16,
       color: RdColors.white5,
@@ -967,11 +967,11 @@ class _SummarySkeleton extends StatelessWidget {
       label: label,
       container: true,
       child: PlanCard(
-        child: PlanPulse(
+        child: RdPulse(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const PlanSkeletonBlock(height: 20, widthFactor: 0.36),
+              const RdSkeleton(height: 20, widthFactor: 0.36),
               const SizedBox(height: 12),
               if (compact) ...[
                 block,
@@ -980,7 +980,7 @@ class _SummarySkeleton extends StatelessWidget {
                 const SizedBox(height: 12),
                 block,
               ] else
-                const PlanGrid(
+                const RdAutoGrid(
                   columns: 3,
                   children: [block, block, block],
                 ),

@@ -291,7 +291,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           cards[i],
         ]
       else
-        _CardGrid(children: cards),
+        // repeat(auto-fit, minmax(340px, 1fr)), align-items: start.
+        RdAutoGrid(
+          minTileWidth: 340,
+          gap: 16,
+          maxColumns: cards.length,
+          children: cards,
+        ),
       if (_errorMessage.isNotEmpty) ...[
         SizedBox(height: compact ? 14 : 22),
         _ErrorBanner(message: _errorMessage, compact: compact),
@@ -689,51 +695,6 @@ class _LoadingLine extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// `repeat(auto-fit, minmax(340px, 1fr))`, `align-items: start`.
-class _CardGrid extends StatelessWidget {
-  const _CardGrid({required this.children});
-
-  final List<Widget> children;
-
-  static const _gap = 16.0;
-  static const _minWidth = 340.0;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final columns = ((constraints.maxWidth + _gap) ~/ (_minWidth + _gap))
-            .clamp(1, children.length);
-        final rows = <Widget>[];
-        for (var start = 0; start < children.length; start += columns) {
-          if (rows.isNotEmpty) {
-            rows.add(const SizedBox(height: _gap));
-          }
-          rows.add(
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (var i = 0; i < columns; i++) ...[
-                  if (i > 0) const SizedBox(width: _gap),
-                  Expanded(
-                    child: start + i < children.length
-                        ? children[start + i]
-                        : const SizedBox.shrink(),
-                  ),
-                ],
-              ],
-            ),
-          );
-        }
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: rows,
-        );
-      },
     );
   }
 }

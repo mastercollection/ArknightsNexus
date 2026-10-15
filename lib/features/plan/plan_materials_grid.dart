@@ -113,7 +113,7 @@ class PlanMaterialsGrid extends ConsumerWidget {
                 ),
               ),
               SizedBox(height: compact ? 8 : 10),
-              PlanGrid(
+              RdAutoGrid(
                 columns: compact ? 2 : columns,
                 minTileWidth: compact || columns != null ? null : 124,
                 gap: compact ? 8 : (columns == null ? 10 : 8),

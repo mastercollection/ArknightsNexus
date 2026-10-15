@@ -509,8 +509,7 @@ int _columnsFor(double width, bool compact) {
   if (compact) {
     return 3;
   }
-  final columns = ((width + 14) / (150 + 14)).floor();
-  return columns < 1 ? 1 : columns;
+  return rdAutoColumns(width, 150, gap: 14);
 }
 
 class _ItemCard extends StatelessWidget {
@@ -744,7 +743,7 @@ class _LoadingGrid extends StatelessWidget {
       builder: (context, constraints) {
         final columns = _columnsFor(constraints.maxWidth, compact);
         final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
-        return ItemsPulse(
+        return RdPulse(
           child: Wrap(
             spacing: gap,
             runSpacing: gap,
@@ -759,7 +758,7 @@ class _LoadingGrid extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Center(
-                          child: ItemsSkeletonBox(
+                          child: RdSkeleton(
                             width: compact ? 64 : 72,
                             height: compact ? 64 : 72,
                             radius: compact ? 16 : 18,
@@ -767,12 +766,12 @@ class _LoadingGrid extends StatelessWidget {
                           ),
                         ),
                         SizedBox(height: compact ? 8 : 10),
-                        ItemsSkeletonBox(
+                        RdSkeleton(
                           height: compact ? 14 : 16,
                           color: RdColors.white8,
                         ),
                         SizedBox(height: compact ? 8 : 10),
-                        ItemsSkeletonBox(
+                        RdSkeleton(
                           height: compact ? 10 : 12,
                           widthFactor: 0.7,
                           color: RdColors.white5,

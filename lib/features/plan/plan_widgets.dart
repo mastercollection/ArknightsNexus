@@ -401,110 +401,6 @@ class PlanAccentIconButton extends StatelessWidget {
   }
 }
 
-/// Opacity pulse of the canvas skeletons (`pulse 1.6s`).
-class PlanPulse extends StatefulWidget {
-  const PlanPulse({required this.child, super.key});
-
-  final Widget child;
-
-  @override
-  State<PlanPulse> createState() => _PlanPulseState();
-}
-
-class _PlanPulseState extends State<PlanPulse>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 800),
-    lowerBound: 0.45,
-  )..repeat(reverse: true);
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(opacity: _controller, child: widget.child);
-  }
-}
-
-/// Rounded placeholder block used inside skeletons.
-class PlanSkeletonBlock extends StatelessWidget {
-  const PlanSkeletonBlock({
-    this.width,
-    this.height = 14,
-    this.widthFactor,
-    this.radius = RdRadii.pill,
-    this.color = RdColors.white8,
-    super.key,
-  });
-
-  final double? width;
-  final double height;
-  final double? widthFactor;
-  final double radius;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final box = Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(radius),
-      ),
-    );
-    if (widthFactor == null) {
-      return box;
-    }
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: FractionallySizedBox(widthFactor: widthFactor, child: box),
-    );
-  }
-}
-
-/// Lays out [children] in equal-width columns: [columns] fixed, or as many
-/// [minTileWidth]-wide tracks as fit (`repeat(auto-fill, minmax(...))`).
-class PlanGrid extends StatelessWidget {
-  const PlanGrid({
-    required this.children,
-    this.columns,
-    this.minTileWidth,
-    this.gap = 12,
-    super.key,
-  }) : assert(columns != null || minTileWidth != null);
-
-  final List<Widget> children;
-  final int? columns;
-  final double? minTileWidth;
-  final double gap;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final count = columns ??
-            math.max(1, ((width + gap) / (minTileWidth! + gap)).floor());
-        // Floor so rounding never pushes the last tile onto a new row.
-        final tile = ((width - gap * (count - 1)) / count).floorToDouble();
-        return Wrap(
-          spacing: gap,
-          runSpacing: gap,
-          children: [
-            for (final child in children) SizedBox(width: tile, child: child),
-          ],
-        );
-      },
-    );
-  }
-}
-
 /// Star row (`★` x rarity) in the canvas gold.
 class PlanStars extends StatelessWidget {
   const PlanStars({required this.rarity, this.fontSize = 10, super.key});
@@ -984,7 +880,7 @@ class PlanSaveStatusPill extends StatelessWidget {
       decoration: BoxDecoration(shape: BoxShape.circle, color: dotColor),
     );
     if (status == PlanSaveStatus.saving) {
-      dot = PlanPulse(child: dot);
+      dot = RdPulse(child: dot);
     }
     return Semantics(
       liveRegion: true,

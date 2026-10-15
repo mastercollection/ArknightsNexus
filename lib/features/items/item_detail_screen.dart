@@ -428,7 +428,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   Widget _buildPenguinSection(NexusI18n i18n, bool compact) {
     final Widget body;
     if (_isPenguinLoading) {
-      body = ItemsPulse(
+      body = RdPulse(
         child: Column(
           children: [
             for (var i = 0; i < 4; i++)
@@ -438,13 +438,13 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      ItemsSkeletonBox(
+                      RdSkeleton(
                         height: 16,
                         widthFactor: 0.42,
                         color: RdColors.white8,
                       ),
                       SizedBox(height: 8),
-                      ItemsSkeletonBox(
+                      RdSkeleton(
                         height: 12,
                         widthFactor: 0.68,
                         color: RdColors.white5,
@@ -491,7 +491,12 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                   ),
               ],
             )
-          : _DropGrid(children: cards);
+          : RdAutoGrid(
+              minTileWidth: 260,
+              gap: 8,
+              equalHeight: true,
+              children: cards,
+            );
     } else {
       body = Text(
         i18n.t('itemsDetail.states.noPenguinDrops'),
@@ -631,14 +636,14 @@ class _DetailLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const ItemsPulse(
+    return const RdPulse(
       child: ItemsSurface(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Center(
-              child: ItemsSkeletonBox(
+              child: RdSkeleton(
                 width: 84,
                 height: 84,
                 radius: 22,
@@ -649,59 +654,14 @@ class _DetailLoading extends StatelessWidget {
             Center(
               child: FractionallySizedBox(
                 widthFactor: 0.48,
-                child: ItemsSkeletonBox(height: 20, color: RdColors.white8),
+                child: RdSkeleton(height: 20, color: RdColors.white8),
               ),
             ),
             SizedBox(height: 12),
-            ItemsSkeletonBox(height: 72, radius: 18, color: RdColors.soft2),
+            RdSkeleton(height: 72, radius: 18, color: RdColors.soft2),
           ],
         ),
       ),
-    );
-  }
-}
-
-/// `repeat(auto-fill, minmax(260px, 1fr))` with an 8px gap.
-class _DropGrid extends StatelessWidget {
-  const _DropGrid({required this.children});
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const gap = 8.0;
-        final raw = ((constraints.maxWidth + gap) / (260 + gap)).floor();
-        final columns = raw < 1 ? 1 : raw;
-        final rows = <Widget>[];
-        for (var start = 0; start < children.length; start += columns) {
-          rows.add(
-            Padding(
-              padding: EdgeInsets.only(top: start == 0 ? 0 : gap),
-              child: IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (var i = 0; i < columns; i++) ...[
-                      if (i > 0) const SizedBox(width: gap),
-                      Expanded(
-                        child: start + i < children.length
-                            ? children[start + i]
-                            : const SizedBox.shrink(),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          );
-        }
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: rows,
-        );
-      },
     );
   }
 }

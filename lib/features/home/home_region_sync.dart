@@ -176,7 +176,7 @@ class HomeSyncButton extends ConsumerWidget {
     final foreground = syncing ? RdColors.placeholder : RdColors.linkText;
     Widget icon = Icon(Icons.refresh, size: 15, color: foreground);
     if (syncing) {
-      icon = _Spinning(child: icon);
+      icon = RdSpin(child: icon);
     }
     return Tooltip(
       message: i18n.t('rd.home.sync.tooltip'),
@@ -340,33 +340,5 @@ class RdRegionSelect extends ConsumerWidget {
         ),
       ),
     );
-  }
-}
-
-class _Spinning extends StatefulWidget {
-  const _Spinning({required this.child});
-
-  final Widget child;
-
-  @override
-  State<_Spinning> createState() => _SpinningState();
-}
-
-class _SpinningState extends State<_Spinning>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 900),
-  )..repeat();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return RotationTransition(turns: _controller, child: widget.child);
   }
 }

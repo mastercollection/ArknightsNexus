@@ -513,43 +513,16 @@ class _MenuGrid extends ConsumerWidget {
         icon: 'assets/icons/home/enemy.webp',
       ),
     ];
-    final gap = compact ? 12.0 : 14.0;
-    final grid = LayoutBuilder(
-      builder: (context, constraints) {
-        // repeat(auto-fit, minmax(220px, 1fr)) on PC, two columns on phones.
-        final columns = compact
-            ? 2
-            : ((constraints.maxWidth + gap) ~/ (minTileWidth + gap))
-                .clamp(1, 4);
-        final rows = <Widget>[];
-        for (var start = 0; start < items.length; start += columns) {
-          final slice = items.skip(start).take(columns).toList();
-          if (rows.isNotEmpty) {
-            rows.add(SizedBox(height: gap));
-          }
-          rows.add(
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (var i = 0; i < columns; i++) ...[
-                    if (i > 0) SizedBox(width: gap),
-                    Expanded(
-                      child: i < slice.length
-                          ? _MenuTile(item: slice[i], compact: compact)
-                          : const SizedBox.shrink(),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          );
-        }
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: rows,
-        );
-      },
+    // repeat(auto-fit, minmax(220px, 1fr)) on PC, two columns on phones.
+    final grid = RdAutoGrid(
+      columns: compact ? 2 : null,
+      minTileWidth: minTileWidth,
+      maxColumns: 4,
+      gap: compact ? 12.0 : 14.0,
+      equalHeight: true,
+      children: [
+        for (final item in items) _MenuTile(item: item, compact: compact),
+      ],
     );
     if (compact) {
       return grid;

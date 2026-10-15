@@ -131,8 +131,9 @@ class OperatorStatsPanel extends StatelessWidget {
             );
           },
         ),
-        OpAutoGrid(
+        RdAutoGrid(
           minTileWidth: compact ? 120 : 140,
+          gap: 10,
           children: [
             for (final card in cards)
               Container(

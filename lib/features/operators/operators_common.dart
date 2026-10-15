@@ -408,39 +408,3 @@ class OpHeading extends StatelessWidget {
     );
   }
 }
-
-/// Grid whose column count follows CSS `repeat(auto-fill, minmax(min, 1fr))`.
-class OpAutoGrid extends StatelessWidget {
-  const OpAutoGrid({
-    required this.minTileWidth,
-    required this.children,
-    this.gap = 10,
-    super.key,
-  });
-
-  final double minTileWidth;
-  final double gap;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final columns =
-            ((width + gap) / (minTileWidth + gap)).floor().clamp(1, 99);
-        // Floored so rounding never pushes the last tile to a new run.
-        final tileWidth =
-            ((width - gap * (columns - 1)) / columns).floorToDouble();
-        return Wrap(
-          spacing: gap,
-          runSpacing: gap,
-          children: [
-            for (final child in children)
-              SizedBox(width: tileWidth, child: child),
-          ],
-        );
-      },
-    );
-  }
-}

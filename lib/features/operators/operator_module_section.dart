@@ -417,8 +417,9 @@ class _ModuleCard extends StatelessWidget {
                 spacing: 8,
                 children: [
                   _H4(i18n.t('operatorDetail.labels.moduleStatBonus')),
-                  OpAutoGrid(
+                  RdAutoGrid(
                     minTileWidth: 110,
+                    gap: 10,
                     children: [
                       for (final bonus in statBonuses)
                         Container(

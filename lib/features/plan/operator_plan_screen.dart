@@ -878,7 +878,7 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
           ),
           if (showOverview) ...[
             SizedBox(height: compact ? 10 : 12),
-            PlanGrid(
+            RdAutoGrid(
               columns: 2,
               gap: compact ? 8 : 10,
               children: [
@@ -1173,13 +1173,13 @@ class _DetailSkeleton extends StatelessWidget {
       label: label,
       container: true,
       child: const PlanCard(
-        child: PlanPulse(
+        child: RdPulse(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              PlanSkeletonBlock(height: 20, widthFactor: 0.32),
+              RdSkeleton(height: 20, widthFactor: 0.32),
               SizedBox(height: 14),
-              PlanSkeletonBlock(
+              RdSkeleton(
                 height: 180,
                 radius: 16,
                 color: RdColors.white5,
