@@ -1,66 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../app/providers.dart';
-import '../../domain/sync_status.dart';
 import '../../i18n/nexus_i18n.dart';
-import '../../ui/nexus_ui.dart' show NexusMessageType, showNexusMessage;
 import '../../ui/redesign/rd_widgets.dart';
+import '../shared/region_sync.dart';
 
-/// Sync status of the selected region (Vue `index.vue` loads it next to the
-/// featured operators). Reloads on region change and after a manual sync.
-final homeSyncStatusProvider =
-    FutureProvider.autoDispose<RegionSyncStatus?>((ref) {
-  final region = ref.watch(regionProvider);
-  ref.watch(dataRevisionProvider);
-  return ref.watch(regionSyncServiceProvider).getRegionSyncStatus(region);
-});
-
-/// Force sync of the home page (`forceSync` in `index.vue`). Shared by the PC
-/// sidebar panel and the in-page controls so both show the same busy state.
-/// The state is `true` while a sync runs.
-class HomeSyncController extends Notifier<bool> {
-  @override
-  bool build() => false;
-
-  /// Syncs the selected region; returns the error, or `null` on success (or
-  /// when a sync is already running).
-  Future<Object?> sync() async {
-    if (state) {
-      return null;
-    }
-    state = true;
-    final region = ref.read(regionProvider);
-    try {
-      await ref
-          .read(regionSyncServiceProvider)
-          .syncRegion(region)
-          .drain<void>();
-      ref.read(dataRevisionProvider.notifier).state++;
-      return null;
-    } catch (error, stackTrace) {
-      ref
-          .read(appLoggerProvider)
-          .warning('home force sync failed', error, stackTrace);
-      return error;
-    } finally {
-      state = false;
-    }
-  }
-}
-
-final homeSyncControllerProvider =
-    NotifierProvider<HomeSyncController, bool>(HomeSyncController.new);
-
-/// Runs [HomeSyncController.sync] and shows its error as a toast.
-Future<void> runHomeSync(BuildContext context, WidgetRef ref) async {
-  final error = await ref.read(homeSyncControllerProvider.notifier).sync();
-  if (error != null && context.mounted) {
-    showNexusMessage(context, '$error', type: NexusMessageType.error);
-  }
-}
-
-/// Status of [homeSyncStatusProvider] / [homeSyncControllerProvider] for the
+/// Status of [regionSyncStatusProvider] / [regionSyncControllerProvider] for the
 /// status lines.
 enum HomeSyncState { loading, syncing, ready, needed }
 
@@ -71,10 +16,10 @@ class HomeSyncView {
   final int operatorCount;
 
   static HomeSyncView watch(WidgetRef ref) {
-    if (ref.watch(homeSyncControllerProvider)) {
+    if (ref.watch(regionSyncControllerProvider)) {
       return const HomeSyncView(HomeSyncState.syncing, 0);
     }
-    return ref.watch(homeSyncStatusProvider).when(
+    return ref.watch(regionSyncStatusProvider).when(
           data: (status) => status?.isReady == true
               ? HomeSyncView(HomeSyncState.ready, status!.operatorCount)
               : const HomeSyncView(HomeSyncState.needed, 0),
@@ -161,7 +106,7 @@ class HomeSyncButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final i18n = ref.watch(i18nProvider);
-    final syncing = ref.watch(homeSyncControllerProvider);
+    final syncing = ref.watch(regionSyncControllerProvider);
     final foreground = syncing ? RdColors.placeholder : RdColors.linkText;
     Widget icon = Icon(Icons.refresh, size: 15, color: foreground);
     if (syncing) {
@@ -186,7 +131,7 @@ class HomeSyncButton extends ConsumerWidget {
           child: InkWell(
             key: const Key('home-sync-button'),
             borderRadius: BorderRadius.circular(RdRadii.small),
-            onTap: syncing ? null : () => runHomeSync(context, ref),
+            onTap: syncing ? null : () => runRegionSync(context, ref),
             child: Container(
               height: 34,
               padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -222,7 +167,7 @@ class HomeSyncIconButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final i18n = ref.watch(i18nProvider);
-    final syncing = ref.watch(homeSyncControllerProvider);
+    final syncing = ref.watch(regionSyncControllerProvider);
     return RdIconButton(
       key: const Key('home-sync-button'),
       icon: Icons.refresh,
@@ -230,7 +175,7 @@ class HomeSyncIconButton extends ConsumerWidget {
           ? i18n.t('rd.home.sync.actionBusy')
           : i18n.t('rd.home.sync.tooltip'),
       spinning: syncing,
-      onPressed: syncing ? null : () => runHomeSync(context, ref),
+      onPressed: syncing ? null : () => runRegionSync(context, ref),
     );
   }
 }

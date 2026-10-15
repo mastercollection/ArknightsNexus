@@ -12,6 +12,7 @@ import '../../services/diagnostics_service.dart';
 import '../../ui/nexus_ui.dart' show NexusMessageType, showNexusMessage;
 import '../../ui/redesign/rd_widgets.dart';
 import '../shared/region_select.dart';
+import '../shared/region_sync.dart';
 import 'settings_dialogs.dart';
 
 const _globeIcon = 'assets/icons/globe.svg';
@@ -33,13 +34,11 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  RegionSyncStatus? _syncStatus;
   DiagnosticsSummary? _diagnosticsSummary;
   bool _isLoading = true;
 
-  /// A manual sync is running (the loading line and refresh spinner say
-  /// "syncing" instead of "loading").
-  bool _isSyncing = false;
+  /// Error of the last manual sync or diagnostics load. Status load errors
+  /// come from [regionSyncStatusProvider].
   String _errorMessage = '';
   bool _userDataBusy = false;
   bool _diagnosticsBusy = false;
@@ -61,25 +60,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   NexusI18n get _i18n => ref.read(i18nProvider);
 
+  /// Loads the diagnostics summary; the sync status is
+  /// [regionSyncStatusProvider], shared with the home page.
   Future<void> _loadSettings() async {
     final token = ++_loadToken;
-    final region = ref.read(regionProvider);
     setState(() {
       _isLoading = true;
       _errorMessage = '';
     });
     try {
-      final results = await Future.wait<Object?>([
-        ref.read(regionSyncServiceProvider).getRegionSyncStatus(region),
-        ref.read(diagnosticsServiceProvider).getSummary(),
-      ]);
+      final summary = await ref.read(diagnosticsServiceProvider).getSummary();
       if (!mounted || token != _loadToken) {
         return;
       }
-      setState(() {
-        _syncStatus = results[0] as RegionSyncStatus?;
-        _diagnosticsSummary = results[1] as DiagnosticsSummary?;
-      });
+      setState(() => _diagnosticsSummary = summary);
     } catch (error) {
       if (mounted && token == _loadToken) {
         setState(() => _errorMessage = '$error');
@@ -91,40 +85,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  /// Runs the shared [RegionSyncController], so the home controls show the
+  /// same busy state; the refreshed status arrives through
+  /// [regionSyncStatusProvider].
   Future<void> _handleSettingsSync() async {
-    final region = ref.read(regionProvider);
-    setState(() {
-      _isLoading = true;
-      _isSyncing = true;
-      _errorMessage = '';
-    });
-    try {
-      await ref
-          .read(regionSyncServiceProvider)
-          .syncRegion(region)
-          .drain<void>();
-      ref.read(dataRevisionProvider.notifier).state++;
-      if (mounted) {
-        setState(() => _isSyncing = false);
-      }
-      await _loadSettings();
-      if (mounted) {
-        showNexusMessage(
-          context,
-          _i18n.t('home.messages.syncCompleted'),
-          type: NexusMessageType.success,
-        );
-      }
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _errorMessage = '$error';
-        _isLoading = false;
-        _isSyncing = false;
-      });
+    setState(() => _errorMessage = '');
+    final error = await ref.read(regionSyncControllerProvider.notifier).sync();
+    if (!mounted) {
+      return;
+    }
+    if (error != null) {
+      setState(() => _errorMessage = '$error');
       showNexusMessage(context, '$error', type: NexusMessageType.error);
+      return;
+    }
+    await _loadSettings();
+    if (mounted) {
+      showNexusMessage(
+        context,
+        _i18n.t('home.messages.syncCompleted'),
+        type: NexusMessageType.success,
+      );
     }
   }
 
@@ -251,6 +232,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       }
     });
     final compact = context.rdLayout == RdLayout.compact;
+    final syncing = ref.watch(regionSyncControllerProvider);
+    final statusAsync = ref.watch(regionSyncStatusProvider);
+    final loading = _isLoading || syncing || statusAsync.isLoading;
+    final errorMessage = _errorMessage.isNotEmpty
+        ? _errorMessage
+        : statusAsync.hasError
+            ? '${statusAsync.error}'
+            : '';
 
     final header = RdPageHeader(
       title: i18n.t('home.settings.title'),
@@ -267,23 +256,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           key: const Key('settings-topbar-sync'),
           icon: Icons.refresh,
           tooltip: i18n.t('rd.settings.refreshTooltip'),
-          spinning: _isSyncing,
-          onPressed: _isLoading ? null : _handleSettingsSync,
+          spinning: syncing,
+          onPressed: loading ? null : _handleSettingsSync,
         ),
       ],
     );
 
     final cards = [
       _regionCard(i18n, compact),
-      _syncCard(i18n, compact),
+      _syncCard(i18n, compact, statusAsync.valueOrNull, syncing, loading),
       _userDataCard(i18n, compact),
       _diagnosticsCard(i18n, compact),
     ];
 
     final content = <Widget>[
-      if (_isLoading) ...[
+      if (loading) ...[
         _LoadingLine(
-          label: _isSyncing
+          label: syncing
               ? i18n.t('rd.settings.syncing')
               : i18n.t('rd.settings.loading'),
         ),
@@ -302,10 +291,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           maxColumns: cards.length,
           children: cards,
         ),
-      if (_errorMessage.isNotEmpty) ...[
+      if (errorMessage.isNotEmpty) ...[
         SizedBox(height: compact ? 14 : 22),
         RdNotice(
-          text: _errorMessage,
+          text: errorMessage,
           tone: RdNoticeTone.danger,
           showIcon: false,
         ),
@@ -393,8 +382,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _syncCard(NexusI18n i18n, bool compact) {
-    final ready = _syncStatus?.isReady == true;
+  Widget _syncCard(
+    NexusI18n i18n,
+    bool compact,
+    RegionSyncStatus? status,
+    bool syncing,
+    bool loading,
+  ) {
+    final ready = status?.isReady == true;
     return _SettingsCard(
       compact: compact,
       title: i18n.t('home.settings.syncStatusTitle'),
@@ -428,10 +423,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
         RdButton(
           key: const Key('sync-region-button'),
-          label: _isSyncing
+          label: syncing
               ? i18n.t('rd.settings.syncBusy')
               : i18n.t('home.settings.syncAction'),
-          onPressed: _isLoading ? null : _handleSettingsSync,
+          onPressed: loading ? null : _handleSettingsSync,
           variant: RdButtonVariant.tonal,
           height: compact ? 48 : 44,
           expand: true,

@@ -5,145 +5,6 @@ import '../../i18n/nexus_i18n.dart';
 import '../../ui/redesign/rd_widgets.dart';
 import 'operators_list_controller.dart';
 
-/// The four filter dimensions of the operators list (the old filter drawer:
-/// rarity, profession, affiliation and BA tags).
-enum OperatorFilterDimension { rarity, profession, affiliation, baTags }
-
-extension on OperatorFilterDimension {
-  String title(NexusI18n i18n) => switch (this) {
-        OperatorFilterDimension.rarity =>
-          i18n.t('operatorsList.filters.rarity'),
-        OperatorFilterDimension.profession =>
-          i18n.t('operatorsList.filters.profession'),
-        OperatorFilterDimension.affiliation =>
-          i18n.t('operatorsList.filters.affiliation'),
-        OperatorFilterDimension.baTags =>
-          i18n.t('operatorsList.filters.baTags'),
-      };
-
-  String get keyName => switch (this) {
-        OperatorFilterDimension.rarity => 'rarity',
-        OperatorFilterDimension.profession => 'profession',
-        OperatorFilterDimension.affiliation => 'affiliation',
-        OperatorFilterDimension.baTags => 'ba-tags',
-      };
-
-  bool get multi => this == OperatorFilterDimension.baTags;
-
-  bool get searchable =>
-      this == OperatorFilterDimension.affiliation ||
-      this == OperatorFilterDimension.baTags;
-}
-
-/// One selectable value of a dimension.
-class _FilterOption {
-  const _FilterOption(this.label, this.selected, this.apply);
-
-  final String label;
-  final bool selected;
-
-  /// Selects (single) or toggles (multi) this option.
-  final void Function(OperatorsListController list) apply;
-}
-
-List<_FilterOption> _optionsOf(
-  OperatorFilterDimension dimension,
-  OperatorsListController list,
-  NexusI18n i18n,
-) {
-  final filters = list.filters;
-  final options = list.options;
-  switch (dimension) {
-    case OperatorFilterDimension.rarity:
-      return [
-        for (final rarity in options.rarities)
-          _FilterOption(
-            '$rarity ★',
-            filters.rarity == rarity,
-            (list) => list.filters = list.filters.copyWith(
-              rarity: () => list.filters.rarity == rarity ? null : rarity,
-            ),
-          ),
-      ];
-    case OperatorFilterDimension.profession:
-      return [
-        for (final profession in options.professions)
-          _FilterOption(
-            i18n.profession(profession),
-            filters.profession == profession,
-            (list) => list.filters = list.filters.copyWith(
-              profession: () =>
-                  list.filters.profession == profession ? null : profession,
-            ),
-          ),
-      ];
-    case OperatorFilterDimension.affiliation:
-      return [
-        for (final affiliation in options.affiliations)
-          _FilterOption(
-            affiliation,
-            filters.affiliation == affiliation,
-            (list) => list.filters = list.filters.copyWith(
-              affiliation: () =>
-                  list.filters.affiliation == affiliation ? null : affiliation,
-            ),
-          ),
-      ];
-    case OperatorFilterDimension.baTags:
-      return [
-        for (final tag in options.baTags)
-          _FilterOption(
-            tag,
-            filters.baTags.contains(tag),
-            (list) => list.toggleBaTag(tag),
-          ),
-      ];
-  }
-}
-
-/// Selected value(s) of [dimension] as one label, or null when unset.
-String? _shownValue(
-  OperatorFilterDimension dimension,
-  OperatorFilters filters,
-  NexusI18n i18n,
-) {
-  switch (dimension) {
-    case OperatorFilterDimension.rarity:
-      return filters.rarity == null ? null : '${filters.rarity} ★';
-    case OperatorFilterDimension.profession:
-      return filters.profession == null
-          ? null
-          : i18n.profession(filters.profession!);
-    case OperatorFilterDimension.affiliation:
-      return filters.affiliation;
-    case OperatorFilterDimension.baTags:
-      final tags = filters.baTags;
-      if (tags.isEmpty) {
-        return null;
-      }
-      return tags.length == 1
-          ? tags.first
-          : i18n.t('rd.operators.chip.more', {
-              'value': tags.first,
-              'count': tags.length - 1,
-            });
-  }
-}
-
-void _clearDimension(
-  OperatorFilterDimension dimension,
-  OperatorsListController list,
-) {
-  list.filters = switch (dimension) {
-    OperatorFilterDimension.rarity => list.filters.copyWith(rarity: () => null),
-    OperatorFilterDimension.profession =>
-      list.filters.copyWith(profession: () => null),
-    OperatorFilterDimension.affiliation =>
-      list.filters.copyWith(affiliation: () => null),
-    OperatorFilterDimension.baTags => list.filters.copyWith(baTags: const []),
-  };
-}
-
 const _chipOnBorder = RdColors.chipOnBorder;
 const _chipOnFill = RdColors.chipOnFill;
 
@@ -337,7 +198,7 @@ class _OperatorsFilterSidebarState
     }) {
       final q = query.trim().toLowerCase();
       return [
-        for (final option in _optionsOf(dimension, list, i18n))
+        for (final option in list.filterOptions(dimension, i18n))
           if (q.isEmpty ||
               option.selected ||
               option.label.toLowerCase().contains(q))
@@ -348,7 +209,7 @@ class _OperatorsFilterSidebarState
               label: option.label,
               selected: option.selected,
               tag: dimension == OperatorFilterDimension.baTags,
-              onTap: () => option.apply(list),
+              onTap: () => list.applyFilterOption(option),
             ),
       ];
     }
@@ -615,7 +476,7 @@ class OperatorsFilterChipRow extends ConsumerWidget {
             Builder(
               builder: (context) {
                 final title = dimension.title(i18n);
-                final value = _shownValue(dimension, filters, i18n);
+                final value = list.shownFilterValue(dimension, i18n);
                 final set = value != null;
                 return pill(
                   key: Key('operators-filter-${dimension.keyName}'),
@@ -628,7 +489,7 @@ class OperatorsFilterChipRow extends ConsumerWidget {
                         })
                       : title,
                   onTap: set
-                      ? () => _clearDimension(dimension, list)
+                      ? () => list.clearFilterDimension(dimension)
                       : () => showOperatorFilterSheet(context, dimension),
                 );
               },
@@ -686,7 +547,7 @@ class _AllFiltersSheet extends ConsumerWidget {
               const SizedBox(height: 12),
               Builder(
                 builder: (context) {
-                  final value = _shownValue(dimension, list.filters, i18n);
+                  final value = list.shownFilterValue(dimension, i18n);
                   return Material(
                     color: RdColors.sheetOption,
                     shape: RoundedRectangleBorder(
@@ -798,7 +659,7 @@ class _DimensionSheetState extends ConsumerState<_DimensionSheet> {
     final list = ref.watch(operatorsListControllerProvider);
     final dimension = widget.dimension;
     final title = dimension.title(i18n);
-    final all = _optionsOf(dimension, list, i18n);
+    final all = list.filterOptions(dimension, i18n);
     final q = _query.text.trim().toLowerCase();
     final options = dimension.searchable && q.isNotEmpty
         ? all.where((o) => o.label.toLowerCase().contains(q)).toList()
@@ -831,7 +692,7 @@ class _DimensionSheetState extends ConsumerState<_DimensionSheet> {
                   foregroundColor: RdColors.link,
                 ),
                 onPressed: () {
-                  _clearDimension(dimension, list);
+                  list.clearFilterDimension(dimension);
                   if (!dimension.multi) {
                     Navigator.of(context).pop();
                   }
@@ -882,12 +743,12 @@ class _DimensionSheetState extends ConsumerState<_DimensionSheet> {
                           background: RdColors.sheetOption,
                           onTap: () {
                             if (dimension.multi) {
-                              option.apply(list);
+                              list.applyFilterOption(option);
                               return;
                             }
                             // A pick always selects (the sheet closes).
                             if (!option.selected) {
-                              option.apply(list);
+                              list.applyFilterOption(option);
                             }
                             Navigator.of(context).pop();
                           },
