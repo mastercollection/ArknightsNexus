@@ -228,6 +228,10 @@ void main() {
 
       await tester
           .tap(find.byKey(const ValueKey('operator-tile-char_003_kalts')));
+      await tester.pump();
+      // No page transition: the selected workspace replaces the other at once.
+      expect(find.byType(OperatorDetailScreen), findsOneWidget);
+      expect(find.byType(OperatorsScreen), findsNothing);
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       // List stays; the pane shows the operator (header + hero name).
