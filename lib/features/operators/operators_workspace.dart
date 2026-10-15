@@ -45,7 +45,20 @@ class _OperatorsWorkspaceState extends ConsumerState<OperatorsWorkspace> {
   @override
   Widget build(BuildContext context) {
     final i18n = ref.watch(i18nProvider);
-    final list = ref.watch(operatorsListControllerProvider);
+    // The grid and the sidebar watch the list themselves; this frame only
+    // needs what its header shows, so paging the grid (`loadMore`) does not
+    // rebuild the detail pane.
+    ref.watch(
+      operatorsListControllerProvider.select(
+        (list) => (
+          list.filters,
+          list.isLoading,
+          list.errorMessage,
+          list.operatorList.length,
+        ),
+      ),
+    );
+    final list = ref.read(operatorsListControllerProvider);
     // Keep the field in sync when the query changes elsewhere (?q=).
     if (_search.text != list.filters.query) {
       _search.value = TextEditingValue(

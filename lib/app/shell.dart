@@ -6,6 +6,7 @@ import '../features/home/home_sidebar_panel.dart';
 import '../features/shared/region_sync.dart';
 import '../i18n/nexus_i18n.dart';
 import '../ui/redesign/rd_widgets.dart';
+import 'page_transitions.dart';
 
 /// Top-level sections of the app, in navigation order.
 enum NexusSection {
@@ -66,11 +67,15 @@ class NexusShell extends ConsumerWidget {
   const NexusShell({
     required this.location,
     required this.child,
+    this.sectionSwitch,
     super.key,
   });
 
   final String location;
   final Widget child;
+
+  /// Makes rail / tab switches instant; without it they are plain `go`s.
+  final SectionSwitchSignal? sectionSwitch;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -85,7 +90,12 @@ class NexusShell extends ConsumerWidget {
       if (target == section && atSectionRoot) {
         return;
       }
-      context.go(target.path);
+      final signal = sectionSwitch;
+      if (signal != null) {
+        signal.go(context, target.path);
+      } else {
+        context.go(target.path);
+      }
     }
 
     Widget body;

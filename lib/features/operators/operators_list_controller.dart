@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../data_sources/region_code.dart';
 import '../../domain/operator.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../services/operator_service.dart';
@@ -187,12 +188,28 @@ class OperatorsListController extends ChangeNotifier {
   bool get hasMore => visibleCount < operatorList.length;
 
   /// Starts the first load once; later calls are no-ops.
+  ///
+  /// When the list was already loaded this session for the current region
+  /// and data revision, it is used at once (without notifying: this runs
+  /// while the page builds), so reopening the section shows the operators in
+  /// its first frame instead of a frame of loading tiles first.
   void ensureLoaded() {
     if (_started) {
       return;
     }
     _started = true;
-    load();
+    final loaded = _ref.read(_loadedOperatorsProvider).lookup(
+          _ref.read(regionProvider),
+          _ref.read(dataRevisionProvider),
+        );
+    if (loaded == null) {
+      load();
+      return;
+    }
+    _allOperators = loaded.operators;
+    options = loaded.options;
+    _applyLocalFilters();
+    isLoading = false;
   }
 
   Future<void> load({bool reset = false}) async {
@@ -226,6 +243,12 @@ class OperatorsListController extends ChangeNotifier {
       }
       _allOperators = operators;
       options = OperatorFilterOptions.from(operators);
+      _ref.read(_loadedOperatorsProvider).store(
+            region,
+            _ref.read(dataRevisionProvider),
+            operators,
+            options,
+          );
       _applyLocalFilters();
     } catch (error) {
       if (_disposed || token != _loadToken) {
@@ -461,6 +484,43 @@ class OperatorsListController extends ChangeNotifier {
     super.dispose();
   }
 }
+
+/// The operator list (and its filter options) last loaded this session.
+///
+/// [OperatorsListController] is disposed when the user leaves the section;
+/// this keeps the loaded list for the next visit. The list only changes with
+/// the region or a sync (which bumps [dataRevisionProvider]), so both are
+/// part of the key; the region's freshness check runs once per session.
+class _LoadedOperators {
+  RegionCode? _region;
+  int? _revision;
+  ({List<OperatorSummary> operators, OperatorFilterOptions options})? _value;
+
+  ({List<OperatorSummary> operators, OperatorFilterOptions options})? lookup(
+    RegionCode region,
+    int revision,
+  ) {
+    return region == _region && revision == _revision ? _value : null;
+  }
+
+  void store(
+    RegionCode region,
+    int revision,
+    List<OperatorSummary> operators,
+    OperatorFilterOptions options,
+  ) {
+    _region = region;
+    _revision = revision;
+    _value = (operators: operators, options: options);
+  }
+}
+
+/// Recreated with the operator service, so a different data source never
+/// serves a list loaded from another one.
+final _loadedOperatorsProvider = Provider<_LoadedOperators>((ref) {
+  ref.watch(operatorServiceProvider);
+  return _LoadedOperators();
+});
 
 final operatorsListControllerProvider =
     ChangeNotifierProvider.autoDispose<OperatorsListController>((ref) {

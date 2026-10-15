@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'logging_navigator_observer.dart';
+import 'page_transitions.dart';
 import 'providers.dart';
 import 'shell.dart';
 import '../ui/redesign/rd_tokens.dart';
@@ -32,7 +33,25 @@ final routerProvider = Provider<GoRouter>((ref) {
 
 /// [observers] is called once per navigator (root and shell), since an
 /// observer can only watch one navigator.
+///
+/// Rail / sidebar / tab bar switches go through one [SectionSwitchSignal]
+/// shared by the shell and the pages, so they appear without a transition;
+/// every other navigation uses the platform's push transition.
 GoRouter createRouter({List<NavigatorObserver> Function()? observers}) {
+  final sectionSwitch = SectionSwitchSignal();
+  Page<void> page(
+    GoRouterState state,
+    Widget child, {
+    NexusPageTransition? transition,
+  }) =>
+      NexusPage<void>(
+        key: state.pageKey,
+        name: state.name,
+        sectionSwitch: sectionSwitch,
+        transition: transition,
+        child: child,
+      );
+
   return GoRouter(
     navigatorKey: rootNavigatorKey,
     initialLocation: '/',
@@ -41,19 +60,26 @@ GoRouter createRouter({List<NavigatorObserver> Function()? observers}) {
       ShellRoute(
         navigatorKey: shellNavigatorKey,
         observers: observers?.call(),
-        builder: (context, state, child) =>
-            NexusShell(location: state.uri.toString(), child: child),
+        builder: (context, state, child) => NexusShell(
+          location: state.uri.toString(),
+          sectionSwitch: sectionSwitch,
+          child: child,
+        ),
         routes: [
           GoRoute(
             path: '/',
             name: HomeScreen.routeName,
-            builder: (context, state) => const HomeScreen(),
+            pageBuilder: (context, state) => page(
+              state,
+              const HomeScreen(),
+            ),
           ),
           GoRoute(
             path: '/operators',
             name: OperatorsScreen.routeName,
             pageBuilder: (context, state) => _operatorsPage(
               context,
+              page,
               state,
               OperatorsScreen(
                 initialQuery: state.uri.queryParameters['q'],
@@ -65,6 +91,7 @@ GoRouter createRouter({List<NavigatorObserver> Function()? observers}) {
             name: OperatorDetailScreen.routeName,
             pageBuilder: (context, state) => _operatorsPage(
               context,
+              page,
               state,
               OperatorDetailScreen(
                 operatorId: state.pathParameters['operatorId']!,
@@ -74,31 +101,46 @@ GoRouter createRouter({List<NavigatorObserver> Function()? observers}) {
           GoRoute(
             path: '/items',
             name: ItemsScreen.routeName,
-            builder: (context, state) => const ItemsScreen(),
+            pageBuilder: (context, state) => page(
+              state,
+              const ItemsScreen(),
+            ),
           ),
           GoRoute(
             path: '/items/:itemId',
             name: ItemDetailScreen.routeName,
-            builder: (context, state) => ItemDetailScreen(
-              itemId: state.pathParameters['itemId']!,
+            pageBuilder: (context, state) => page(
+              state,
+              ItemDetailScreen(
+                itemId: state.pathParameters['itemId']!,
+              ),
             ),
           ),
           GoRoute(
             path: '/plan',
             name: PlanScreen.routeName,
-            builder: (context, state) => const PlanScreen(),
+            pageBuilder: (context, state) => page(
+              state,
+              const PlanScreen(),
+            ),
           ),
           GoRoute(
             path: '/plan/:operatorId',
             name: OperatorPlanScreen.routeName,
-            builder: (context, state) => OperatorPlanScreen(
-              operatorId: state.pathParameters['operatorId']!,
+            pageBuilder: (context, state) => page(
+              state,
+              OperatorPlanScreen(
+                operatorId: state.pathParameters['operatorId']!,
+              ),
             ),
           ),
           GoRoute(
             path: '/settings',
             name: SettingsScreen.routeName,
-            builder: (context, state) => const SettingsScreen(),
+            pageBuilder: (context, state) => page(
+              state,
+              const SettingsScreen(),
+            ),
           ),
         ],
       ),
@@ -108,14 +150,25 @@ GoRouter createRouter({List<NavigatorObserver> Function()? observers}) {
 
 /// At expanded width `/operators` and `/operators/:id` both render the same
 /// master-detail workspace, so switching between them must not animate the
-/// whole page; narrower layouts keep the normal push transition.
+/// whole page; narrower layouts use the push transition like every route.
+///
+/// Both cases are a [NexusPage], so the routes delegate the same exit
+/// transition as their neighbours (a different one would rebuild the page
+/// below from scratch on every push) and a window resize keeps the route.
 Page<void> _operatorsPage(
   BuildContext context,
+  Page<void> Function(
+    GoRouterState state,
+    Widget child, {
+    NexusPageTransition? transition,
+  }) page,
   GoRouterState state,
   Widget child,
 ) {
-  if (context.rdLayout == RdLayout.expanded) {
-    return NoTransitionPage<void>(key: state.pageKey, child: child);
-  }
-  return MaterialPage<void>(key: state.pageKey, child: child);
+  return page(
+    state,
+    child,
+    transition:
+        context.rdLayout == RdLayout.expanded ? NexusPageTransition.none : null,
+  );
 }

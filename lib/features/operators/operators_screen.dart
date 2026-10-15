@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -81,7 +82,6 @@ class _OperatorsListPageState extends ConsumerState<OperatorsListPage> {
   double _lastScrollY = 0;
   double _upwardTravel = 0;
   double _downwardTravel = 0;
-  final _clock = Stopwatch()..start();
   int _lockUntil = 0;
 
   @override
@@ -101,7 +101,10 @@ class _OperatorsListPageState extends ConsumerState<OperatorsListPage> {
   /// Condenses after scrollY > 140 with 52px of downward travel, expands
   /// after 56px of upward travel or near the top; 220ms lock per toggle.
   void _handleScroll(double currentScrollY) {
-    final now = _clock.elapsedMilliseconds;
+    // Frame time rather than a wall clock: the lock follows the animation
+    // clock, which tests drive.
+    final now =
+        SchedulerBinding.instance.currentSystemFrameTimeStamp.inMilliseconds;
     final delta = currentScrollY - _lastScrollY;
     if (delta > 0) {
       _downwardTravel += delta;
