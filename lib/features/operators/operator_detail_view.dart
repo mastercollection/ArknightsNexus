@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -16,6 +15,7 @@ import '../../services/image_cache_service.dart';
 import '../../services/rich_description.dart';
 import '../../ui/nexus_ui.dart' show NexusMessageType, showNexusMessage;
 import '../../ui/redesign/rd_widgets.dart';
+import '../../widgets/resolved_image_provider.dart';
 import 'operator_detail_panels.dart';
 import 'operator_detail_view_model.dart';
 import 'operator_detail_widgets.dart';
@@ -63,9 +63,9 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
   bool _isLoading = true;
   String _errorMessage = '';
   Map<String, String> _terms = const {};
-  Map<String, File> _skillIcons = const {};
-  Map<String, File> _moduleTypeIcons = const {};
-  Map<String, File> _moduleEquipIcons = const {};
+  Map<String, ImageProvider> _skillIcons = const {};
+  Map<String, ImageProvider> _moduleTypeIcons = const {};
+  Map<String, ImageProvider> _moduleEquipIcons = const {};
   int _loadToken = 0;
 
   // Favorite auto-persist (`useAutoPersist`, 250ms debounce).
@@ -162,9 +162,9 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
       }
 
       final images = ref.read(imageCacheServiceProvider);
-      var skillIcons = <String, File>{};
-      var typeIcons = <String, File>{};
-      var equipIcons = <String, File>{};
+      var skillIcons = <String, ImageProvider>{};
+      var typeIcons = <String, ImageProvider>{};
+      var equipIcons = <String, ImageProvider>{};
       if (operator != null) {
         try {
           await images.prefetch([
@@ -227,7 +227,7 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
     }
   }
 
-  Future<Map<String, File>> _resolveAll(
+  Future<Map<String, ImageProvider>> _resolveAll(
     ImageCacheService images,
     Map<String, (CachedImageKind, String)> requests,
   ) async {
@@ -243,15 +243,16 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
     } catch (_) {
       // Fallback UI covers missing images.
     }
-    final resolved = <String, File>{};
+    final resolved = <String, ImageProvider>{};
     await Future.wait(
       valid.entries.map((entry) async {
         try {
           final image = await images.resolve(
             ImageRequest(kind: entry.value.$1, id: entry.value.$2),
           );
-          if (image.isReady && image.file != null) {
-            resolved[entry.key] = image.file!;
+          final provider = resolvedImageProvider(image);
+          if (provider != null) {
+            resolved[entry.key] = provider;
           }
         } catch (_) {
           // Ignore individual failures.

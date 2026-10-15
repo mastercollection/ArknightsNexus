@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../app/providers.dart';
 import '../data_sources/image_source.dart';
 import '../services/image_cache_service.dart';
+import 'resolved_image_provider.dart';
 
 /// Displays a cached remote image for a [CachedImageKind]/id pair.
 ///
@@ -74,12 +75,14 @@ class _CachedImageState extends ConsumerState<CachedImage> {
               widget.loading != null) {
             return widget.loading!;
           }
-          if (resolved == null || !resolved.isReady || resolved.file == null) {
+          final provider =
+              resolved == null ? null : resolvedImageProvider(resolved);
+          if (provider == null) {
             return widget.placeholder;
           }
 
-          final image = Image.file(
-            resolved.file!,
+          final image = Image(
+            image: provider,
             width: widget.size,
             height: widget.size,
             fit: widget.fit,

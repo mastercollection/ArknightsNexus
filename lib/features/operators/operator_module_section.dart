@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 
 import '../../domain/operator.dart';
@@ -26,10 +24,10 @@ class OperatorModuleSection extends StatefulWidget {
   final NexusI18n i18n;
 
   /// Resolved `moduleType` icon files keyed by `uniEquipId`.
-  final Map<String, File> typeIcons;
+  final Map<String, ImageProvider> typeIcons;
 
   /// Resolved `moduleEquip` icon files keyed by `uniEquipId`.
-  final Map<String, File> equipIcons;
+  final Map<String, ImageProvider> equipIcons;
   final TermTapCallback? onTermTap;
 
   /// Phone sizes (44px segments, smaller range cells).
@@ -213,7 +211,7 @@ class _ModulePill extends StatelessWidget {
 
   final OperatorModule module;
   final bool selected;
-  final File? icon;
+  final ImageProvider? icon;
   final VoidCallback onTap;
 
   @override
@@ -239,7 +237,7 @@ class _ModulePill extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             child: icon != null
-                ? Image.file(icon!, fit: BoxFit.contain)
+                ? Image(image: icon!, fit: BoxFit.contain)
                 : Text(
                     label.isEmpty ? '' : label.substring(0, 1),
                     style: const TextStyle(
@@ -279,7 +277,7 @@ class _ModuleCard extends StatelessWidget {
   final OperatorModule module;
   final OperatorModuleBattlePhase? phase;
   final int level;
-  final File? equipIcon;
+  final ImageProvider? equipIcon;
   final NexusI18n i18n;
   final bool compact;
   final ValueChanged<int> onLevelChanged;
@@ -329,7 +327,7 @@ class _ModuleCard extends StatelessWidget {
                   border: Border.all(color: RdColors.white8),
                 ),
                 child: equipIcon != null
-                    ? Image.file(equipIcon!, fit: BoxFit.contain)
+                    ? Image(image: equipIcon!, fit: BoxFit.contain)
                     : Text(
                         typeLabel.isEmpty ? '' : typeLabel.substring(0, 1),
                         style: const TextStyle(

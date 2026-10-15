@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 
 import '../../domain/operator.dart';
@@ -446,8 +444,8 @@ class OperatorModulesPanel extends StatelessWidget {
 
   final OperatorDetail operator;
   final NexusI18n i18n;
-  final Map<String, File> typeIcons;
-  final Map<String, File> equipIcons;
+  final Map<String, ImageProvider> typeIcons;
+  final Map<String, ImageProvider> equipIcons;
   final TermTapCallback onTermTap;
   final bool compact;
 
@@ -489,7 +487,7 @@ class OperatorSkillsPanel extends StatelessWidget {
   final NexusI18n i18n;
   final OperatorSkill? selectedSkill;
   final int selectedLevel;
-  final Map<String, File> skillIcons;
+  final Map<String, ImageProvider> skillIcons;
   final ValueChanged<String> onSkillSelected;
   final ValueChanged<int> onLevelChanged;
   final TermTapCallback onTermTap;
@@ -705,7 +703,7 @@ class _SkillButton extends StatelessWidget {
   });
 
   final OperatorSkill skill;
-  final File? icon;
+  final ImageProvider? icon;
   final bool selected;
   final VoidCallback onTap;
 
@@ -724,8 +722,8 @@ class _SkillButton extends StatelessWidget {
         semanticLabel: skill.name,
         onTap: onTap,
         child: icon != null
-            ? Image.file(
-                icon!,
+            ? Image(
+                image: icon!,
                 width: 52,
                 height: 52,
                 fit: BoxFit.contain,

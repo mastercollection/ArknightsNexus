@@ -45,12 +45,12 @@ void main() {
       );
 
       expect(result.isReady, isTrue);
-      expect(await result.file!.readAsBytes(), [1, 2, 3, 4]);
-      expect(result.file!.path, endsWith('char_002_amiya.png'));
+      expect(await File(result.filePath!).readAsBytes(), [1, 2, 3, 4]);
+      expect(result.filePath!, endsWith('char_002_amiya.png'));
 
       // No stale .part file remains.
-      final part = await repository.fileFor(
-        'images/portraits/$id.png.part',
+      final part = File(
+        await repository.pathFor('images/portraits/$id.png.part'),
       );
       expect(await part.exists(), isFalse);
     });
@@ -87,7 +87,7 @@ void main() {
       );
 
       expect(result.isReady, isTrue);
-      expect(await result.file!.readAsBytes(), [7, 7]);
+      expect(await File(result.filePath!).readAsBytes(), [7, 7]);
     });
 
     test('returns missing when all candidates fail', () async {
@@ -96,7 +96,7 @@ void main() {
       );
 
       expect(result.status, ImageStatus.missing);
-      expect(result.file, isNull);
+      expect(result.filePath, isNull);
     });
 
     test('returns missing for an invalid id without hitting the network',

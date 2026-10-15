@@ -19,9 +19,7 @@ class FileImageCacheRepository implements ImageCacheRepository {
   }
 
   @override
-  Future<File> fileFor(String relativePath) async {
-    return File(await _absolute(relativePath));
-  }
+  Future<String> pathFor(String relativePath) => _absolute(relativePath);
 
   @override
   Future<bool> exists(String relativePath) async {
@@ -41,10 +39,13 @@ class FileImageCacheRepository implements ImageCacheRepository {
   }
 
   @override
-  Future<File> promotePart(String partRelativePath, String relativePath) async {
+  Future<String> promotePart(
+    String partRelativePath,
+    String relativePath,
+  ) async {
     final part = File(await _absolute(partRelativePath));
     final target = await _absolute(relativePath);
-    return part.rename(target);
+    return (await part.rename(target)).path;
   }
 
   @override

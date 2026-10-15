@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -15,6 +14,7 @@ import '../../domain/user_data.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../services/user_data_service.dart';
 import '../../ui/redesign/rd_widgets.dart';
+import '../../widgets/resolved_image_provider.dart';
 import 'plan_auto_persist.dart';
 import 'plan_materials_grid.dart';
 import 'plan_widgets.dart';
@@ -50,7 +50,7 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
   UserPlanOperator? _localPlan;
   Map<String, ItemEntry> _itemsById = const {};
   BuildingFormulaBundle _buildingFormulas = const BuildingFormulaBundle();
-  Map<String, File> _moduleTypeIcons = const {};
+  Map<String, ImageProvider> _moduleTypeIcons = const {};
   bool _detailExpandRecipes = false;
   int _loadToken = 0;
 
@@ -242,9 +242,10 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
             final resolved = await imageService.resolve(
               ImageRequest(kind: CachedImageKind.moduleType, id: typeIcon),
             );
-            return resolved.isReady && resolved.file != null
-                ? MapEntry(module.uniEquipId, resolved.file!)
-                : null;
+            final provider = resolvedImageProvider(resolved);
+            return provider == null
+                ? null
+                : MapEntry(module.uniEquipId, provider);
           } catch (_) {
             return null;
           }
@@ -255,7 +256,7 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
     }
     setState(() {
       _moduleTypeIcons =
-          Map.fromEntries(entries.whereType<MapEntry<String, File>>());
+          Map.fromEntries(entries.whereType<MapEntry<String, ImageProvider>>());
     });
   }
 
@@ -789,7 +790,7 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
                     borderRadius: BorderRadius.circular(RdRadii.control),
                     border: Border.all(color: RdColors.white8),
                   ),
-                  child: Image.file(icon, fit: BoxFit.contain),
+                  child: Image(image: icon, fit: BoxFit.contain),
                 ),
                 const SizedBox(width: 10),
               ],

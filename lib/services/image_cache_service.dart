@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import '../core/errors/app_failure.dart';
 import '../core/http/http_client.dart';
@@ -9,22 +9,37 @@ import '../repositories/image_cache_repository.dart';
 /// Whether a resolved image is available locally.
 enum ImageStatus { ready, missing }
 
-/// Result of resolving an image request.
+/// Result of resolving an image request: a cached file on native builds,
+/// the downloaded bytes on the web build (which has no file system).
+/// Widgets turn it into an `ImageProvider` with `resolvedImageProvider`.
 class ResolvedImage {
-  const ResolvedImage.ready(File this.file) : status = ImageStatus.ready;
+  const ResolvedImage.file(String this.filePath)
+      : status = ImageStatus.ready,
+        bytes = null;
+
+  const ResolvedImage.bytes(Uint8List this.bytes)
+      : status = ImageStatus.ready,
+        filePath = null;
 
   const ResolvedImage.missing()
       : status = ImageStatus.missing,
-        file = null;
+        filePath = null,
+        bytes = null;
 
   final ImageStatus status;
-  final File? file;
+
+  /// Absolute path of the cached file.
+  final String? filePath;
+
+  /// The encoded image itself.
+  final Uint8List? bytes;
 
   bool get isReady => status == ImageStatus.ready;
 }
 
 abstract interface class ImageCacheService {
-  /// Resolves an image to a local file, downloading and caching it if needed.
+  /// Resolves an image, downloading (and on native builds caching) it if
+  /// needed.
   Future<ResolvedImage> resolve(ImageRequest request);
 
   /// Resolves multiple images concurrently, ignoring individual failures.
@@ -67,8 +82,8 @@ class DartImageCacheService implements ImageCacheService {
 
     if (!request.forceRefresh &&
         await _repository.exists(descriptor.relativePath)) {
-      final file = await _repository.fileFor(descriptor.relativePath);
-      final result = ResolvedImage.ready(file);
+      final path = await _repository.pathFor(descriptor.relativePath);
+      final result = ResolvedImage.file(path);
       _resolved[cacheKey] = result;
       return result;
     }
@@ -80,11 +95,11 @@ class DartImageCacheService implements ImageCacheService {
       try {
         final bytes = await _httpClient.getBytes(Uri.parse(url));
         await _repository.writePart(descriptor.partRelativePath, bytes);
-        final file = await _repository.promotePart(
+        final path = await _repository.promotePart(
           descriptor.partRelativePath,
           descriptor.relativePath,
         );
-        final result = ResolvedImage.ready(file);
+        final result = ResolvedImage.file(path);
         _resolved[cacheKey] = result;
         return result;
       } on Object catch (error) {
