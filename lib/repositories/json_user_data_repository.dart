@@ -3,11 +3,16 @@ import 'dart:io';
 
 import '../core/errors/app_failure.dart';
 import '../core/storage/app_directories.dart';
+import '../core/storage/atomic_file.dart';
 import '../domain/user_data.dart';
 import 'user_data_repository.dart';
 
+/// `user/user_data.json` with an in-memory copy: the file is parsed once and
+/// every successful [write] replaces the copy, so the app does not re-read
+/// the file for each operation. This repository must be the only writer of
+/// the file while the app runs.
 class JsonUserDataRepository implements UserDataRepository {
-  const JsonUserDataRepository(
+  JsonUserDataRepository(
     this._directories, {
     Future<List<File>> Function()? legacyUserDataFiles,
   }) : _legacyUserDataFiles = legacyUserDataFiles;
@@ -18,10 +23,32 @@ class JsonUserDataRepository implements UserDataRepository {
   /// that exists is copied over once, so existing users keep their data.
   final Future<List<File>> Function()? _legacyUserDataFiles;
 
+  UserData? _current;
+  Future<UserData>? _loading;
+
   @override
   Future<UserData> read() async {
+    final current = _current;
+    if (current != null) {
+      return current;
+    }
+    final loading = _loading ??= _load();
+    try {
+      final data = await loading;
+      // A write that finished meanwhile is newer than what was loaded.
+      return _current ??= data;
+    } finally {
+      if (identical(_loading, loading)) {
+        _loading = null;
+      }
+    }
+  }
+
+  Future<UserData> _load() async {
     final file = await _userDataFile();
-    if (!await file.exists() && !await _importLegacy(file)) {
+    // A crashed fallback write may have left only `user_data.json.prev`;
+    // restoring it keeps the legacy import below from overwriting real data.
+    if (!await recoverAtomicFile(file) && !await _importLegacy(file)) {
       return const UserData();
     }
 
@@ -38,17 +65,12 @@ class JsonUserDataRepository implements UserDataRepository {
   Future<void> write(UserData data) async {
     final file = await _userDataFile();
     try {
-      await file.parent.create(recursive: true);
-      final temp = File('${file.path}.tmp');
       const encoder = JsonEncoder.withIndent('  ');
-      await temp.writeAsString(encoder.convert(data.toJson()));
-      if (await file.exists()) {
-        await file.delete();
-      }
-      await temp.rename(file.path);
+      await writeFileAtomically(file, encoder.convert(data.toJson()));
     } catch (error) {
       throw CacheFailure('Failed to write ${file.path}: $error');
     }
+    _current = data;
   }
 
   @override
