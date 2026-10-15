@@ -63,11 +63,13 @@ class SectionSwitchSignal {
 
 /// Page of the shell navigator: a section switch ([SectionSwitchSignal])
 /// creates it without a transition, anything else with the push transition
-/// of the current platform ([pushTransitionFor]).
+/// of the current platform ([pushTransitionFor]), unless [transition] fixes
+/// it.
 class NexusPage<T> extends Page<T> {
   const NexusPage({
     required this.child,
     required this.sectionSwitch,
+    this.transition,
     super.key,
     super.name,
     super.arguments,
@@ -77,13 +79,17 @@ class NexusPage<T> extends Page<T> {
   final Widget child;
   final SectionSwitchSignal sectionSwitch;
 
+  /// Overrides the transition the route is created with.
+  final NexusPageTransition? transition;
+
   @override
   Route<T> createRoute(BuildContext context) {
     final push = pushTransitionFor(defaultTargetPlatform);
     return _NexusPageRoute<T>(
       page: this,
       push: push,
-      transition: sectionSwitch.active ? NexusPageTransition.none : push,
+      transition: transition ??
+          (sectionSwitch.active ? NexusPageTransition.none : push),
     );
   }
 }

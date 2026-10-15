@@ -39,10 +39,16 @@ final routerProvider = Provider<GoRouter>((ref) {
 /// every other navigation uses the platform's push transition.
 GoRouter createRouter({List<NavigatorObserver> Function()? observers}) {
   final sectionSwitch = SectionSwitchSignal();
-  Page<void> page(GoRouterState state, Widget child) => NexusPage<void>(
+  Page<void> page(
+    GoRouterState state,
+    Widget child, {
+    NexusPageTransition? transition,
+  }) =>
+      NexusPage<void>(
         key: state.pageKey,
         name: state.name,
         sectionSwitch: sectionSwitch,
+        transition: transition,
         child: child,
       );
 
@@ -144,15 +150,25 @@ GoRouter createRouter({List<NavigatorObserver> Function()? observers}) {
 
 /// At expanded width `/operators` and `/operators/:id` both render the same
 /// master-detail workspace, so switching between them must not animate the
-/// whole page; narrower layouts use the shell's [page] like every route.
+/// whole page; narrower layouts use the push transition like every route.
+///
+/// Both cases are a [NexusPage], so the routes delegate the same exit
+/// transition as their neighbours (a different one would rebuild the page
+/// below from scratch on every push) and a window resize keeps the route.
 Page<void> _operatorsPage(
   BuildContext context,
-  Page<void> Function(GoRouterState state, Widget child) page,
+  Page<void> Function(
+    GoRouterState state,
+    Widget child, {
+    NexusPageTransition? transition,
+  }) page,
   GoRouterState state,
   Widget child,
 ) {
-  if (context.rdLayout == RdLayout.expanded) {
-    return NoTransitionPage<void>(key: state.pageKey, child: child);
-  }
-  return page(state, child);
+  return page(
+    state,
+    child,
+    transition:
+        context.rdLayout == RdLayout.expanded ? NexusPageTransition.none : null,
+  );
 }
