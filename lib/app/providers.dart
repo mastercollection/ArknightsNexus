@@ -18,6 +18,7 @@ import '../services/item_service.dart';
 import '../services/operator_service.dart';
 import '../services/penguin_stats_service.dart';
 import '../services/plan_cost_service.dart';
+import '../services/published_snapshot_sync_service.dart';
 import '../services/region_readiness.dart';
 import '../services/region_sync_service.dart';
 import '../services/user_data_file_service.dart';
@@ -74,9 +75,12 @@ final itemServiceProvider = Provider<ItemService>((ref) {
 final regionSyncServiceProvider = Provider<RegionSyncService>((ref) {
   final httpClient = PackageHttpClient();
   ref.onDispose(httpClient.close);
-  return DartRegionSyncService(
+  final cache = ref.watch(regionCacheRepositoryProvider);
+  return PublishedSnapshotSyncService(
     httpClient: httpClient,
-    cache: ref.watch(regionCacheRepositoryProvider),
+    cache: cache,
+    logger: ref.watch(appLoggerProvider),
+    fallback: DartRegionSyncService(httpClient: httpClient, cache: cache),
   );
 });
 
