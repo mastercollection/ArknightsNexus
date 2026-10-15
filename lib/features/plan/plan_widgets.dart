@@ -14,9 +14,6 @@ class PlanColors {
   /// `#dbe2f0`: first line of state panels, tier labels.
   static const stateTitle = Color(0xFFDBE2F0);
 
-  /// `rgba(255,255,255,0.03)`: inset blocks inside cards.
-  static const inset = Color(0x08FFFFFF);
-
   /// `#ffb3b3`: shortage counts.
   static const shortage = Color(0xFFFFB3B3);
 
@@ -25,27 +22,12 @@ class PlanColors {
   static const validationFill = Color(0x14FF6666);
   static const validationBorder = Color(0x40FF7878);
 
-  /// Runs chip (`rgba(113,165,255,0.16)` / `#dce9ff`).
-  static const runsFill = Color(0x2971A5FF);
-  static const runsText = Color(0xFFDCE9FF);
-
-  /// Sanity chip (`rgba(255,207,112,0.14)` / `#ffe2a8`).
-  static const sanityFill = Color(0x24FFCF70);
-
-  /// Outlined accent button ("다시 불러오기", "상세 열기", "추가").
-  static const linkBorder = Color(0x8085B6FF);
-  static const linkFill = Color(0x1F85B6FF);
-  static const linkText = Color(0xFFDBE8FF);
-
   /// Removal (selection mode) colours.
   static const dangerBorder = Color(0x73FF7878);
   static const dangerFill = Color(0x29FF7878);
   static const dangerText = Color(0xFFFFD0D0);
   static const pendingFill = Color(0x3378141C);
   static const pendingBorder = Color(0x66FF7878);
-
-  /// Number inputs and steppers.
-  static const fieldBorder = Color(0x24FFFFFF);
 
   /// Muted footnote / separator colour (`#6f7c94`).
   static const faint = Color(0xFF6F7C94);
@@ -182,7 +164,7 @@ class PlanInset extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(12),
     this.radius = RdRadii.inner,
-    this.color = PlanColors.inset,
+    this.color = RdColors.white3,
     super.key,
   });
 
@@ -353,10 +335,10 @@ class PlanLinkButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final resolvedHeight = height ?? (_isCompact(context) ? 44.0 : 40.0);
     return Material(
-      color: PlanColors.linkFill,
+      color: RdColors.linkFill,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(RdRadii.control),
-        side: const BorderSide(color: PlanColors.linkBorder),
+        side: const BorderSide(color: RdColors.linkBorder),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(RdRadii.control),
@@ -371,7 +353,7 @@ class PlanLinkButton extends StatelessWidget {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: PlanColors.linkText,
+              color: RdColors.linkText,
             ),
           ),
         ),
@@ -456,7 +438,7 @@ class PlanSkeletonBlock extends StatelessWidget {
     this.height = 14,
     this.widthFactor,
     this.radius = RdRadii.pill,
-    this.color = const Color(0x14FFFFFF),
+    this.color = RdColors.white8,
     super.key,
   });
 
@@ -585,7 +567,7 @@ class PlanOperatorTile extends StatelessWidget {
       PlanTileMode.favorite => (RdColors.inner, const Color(0x5985B6FF)),
       PlanTileMode.pick => pending
           ? (PlanColors.pendingFill, PlanColors.pendingBorder)
-          : (const Color(0x05FFFFFF), const Color(0x1AFFFFFF)),
+          : (const Color(0x05FFFFFF), RdColors.white10),
     };
     final radius = BorderRadius.circular(compact ? 16 : RdRadii.tile);
 
@@ -598,7 +580,7 @@ class PlanOperatorTile extends StatelessWidget {
           shape: BoxShape.circle,
           color: pending ? const Color(0xFF4A1A20) : const Color(0xFF0A0F1E),
           border: Border.all(
-            color: pending ? const Color(0x80FF7878) : const Color(0x24FFFFFF),
+            color: pending ? const Color(0x80FF7878) : RdColors.white14,
           ),
         ),
         child: Icon(
@@ -685,7 +667,7 @@ class PlanOperatorTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: compact ? 11 : 12,
-                      color: const Color(0xFFA9C8FF),
+                      color: RdColors.link,
                     ),
                   ),
                 ],
@@ -888,7 +870,7 @@ class PlanFarmingRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: gold ? PlanColors.sanityFill : PlanColors.runsFill,
+            color: gold ? RdColors.goldFill : RdColors.blueFill,
             borderRadius: BorderRadius.circular(RdRadii.pill),
           ),
           child: Text(
@@ -896,7 +878,7 @@ class PlanFarmingRow extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: gold ? FontWeight.w700 : FontWeight.w400,
-              color: gold ? RdColors.warnText : PlanColors.runsText,
+              color: gold ? RdColors.warnText : RdColors.blueText,
             ),
           ),
         ),
@@ -1016,7 +998,7 @@ class PlanSaveStatusPill extends StatelessWidget {
           color: failed ? PlanColors.toastFill : RdColors.inner2,
           borderRadius: BorderRadius.circular(RdRadii.pill),
           border: Border.all(
-            color: failed ? const Color(0x80FF7878) : const Color(0x1AFFFFFF),
+            color: failed ? const Color(0x80FF7878) : RdColors.white10,
           ),
         ),
         child: Row(
@@ -1192,7 +1174,7 @@ class PlanSegmentedPicker<T> extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: on ? FontWeight.w700 : FontWeight.w500,
-                      color: on ? const Color(0xFFF3F8FF) : RdColors.secondary2,
+                      color: on ? RdColors.onSegment : RdColors.secondary2,
                     ),
                   ),
                 ),
@@ -1249,14 +1231,10 @@ class PlanSkillLevelPicker extends StatelessWidget {
     final on = level == selected;
     final mastery = planMasteryAsset(level);
     final (Color fill, Color border, Color text) = on
-        ? (RdColors.segmentOn, const Color(0xB385B6FF), const Color(0xFFF3F8FF))
+        ? (RdColors.segmentOn, const Color(0xB385B6FF), RdColors.onSegment)
         : mastery != null
             ? (const Color(0x0FFFCF70), const Color(0x47FFCF70), RdColors.gold)
-            : (
-                RdColors.segmentTrack,
-                const Color(0x1AFFFFFF),
-                RdColors.secondary
-              );
+            : (RdColors.segmentTrack, RdColors.white10, RdColors.secondary);
     return Semantics(
       key: Key('$chipKeyPrefix-$level'),
       button: true,
@@ -1455,7 +1433,7 @@ class _StepButton extends StatelessWidget {
           color: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(RdRadii.small),
-            side: const BorderSide(color: PlanColors.fieldBorder),
+            side: const BorderSide(color: RdColors.white14),
           ),
           child: InkWell(
             borderRadius: BorderRadius.circular(RdRadii.small),
@@ -1582,7 +1560,7 @@ class _PlanNumberInputState extends State<PlanNumberInput> {
         color: RdColors.segmentTrack,
         borderRadius: BorderRadius.circular(RdRadii.small),
         border: Border.all(
-          color: focused ? RdColors.accent : PlanColors.fieldBorder,
+          color: focused ? RdColors.accent : RdColors.white14,
         ),
       ),
       child: Semantics(

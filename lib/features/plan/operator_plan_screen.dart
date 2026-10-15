@@ -787,7 +787,7 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xD9071224),
                     borderRadius: BorderRadius.circular(RdRadii.control),
-                    border: Border.all(color: const Color(0x14FFFFFF)),
+                    border: Border.all(color: RdColors.white8),
                   ),
                   child: Image.file(icon, fit: BoxFit.contain),
                 ),
@@ -1182,7 +1182,7 @@ class _DetailSkeleton extends StatelessWidget {
               PlanSkeletonBlock(
                 height: 180,
                 radius: 16,
-                color: Color(0x0DFFFFFF),
+                color: RdColors.white5,
               ),
             ],
           ),

@@ -40,7 +40,7 @@ class OperatorSkillTable extends StatefulWidget {
 const _fontSize = 13.0;
 const _cellPadding = EdgeInsets.symmetric(horizontal: 10, vertical: 8);
 const _stickyFill = Color(0xFF0B0F19);
-const _rowLine = Color(0x14FFFFFF);
+const _rowLine = RdColors.white8;
 
 class _OperatorSkillTableState extends State<OperatorSkillTable> {
   final _controller = ScrollController();

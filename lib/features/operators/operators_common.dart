@@ -9,12 +9,6 @@ import '../../widgets/cached_image.dart';
 /// `rgba(10,15,30,0.78)` panel fill of the operators canvas.
 const opPanelFill = Color(0xC70A0F1E);
 
-/// `rgba(255,255,255,0.07)` panel border.
-const opPanelBorder = Color(0x12FFFFFF);
-
-/// Body copy of descriptions (`#e6ecf8`).
-const opBodyColor = Color(0xFFE6ECF8);
-
 /// Cached operator portrait in a rounded `#16223a` box; the initial letter
 /// stands in while the image is missing.
 class OpPortrait extends StatelessWidget {
@@ -91,8 +85,8 @@ class OpChip extends StatelessWidget {
     final (Color border, Color fill, Color text) = switch (kind) {
       OpChipKind.team => (
           const Color(0x4771A5FF),
-          const Color(0x2971A5FF),
-          const Color(0xFFDCE9FF),
+          RdColors.blueFill,
+          RdColors.blueText,
         ),
       OpChipKind.nation => (
           const Color(0x47C4B5FD),
@@ -115,9 +109,9 @@ class OpChip extends StatelessWidget {
           const Color(0xFFBBF7D0),
         ),
       OpChipKind.plain => (
-          const Color(0x1AFFFFFF),
-          const Color(0x12FFFFFF),
-          opBodyColor,
+          RdColors.white10,
+          RdColors.line2,
+          RdColors.body,
         ),
       OpChipKind.ba => (
           const Color(0x855EB6FF),
@@ -237,8 +231,7 @@ class OpSegmented<T> extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: on ? FontWeight.w700 : FontWeight.w400,
-                        color:
-                            on ? const Color(0xFFF3F8FF) : RdColors.secondary2,
+                        color: on ? RdColors.onSegment : RdColors.secondary2,
                       ),
                     ),
                   ),
@@ -280,7 +273,7 @@ class OpStepButton extends StatelessWidget {
           color: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(RdRadii.small),
-            side: const BorderSide(color: Color(0x24FFFFFF)),
+            side: const BorderSide(color: RdColors.white14),
           ),
           child: InkWell(
             borderRadius: BorderRadius.circular(RdRadii.small),
@@ -342,9 +335,9 @@ class OpRangeControl extends StatelessWidget {
           child: SliderTheme(
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: RdColors.accent,
-              inactiveTrackColor: const Color(0x33FFFFFF),
+              inactiveTrackColor: RdColors.white20,
               thumbColor: RdColors.accent,
-              overlayColor: const Color(0x2985B6FF),
+              overlayColor: RdColors.chipOnFill,
               trackHeight: 4,
               showValueIndicator: ShowValueIndicator.never,
               tickMarkShape: SliderTickMarkShape.noTickMark,

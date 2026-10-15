@@ -18,7 +18,7 @@ Future<bool> showSettingsConfirm({
     builder: (dialogContext) => _SettingsDialog(
       badge: '!',
       badgeColor: RdColors.gold,
-      badgeFill: const Color(0x24FFCF70),
+      badgeFill: RdColors.goldFill,
       title: title,
       body: Text(
         message,
@@ -157,7 +157,7 @@ class _SettingsDialog extends StatelessWidget {
             color: RdColors.inner2,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(RdRadii.card),
-              side: const BorderSide(color: Color(0x1AFFFFFF)),
+              side: const BorderSide(color: RdColors.white10),
             ),
             child: Semantics(
               scopesRoute: true,

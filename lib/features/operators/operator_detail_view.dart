@@ -603,7 +603,7 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
           padding: EdgeInsets.fromLTRB(side, 10, side, 12),
           decoration: const BoxDecoration(
             color: RdColors.rail,
-            border: Border(top: BorderSide(color: Color(0x14FFFFFF))),
+            border: Border(top: BorderSide(color: RdColors.white8)),
           ),
           child: actions,
         ),
@@ -861,10 +861,10 @@ class _HeaderButton extends StatelessWidget {
         label: tooltip,
         excludeSemantics: true,
         child: Material(
-          color: const Color(0x0DFFFFFF),
+          color: RdColors.white5,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
-            side: const BorderSide(color: Color(0x14FFFFFF)),
+            side: const BorderSide(color: RdColors.white8),
           ),
           child: InkWell(
             borderRadius: BorderRadius.circular(14),
@@ -965,7 +965,7 @@ class _DetailHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0x14FFFFFF)),
+        border: Border.all(color: RdColors.white8),
         gradient: const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -1025,7 +1025,7 @@ class _HeroCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: opPanelFill,
         borderRadius: BorderRadius.circular(compact ? 24 : 28),
-        border: Border.all(color: opPanelBorder),
+        border: Border.all(color: RdColors.line2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1239,7 +1239,7 @@ class _PlanActions extends StatelessWidget {
       color: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(showFavorite ? 12 : 14),
-        side: const BorderSide(color: Color(0x6685B6FF)),
+        side: const BorderSide(color: RdColors.tonalBorder),
       ),
       child: InkWell(
         key: const Key('operator-detail-open-plan'),
@@ -1254,7 +1254,7 @@ class _PlanActions extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: Color(0xFFDBE8FF),
+              color: RdColors.linkText,
             ),
           ),
         ),
@@ -1277,7 +1277,7 @@ class _PlanActions extends StatelessWidget {
                 color: Colors.transparent,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(RdRadii.control),
-                  side: const BorderSide(color: Color(0x24FFFFFF)),
+                  side: const BorderSide(color: RdColors.white14),
                 ),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(RdRadii.control),
@@ -1328,7 +1328,7 @@ Future<void> showOperatorTermSheet({
       useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: const Color(0x80000000),
+      barrierColor: RdColors.barrier,
       constraints: BoxConstraints(maxHeight: height * 0.65),
       builder: (context) => content,
     );
@@ -1338,7 +1338,7 @@ Future<void> showOperatorTermSheet({
     useRootNavigator: true,
     barrierDismissible: true,
     barrierLabel: i18n.t('rd.operators.detail.closeTerm'),
-    barrierColor: const Color(0x80000000),
+    barrierColor: RdColors.barrier,
     transitionDuration: const Duration(milliseconds: 160),
     transitionBuilder: (context, animation, secondary, child) =>
         FadeTransition(opacity: animation, child: child),
@@ -1441,7 +1441,7 @@ class _TermContentState extends State<_TermContent> {
                             width: 40,
                             height: 4,
                             decoration: BoxDecoration(
-                              color: const Color(0x33FFFFFF),
+                              color: RdColors.white20,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),

@@ -492,7 +492,7 @@ class RdSegmented<T> extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: on ? FontWeight.w700 : FontWeight.w500,
-                color: on ? const Color(0xFFF3F8FF) : RdColors.secondary,
+                color: on ? RdColors.onSegment : RdColors.secondary,
               ),
             ),
           ),
@@ -648,7 +648,7 @@ class RdStatePanel extends StatelessWidget {
         borderRadius: BorderRadius.circular(RdRadii.card),
         border: Border.all(
           color: kind == RdStateKind.error
-              ? const Color(0x33FF7878)
+              ? RdColors.dangerBorder
               : RdColors.line2,
         ),
       ),

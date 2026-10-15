@@ -713,7 +713,7 @@ class _LoadMoreFooter extends StatelessWidget {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(RdRadii.inner),
-        border: Border.all(color: const Color(0x24FFFFFF)),
+        border: Border.all(color: RdColors.white14),
       ),
       child: compact
           ? Column(
@@ -763,19 +763,19 @@ class _LoadingGrid extends StatelessWidget {
                             width: compact ? 64 : 72,
                             height: compact ? 64 : 72,
                             radius: compact ? 16 : 18,
-                            color: const Color(0x0FFFFFFF),
+                            color: RdColors.soft,
                           ),
                         ),
                         SizedBox(height: compact ? 8 : 10),
                         ItemsSkeletonBox(
                           height: compact ? 14 : 16,
-                          color: const Color(0x14FFFFFF),
+                          color: RdColors.white8,
                         ),
                         SizedBox(height: compact ? 8 : 10),
                         ItemsSkeletonBox(
                           height: compact ? 10 : 12,
                           widthFactor: 0.7,
-                          color: const Color(0x0DFFFFFF),
+                          color: RdColors.white5,
                         ),
                       ],
                     ),
@@ -863,15 +863,15 @@ class _ItemCountImportFormState extends ConsumerState<_ItemCountImportForm> {
                     ),
                     border: OutlineInputBorder(
                       borderRadius: radius,
-                      borderSide: const BorderSide(color: Color(0x24FFFFFF)),
+                      borderSide: const BorderSide(color: RdColors.white14),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: radius,
-                      borderSide: const BorderSide(color: Color(0x24FFFFFF)),
+                      borderSide: const BorderSide(color: RdColors.white14),
                     ),
                     disabledBorder: OutlineInputBorder(
                       borderRadius: radius,
-                      borderSide: const BorderSide(color: Color(0x24FFFFFF)),
+                      borderSide: const BorderSide(color: RdColors.white14),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: radius,
@@ -908,7 +908,7 @@ class _ItemCountImportFormState extends ConsumerState<_ItemCountImportForm> {
                     i18n.t('rd.items.importing'),
                     style: const TextStyle(
                       fontSize: 13,
-                      color: Color(0xFFA9C8FF),
+                      color: RdColors.link,
                     ),
                   ),
                 ),

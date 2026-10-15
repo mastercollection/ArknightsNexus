@@ -184,7 +184,7 @@ class _ItemsDialogFrameState extends State<ItemsDialogFrame> {
                         width: 40,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: const Color(0x33FFFFFF),
+                          color: RdColors.white20,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -212,10 +212,10 @@ class _ItemsDialogFrameState extends State<ItemsDialogFrame> {
             decoration: BoxDecoration(
               color: RdColors.inner2,
               borderRadius: BorderRadius.circular(RdRadii.card),
-              border: Border.all(color: const Color(0x1AFFFFFF)),
+              border: Border.all(color: RdColors.white10),
               boxShadow: const [
                 BoxShadow(
-                  color: Color(0x80000000),
+                  color: RdColors.barrier,
                   offset: Offset(0, 24),
                   blurRadius: 60,
                 ),

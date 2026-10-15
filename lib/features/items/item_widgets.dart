@@ -5,9 +5,6 @@ import '../../ui/redesign/rd_widgets.dart';
 /// Primary line of a state panel (`#d7dfef` on the redesign canvas).
 const itemsStateTitleColor = Color(0xFFD7DFEF);
 
-/// Secondary line of a state panel.
-const itemsStateMessageColor = RdColors.secondary2;
-
 /// Surface of an item card / section on the canvas: `#0c1426`, 1px line,
 /// radius 18 (16 on phones).
 class ItemsSurface extends StatelessWidget {
@@ -158,7 +155,7 @@ class ItemsStatePanel extends StatelessWidget {
                 message!,
                 style: TextStyle(
                   fontSize: compact ? 13 : 14,
-                  color: itemsStateMessageColor,
+                  color: RdColors.secondary2,
                 ),
               ),
             ],
@@ -232,8 +229,7 @@ class ItemsInlineError extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               message,
-              style:
-                  const TextStyle(fontSize: 13, color: itemsStateMessageColor),
+              style: const TextStyle(fontSize: 13, color: RdColors.secondary2),
             ),
           ],
         ),
@@ -314,7 +310,7 @@ class ItemsSelect<T> extends StatelessWidget {
           height: height,
           padding: const EdgeInsets.only(left: 10, right: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFF121A2C),
+            color: RdColors.field,
             borderRadius: BorderRadius.circular(radius),
             border: Border.all(color: RdColors.line3),
           ),

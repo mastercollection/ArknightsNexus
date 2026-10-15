@@ -933,7 +933,7 @@ class _OperatorsSkeleton extends StatelessWidget {
                             width: 84,
                             height: 84,
                             radius: 24,
-                            color: Color(0x0FFFFFFF),
+                            color: RdColors.soft,
                           ),
                           SizedBox(height: 10),
                           PlanSkeletonBlock(widthFactor: 0.72),
@@ -961,7 +961,7 @@ class _SummarySkeleton extends StatelessWidget {
     const block = PlanSkeletonBlock(
       height: 96,
       radius: 16,
-      color: Color(0x0DFFFFFF),
+      color: RdColors.white5,
     );
     return Semantics(
       label: label,

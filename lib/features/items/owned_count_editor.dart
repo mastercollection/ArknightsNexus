@@ -260,7 +260,7 @@ class OwnedCountEditorState extends ConsumerState<OwnedCountEditor> {
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 13,
-                    color: Color(0xFFA9C8FF),
+                    color: RdColors.link,
                   ),
                 ),
               ),
@@ -344,12 +344,12 @@ class _HoldHints extends StatelessWidget {
   final String inputHint;
 
   static const _stepFills = [
-    Color(0x2985B6FF), // rgba(133,182,255,0.16)
+    RdColors.chipOnFill, // rgba(133,182,255,0.16)
     Color(0x3D85B6FF), // 0.24
     Color(0x5785B6FF), // 0.34
   ];
   static const _stepText = [
-    Color(0xFFDCE9FF),
+    RdColors.blueText,
     Color(0xFFE7EFFF),
     RdColors.text,
   ];
@@ -490,7 +490,7 @@ class _StepButtonState extends State<_StepButton> {
                   border: Border.all(
                     color: highlighted
                         ? const Color(0x7A85B6FF)
-                        : const Color(0x4785B6FF),
+                        : RdColors.searchBorder,
                   ),
                 ),
                 child: Text(
@@ -559,7 +559,7 @@ class _OwnedCountInput extends StatelessWidget {
           decoration: BoxDecoration(
             color: background,
             borderRadius: radius,
-            border: Border.all(color: const Color(0x6685B6FF)),
+            border: Border.all(color: RdColors.tonalBorder),
           ),
           child: Semantics(
             label: label,

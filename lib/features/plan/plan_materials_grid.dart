@@ -204,7 +204,7 @@ class PlanRecipeSwitch extends StatelessWidget {
       width: 38,
       height: 20,
       decoration: BoxDecoration(
-        color: value ? const Color(0xE62890FF) : const Color(0x14FFFFFF),
+        color: value ? const Color(0xE62890FF) : RdColors.white8,
         borderRadius: BorderRadius.circular(RdRadii.pill),
         border: Border.all(color: const Color(0x4D7A90B8)),
       ),

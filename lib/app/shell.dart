@@ -395,7 +395,7 @@ class _BottomTabs extends StatelessWidget {
       child: Container(
         decoration: const BoxDecoration(
           color: RdColors.rail,
-          border: Border(top: BorderSide(color: Color(0x14FFFFFF))),
+          border: Border(top: BorderSide(color: RdColors.white8)),
         ),
         padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
         // The tab InkWells need a Material ancestor for their ink.

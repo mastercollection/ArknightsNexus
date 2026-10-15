@@ -441,13 +441,13 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                       ItemsSkeletonBox(
                         height: 16,
                         widthFactor: 0.42,
-                        color: Color(0x14FFFFFF),
+                        color: RdColors.white8,
                       ),
                       SizedBox(height: 8),
                       ItemsSkeletonBox(
                         height: 12,
                         widthFactor: 0.68,
-                        color: Color(0x0DFFFFFF),
+                        color: RdColors.white5,
                       ),
                     ],
                   ),
@@ -642,18 +642,18 @@ class _DetailLoading extends StatelessWidget {
                 width: 84,
                 height: 84,
                 radius: 22,
-                color: Color(0x0FFFFFFF),
+                color: RdColors.soft,
               ),
             ),
             SizedBox(height: 12),
             Center(
               child: FractionallySizedBox(
                 widthFactor: 0.48,
-                child: ItemsSkeletonBox(height: 20, color: Color(0x14FFFFFF)),
+                child: ItemsSkeletonBox(height: 20, color: RdColors.white8),
               ),
             ),
             SizedBox(height: 12),
-            ItemsSkeletonBox(height: 72, radius: 18, color: Color(0x0AFFFFFF)),
+            ItemsSkeletonBox(height: 72, radius: 18, color: RdColors.soft2),
           ],
         ),
       ),
@@ -838,7 +838,7 @@ class _PenguinDropCard extends StatelessWidget {
               _DropChip(label: times, mono: true),
               _DropChip(
                 label: source,
-                color: const Color(0x24FFCF70),
+                color: RdColors.goldFill,
                 textColor: RdColors.warnText,
               ),
             ],
@@ -853,8 +853,8 @@ class _DropChip extends StatelessWidget {
   const _DropChip({
     required this.label,
     this.mono = false,
-    this.color = const Color(0x2971A5FF),
-    this.textColor = const Color(0xFFDCE9FF),
+    this.color = RdColors.blueFill,
+    this.textColor = RdColors.blueText,
   });
 
   final String label;

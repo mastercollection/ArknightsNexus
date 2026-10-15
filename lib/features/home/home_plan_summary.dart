@@ -517,7 +517,7 @@ class _InlineState extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: error ? const Color(0xEBFFD6D6) : RdColors.secondary,
+            color: error ? RdColors.dangerText : RdColors.secondary,
           ),
         ),
         if (message != null && message!.isNotEmpty) ...[
@@ -574,7 +574,7 @@ class _HomeLink extends StatelessWidget {
                 label,
                 style: const TextStyle(
                   fontSize: 14,
-                  color: Color(0xFFA9C8FF),
+                  color: RdColors.link,
                 ),
               ),
             ),

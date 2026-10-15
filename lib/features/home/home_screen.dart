@@ -361,7 +361,7 @@ class _EnterKey extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: const Color(0x24FFFFFF)),
+          border: Border.all(color: RdColors.white14),
         ),
         child: Text(
           'Enter',
@@ -384,10 +384,10 @@ class _TonalButton extends StatelessWidget {
     return Semantics(
       button: true,
       child: Material(
-        color: const Color(0x2485B6FF),
+        color: RdColors.tonalFill,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(RdRadii.control),
-          side: const BorderSide(color: Color(0x6685B6FF)),
+          side: const BorderSide(color: RdColors.tonalBorder),
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(RdRadii.control),

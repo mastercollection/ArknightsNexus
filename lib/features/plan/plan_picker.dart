@@ -44,7 +44,7 @@ Future<void> showPlanOperatorPicker({
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: RdColors.sheet,
-      barrierColor: const Color(0x80000000),
+      barrierColor: RdColors.barrier,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
@@ -72,7 +72,7 @@ Future<void> showPlanOperatorPicker({
               color: RdColors.sheet,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(22),
-                side: const BorderSide(color: Color(0x14FFFFFF)),
+                side: const BorderSide(color: RdColors.white8),
               ),
               clipBehavior: Clip.antiAlias,
               child: panel(false),
@@ -228,7 +228,7 @@ class _PlanOperatorPickerState extends ConsumerState<PlanOperatorPicker> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: const Color(0x33FFFFFF),
+                    color: RdColors.white20,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -279,7 +279,7 @@ class _PickerRow extends StatelessWidget {
         color: RdColors.sheetOption,
         shape: RoundedRectangleBorder(
           borderRadius: radius,
-          side: const BorderSide(color: Color(0x14FFFFFF)),
+          side: const BorderSide(color: RdColors.white8),
         ),
         child: InkWell(
           borderRadius: radius,
@@ -337,14 +337,14 @@ class _PickerRow extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: RdColors.chipOnFill,
                       borderRadius: BorderRadius.circular(RdRadii.pill),
-                      border: Border.all(color: PlanColors.linkBorder),
+                      border: Border.all(color: RdColors.linkBorder),
                     ),
                     child: Text(
                       addLabel,
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: PlanColors.linkText,
+                        color: RdColors.linkText,
                       ),
                     ),
                   ),

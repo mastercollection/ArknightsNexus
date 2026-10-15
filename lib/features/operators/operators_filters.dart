@@ -219,7 +219,7 @@ class _MiniSearch extends StatelessWidget {
     required this.hint,
     required this.onChanged,
     this.height = 38,
-    this.background = const Color(0xFF121A2C),
+    this.background = RdColors.field,
   });
 
   final TextEditingController controller;
@@ -505,7 +505,7 @@ class _OperatorsFilterSidebarState
                         i18n.t('operatorsList.filters.reset'),
                         style: const TextStyle(
                           fontSize: 14,
-                          color: Color(0xFFDBE8FF),
+                          color: RdColors.linkText,
                         ),
                       ),
                     ),
@@ -584,7 +584,7 @@ class OperatorsFilterChipRow extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: const Color(0x0DFFFFFF),
+                color: RdColors.white5,
                 borderRadius: BorderRadius.circular(RdRadii.pill),
               ),
               child: Text(
@@ -646,7 +646,7 @@ Future<void> _showSheet(BuildContext context, WidgetBuilder builder) {
     useRootNavigator: true,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    barrierColor: const Color(0x80000000),
+    barrierColor: RdColors.barrier,
     constraints: const BoxConstraints(maxWidth: 640),
     builder: builder,
   );
@@ -691,7 +691,7 @@ class OpSheetFrame extends StatelessWidget {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: const Color(0x33FFFFFF),
+                      color: RdColors.white20,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -752,7 +752,7 @@ class _AllFiltersSheet extends ConsumerWidget {
                     color: RdColors.sheetOption,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
-                      side: const BorderSide(color: Color(0x1AFFFFFF)),
+                      side: const BorderSide(color: RdColors.white10),
                     ),
                     child: InkWell(
                       key: Key('operators-filter-row-${dimension.keyName}'),
@@ -886,7 +886,7 @@ class _DimensionSheetState extends ConsumerState<_DimensionSheet> {
                 key: const Key('operators-filter-sheet-clear'),
                 style: TextButton.styleFrom(
                   minimumSize: const Size(44, 44),
-                  foregroundColor: const Color(0xFFA9C8FF),
+                  foregroundColor: RdColors.link,
                 ),
                 onPressed: () {
                   _clearDimension(dimension, list);

@@ -129,11 +129,9 @@ BoxDecoration detailToggleDecoration({
   return BoxDecoration(
     borderRadius: BorderRadius.circular(radius),
     border: Border.all(
-      color: selected ? const Color(0x7381D6FF) : const Color(0x14FFFFFF),
+      color: selected ? const Color(0x7381D6FF) : RdColors.white8,
     ),
-    color: selected
-        ? null
-        : (hovered ? const Color(0x12FFFFFF) : const Color(0x0AFFFFFF)),
+    color: selected ? null : (hovered ? RdColors.line2 : RdColors.soft2),
     gradient: selected
         ? const LinearGradient(
             begin: Alignment.topLeft,
@@ -329,7 +327,7 @@ class _ModuleCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: const Color(0xD1070A12),
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: const Color(0x14FFFFFF)),
+                  border: Border.all(color: RdColors.white8),
                 ),
                 child: equipIcon != null
                     ? Image.file(equipIcon!, fit: BoxFit.contain)
@@ -555,7 +553,7 @@ class ModuleCandidateCard extends StatelessWidget {
     final variants = candidate.potentialVariants;
     return DetailInset(
       key: ValueKey(candidate.key),
-      color: const Color(0x08FFFFFF),
+      color: RdColors.white3,
       radius: 16,
       padding: const EdgeInsets.all(14),
       child: Column(

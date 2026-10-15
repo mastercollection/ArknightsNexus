@@ -344,7 +344,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             vertical: compact ? 6 : 8,
           ),
           decoration: BoxDecoration(
-            color: const Color(0x08FFFFFF),
+            color: RdColors.white3,
             borderRadius: BorderRadius.circular(RdRadii.pill),
           ),
           child: Row(
@@ -810,11 +810,11 @@ class _SettingsActionButton extends StatelessWidget {
       button: true,
       enabled: enabled,
       child: Material(
-        color: enabled ? const Color(0x2485B6FF) : const Color(0x08FFFFFF),
+        color: enabled ? RdColors.tonalFill : RdColors.white3,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(RdRadii.control),
           side: BorderSide(
-            color: enabled ? const Color(0x6685B6FF) : const Color(0x14FFFFFF),
+            color: enabled ? RdColors.tonalBorder : RdColors.white8,
           ),
         ),
         child: InkWell(
@@ -856,16 +856,16 @@ class _ErrorBanner extends StatelessWidget {
           vertical: 12,
         ),
         decoration: BoxDecoration(
-          color: const Color(0x14FF7878),
+          color: RdColors.dangerFill,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0x33FF7878)),
+          border: Border.all(color: RdColors.dangerBorder),
         ),
         child: Text(
           message,
           style: TextStyle(
             fontSize: compact ? 13 : 14,
             height: 1.5,
-            color: const Color(0xEBFFD6D6),
+            color: RdColors.dangerText,
           ),
         ),
       ),

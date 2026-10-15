@@ -173,7 +173,7 @@ class HomeSyncButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final i18n = ref.watch(i18nProvider);
     final syncing = ref.watch(homeSyncControllerProvider);
-    final foreground = syncing ? RdColors.placeholder : const Color(0xFFDBE8FF);
+    final foreground = syncing ? RdColors.placeholder : RdColors.linkText;
     Widget icon = Icon(Icons.refresh, size: 15, color: foreground);
     if (syncing) {
       icon = _Spinning(child: icon);
@@ -187,12 +187,11 @@ class HomeSyncButton extends ConsumerWidget {
         excludeSemantics: true,
         label: i18n.t('rd.home.sync.tooltip'),
         child: Material(
-          color: syncing ? Colors.transparent : const Color(0x1F85B6FF),
+          color: syncing ? Colors.transparent : RdColors.linkFill,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(RdRadii.small),
             side: BorderSide(
-              color:
-                  syncing ? const Color(0x14FFFFFF) : const Color(0x6685B6FF),
+              color: syncing ? RdColors.white8 : RdColors.tonalBorder,
             ),
           ),
           child: InkWell(
@@ -309,7 +308,7 @@ class RdRegionSelect extends ConsumerWidget {
           height: height,
           padding: const EdgeInsets.only(left: 10, right: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFF121A2C),
+            color: RdColors.field,
             borderRadius: BorderRadius.circular(RdRadii.small),
             border: Border.all(color: RdColors.line3),
           ),

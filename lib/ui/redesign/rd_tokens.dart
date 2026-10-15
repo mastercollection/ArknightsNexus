@@ -42,12 +42,57 @@ class RdColors {
   static const soft = Color(0x0FFFFFFF); // rgba(255,255,255,0.06)
   static const soft2 = Color(0x0AFFFFFF); // rgba(255,255,255,0.04)
 
+  /// White overlays of the canvas that the line/soft tokens do not name,
+  /// by percentage: insets, skeletons, field borders, drag handles.
+  static const white3 = Color(0x08FFFFFF); // rgba(255,255,255,0.03)
+  static const white5 = Color(0x0DFFFFFF); // rgba(255,255,255,0.05)
+  static const white8 = Color(0x14FFFFFF); // rgba(255,255,255,0.08)
+  static const white10 = Color(0x1AFFFFFF); // rgba(255,255,255,0.1)
+  static const white14 = Color(0x24FFFFFF); // rgba(255,255,255,0.14)
+  static const white20 = Color(0x33FFFFFF); // rgba(255,255,255,0.2)
+
+  /// Modal barrier of dialogs and sheets (50% black).
+  static const barrier = Color(0x80000000);
+
   static const chipOnBorder = Color(0x9985B6FF); // rgba(133,182,255,0.6)
   static const chipOnFill = Color(0x2985B6FF); // rgba(133,182,255,0.16)
   static const searchBorder = Color(0x4785B6FF); // rgba(133,182,255,0.28)
 
+  /// Accent-tinted ("tonal") buttons.
+  static const tonalFill = Color(0x2485B6FF); // rgba(133,182,255,0.14)
+  static const tonalBorder = Color(0x6685B6FF); // rgba(133,182,255,0.4)
+
+  /// Outlined accent link buttons (retry, open detail, add).
+  static const linkFill = Color(0x1F85B6FF);
+  static const linkBorder = Color(0x8085B6FF);
+  static const linkText = Color(0xFFDBE8FF);
+
+  /// Light-blue text links ("계획 열기 →", "+ 플랜에 추가").
+  static const link = Color(0xFFA9C8FF);
+
+  /// Text on a selected segment / chip.
+  static const onSegment = Color(0xFFF3F8FF);
+
+  /// Error banners and panels.
+  static const dangerFill = Color(0x14FF7878);
+  static const dangerBorder = Color(0x33FF7878);
+  static const dangerText = Color(0xEBFFD6D6);
+
+  /// Runs chip of the farming rows, team chips (`rgba(113,165,255,0.16)`).
+  static const blueFill = Color(0x2971A5FF);
+  static const blueText = Color(0xFFDCE9FF);
+
+  /// Gold sanity chip / gold badge fill (`rgba(255,207,112,0.14)`).
+  static const goldFill = Color(0x24FFCF70);
+
   static const segmentTrack = Color(0xFF111A2C);
   static const segmentOn = Color(0xE65C94DC); // rgba(92,148,220,0.9)
+
+  /// Dropdown fields.
+  static const field = Color(0xFF121A2C);
+
+  /// Body copy of descriptions (`#e6ecf8`).
+  static const body = Color(0xFFE6ECF8);
 
   static const sheet = Color(0xFF141414);
   static const sheetOption = Color(0xFF1D1E1F);

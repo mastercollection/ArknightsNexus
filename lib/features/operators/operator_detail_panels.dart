@@ -142,7 +142,7 @@ class OperatorStatsPanel extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: opPanelFill,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0x14FFFFFF)),
+                  border: Border.all(color: RdColors.white8),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,7 +383,7 @@ class OperatorPotentialsPanel extends StatelessWidget {
             key: ValueKey('potential-${potential.key}'),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0x08FFFFFF),
+              color: RdColors.white3,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(

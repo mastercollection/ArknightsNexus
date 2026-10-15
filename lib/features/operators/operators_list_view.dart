@@ -249,7 +249,7 @@ class _OperatorTileState extends State<OperatorTile> {
         ? const Color(0xB385B6FF)
         : _hovered
             ? const Color(0x5985B6FF)
-            : opPanelBorder;
+            : RdColors.line2;
     final background = widget.compact
         ? RdColors.card
         : selected
@@ -399,7 +399,7 @@ class _LoadingTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: compact ? RdColors.card : opPanelFill,
         borderRadius: BorderRadius.circular(compact ? 16 : 22),
-        border: Border.all(color: opPanelBorder),
+        border: Border.all(color: RdColors.line2),
       ),
       child: Column(
         children: [
@@ -415,13 +415,13 @@ class _LoadingTile extends StatelessWidget {
               width: 44,
               height: 44,
               radius: 16,
-              color: Color(0x0FFFFFFF),
+              color: RdColors.soft,
             ),
           ),
           const SizedBox(height: 10),
           const FractionallySizedBox(
             widthFactor: 0.72,
-            child: NexusPulse(height: 12, color: Color(0x14FFFFFF)),
+            child: NexusPulse(height: 12, color: RdColors.white8),
           ),
         ],
       ),

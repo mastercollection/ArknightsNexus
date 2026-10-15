@@ -10,10 +10,10 @@ import 'potential_diff_display.dart';
 typedef TermTapCallback = void Function(String key, String label);
 
 /// Body copy colour used for descriptions (`#e6ecf8`).
-const detailBodyColor = opBodyColor;
+const detailBodyColor = RdColors.body;
 
 /// `rgba(255,255,255,0.04)` section surface.
-const detailInsetFill = Color(0x0AFFFFFF);
+const detailInsetFill = RdColors.soft2;
 
 /// Description paragraph style of the detail canvas (14px, line-height 1.75).
 const detailBodyStyle = TextStyle(
@@ -149,9 +149,9 @@ class _InlineBadge extends StatelessWidget {
     return Container(
       padding: EdgeInsets.fromLTRB(icon != null ? 3 : 8, 1, 8, 1),
       decoration: BoxDecoration(
-        color: const Color(0x0FFFFFFF),
+        color: RdColors.soft,
         borderRadius: BorderRadius.circular(RdRadii.pill),
-        border: Border.all(color: const Color(0x14FFFFFF)),
+        border: Border.all(color: RdColors.white8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -321,7 +321,7 @@ class RangeGrid extends StatelessWidget {
             decoration: BoxDecoration(
               color: const Color(0xD6070A12),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0x14FFFFFF)),
+              border: Border.all(color: RdColors.white8),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -372,7 +372,7 @@ class _RangeCell extends StatelessWidget {
                 ),
                 null,
               )
-            : (const Color(0x0FFFFFFF), null, const Color(0x08FFFFFF));
+            : (RdColors.soft, null, RdColors.white3);
     return Container(
       width: size,
       height: size,
@@ -420,7 +420,7 @@ class PotentialVariantList extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.only(top: 10),
       decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: Color(0x0FFFFFFF))),
+        border: Border(top: BorderSide(color: RdColors.line)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -433,7 +433,7 @@ class PotentialVariantList extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  color: const Color(0x08FFFFFF),
+                  color: RdColors.white3,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
