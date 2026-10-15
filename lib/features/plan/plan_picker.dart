@@ -96,7 +96,7 @@ class _PlanOperatorPickerState extends ConsumerState<PlanOperatorPicker> {
     final i18n = ref.watch(i18nProvider);
     final operators = widget.operators();
     final compact = widget.compact;
-    final closeLabel = i18n.t('rd.plan.close');
+    final closeLabel = i18n.t('common.close');
 
     final header = Row(
       crossAxisAlignment: CrossAxisAlignment.start,

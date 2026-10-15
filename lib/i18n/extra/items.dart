@@ -4,9 +4,7 @@
 const Map<String, Map<String, String>> itemsExtraMessages = {
   'kr': {
     'rd.items.eyebrow': 'ITEMS',
-    'rd.items.back': '뒤로가기',
     'rd.items.backToList': '아이템 목록으로',
-    'rd.items.close': '닫기',
     'rd.items.editCount': '{name} 보유 수량 편집',
     'rd.items.loadMoreHint': '스크롤 끝에 닿으면 30개씩 이어서 표시',
     'rd.items.progress': '{shown} / {total}개 표시 중',
@@ -32,9 +30,7 @@ const Map<String, Map<String, String>> itemsExtraMessages = {
   },
   'cn': {
     'rd.items.eyebrow': 'ITEMS',
-    'rd.items.back': '返回',
     'rd.items.backToList': '返回道具列表',
-    'rd.items.close': '关闭',
     'rd.items.editCount': '编辑 {name} 的持有数量',
     'rd.items.loadMoreHint': '滚动到底部时每次继续显示 30 个',
     'rd.items.progress': '已显示 {shown} / {total} 个',
@@ -59,9 +55,7 @@ const Map<String, Map<String, String>> itemsExtraMessages = {
   },
   'jp': {
     'rd.items.eyebrow': 'ITEMS',
-    'rd.items.back': '戻る',
     'rd.items.backToList': 'アイテム一覧へ',
-    'rd.items.close': '閉じる',
     'rd.items.editCount': '{name} の所持数を編集',
     'rd.items.loadMoreHint': '最後までスクロールすると 30 件ずつ追加表示',
     'rd.items.progress': '{shown} / {total} 件を表示中',
@@ -87,9 +81,7 @@ const Map<String, Map<String, String>> itemsExtraMessages = {
   },
   'tw': {
     'rd.items.eyebrow': 'ITEMS',
-    'rd.items.back': '返回',
     'rd.items.backToList': '返回道具列表',
-    'rd.items.close': '關閉',
     'rd.items.editCount': '編輯 {name} 的持有數量',
     'rd.items.loadMoreHint': '捲動到底部時每次繼續顯示 30 個',
     'rd.items.progress': '已顯示 {shown} / {total} 個',
@@ -114,9 +106,7 @@ const Map<String, Map<String, String>> itemsExtraMessages = {
   },
   'en': {
     'rd.items.eyebrow': 'ITEMS',
-    'rd.items.back': 'Back',
     'rd.items.backToList': 'Back to items',
-    'rd.items.close': 'Close',
     'rd.items.editCount': 'Edit owned count of {name}',
     'rd.items.loadMoreHint': 'Shows 30 more when you reach the end',
     'rd.items.progress': 'Showing {shown} / {total}',

@@ -30,10 +30,10 @@ class HomeSyncView {
 
   String label(NexusI18n i18n) => switch (state) {
         HomeSyncState.loading => i18n.t('rd.home.sync.loading'),
-        HomeSyncState.syncing => i18n.t('rd.home.sync.syncing'),
+        HomeSyncState.syncing => i18n.t('common.syncing'),
         HomeSyncState.ready => operatorCount > 0
             ? i18n.t('rd.home.sync.readyCount', {'count': operatorCount})
-            : i18n.t('rd.home.sync.ready'),
+            : i18n.t('home.settings.syncReady'),
         HomeSyncState.needed => i18n.t('rd.home.sync.needed'),
       };
 

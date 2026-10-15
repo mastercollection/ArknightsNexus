@@ -471,7 +471,7 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
       sectionLabel: i18n.t('operatorDetail.sections.${section.name}'),
       favorite: _isFavorite,
       compact: _compact,
-      backTooltip: i18n.t('rd.operators.back'),
+      backTooltip: i18n.t('common.back'),
       favoriteTooltip: i18n.t('rd.operators.detail.favorite'),
       onBack: widget.onBack,
       onToggleFavorite: _toggleFavorite,
@@ -780,7 +780,7 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
               alignment: Alignment.centerLeft,
               child: RdIconButton(
                 icon: Icons.chevron_left,
-                tooltip: i18n.t('rd.operators.back'),
+                tooltip: i18n.t('common.back'),
                 onPressed: widget.onBack,
                 size: 44,
                 iconSize: 22,
@@ -1197,7 +1197,7 @@ class _PlanActions extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14),
           alignment: Alignment.center,
           child: Text(
-            i18n.t('rd.operators.detail.openPlan'),
+            i18n.t('common.openPlan'),
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -1271,7 +1271,7 @@ Future<void> showOperatorTermSheet({
   final height = MediaQuery.sizeOf(context).height;
   return showRdSheet<void>(
     context: context,
-    barrierLabel: i18n.t('rd.operators.detail.closeTerm'),
+    barrierLabel: i18n.t('common.close'),
     sheetMaxHeight: height * 0.65,
     dialogMaxHeight: height * 0.7,
     dialogAlignment: const Alignment(0, -0.6),
@@ -1399,8 +1399,7 @@ class _TermContentState extends State<_TermContent> {
                           const SizedBox(width: 10),
                           RdIconButton(
                             icon: Icons.close,
-                            tooltip:
-                                widget.i18n.t('rd.operators.detail.closeTerm'),
+                            tooltip: widget.i18n.t('common.close'),
                             size: compact ? 44 : 40,
                             filled: false,
                             onPressed: () => Navigator.of(context).maybePop(),

@@ -244,13 +244,13 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
     try {
       await showRdSheet<void>(
         context: context,
-        barrierLabel: i18n.t('rd.items.close'),
+        barrierLabel: i18n.t('common.close'),
         maxWidth: 420,
         enableDrag: false,
         builder: (_) => RdSheetFrame(
           title:
               item.name.isEmpty ? i18n.t('itemsPage.topBar.title') : item.name,
-          closeLabel: i18n.t('rd.items.close'),
+          closeLabel: i18n.t('common.close'),
           header: context.rdLayout == RdLayout.compact
               ? OwnedCountEditorHeader(
                   item: item,
@@ -297,12 +297,12 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
     final importing = ValueNotifier<bool>(false);
     await showRdSheet<void>(
       context: context,
-      barrierLabel: i18n.t('rd.items.close'),
+      barrierLabel: i18n.t('common.close'),
       maxWidth: 560,
       enableDrag: false,
       builder: (_) => RdSheetFrame(
         title: i18n.t('itemsPage.importDialog.title'),
-        closeLabel: i18n.t('rd.items.close'),
+        closeLabel: i18n.t('common.close'),
         closeLocked: importing,
         onCloseRequest: () async => !importing.value,
         sheetMaxHeightFactor: 0.92,
@@ -386,7 +386,7 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
       title: i18n.t('itemsPage.topBar.title'),
       subtitle: i18n.t('itemsPage.topBar.description'),
       onBack: _back,
-      backTooltip: i18n.t('rd.items.back'),
+      backTooltip: i18n.t('common.back'),
       actions: [importButton],
       bottom: compact ? search : null,
     );

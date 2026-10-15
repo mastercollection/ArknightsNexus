@@ -125,7 +125,7 @@ class HomePlanSummaryCard extends ConsumerWidget {
           key: const Key('home-open-plan'),
           label: compact
               ? i18n.t('rd.home.plan.openShort')
-              : i18n.t('rd.home.plan.open'),
+              : i18n.t('common.openPlan'),
           onTap: () => context.push('/plan'),
         ),
       ],

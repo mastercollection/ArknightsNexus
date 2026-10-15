@@ -173,7 +173,7 @@ class _OperatorsListPageState extends ConsumerState<OperatorsListPage> {
               children: [
                 RdIconButton(
                   icon: Icons.chevron_left,
-                  tooltip: i18n.t('rd.operators.back'),
+                  tooltip: i18n.t('common.back'),
                   filled: false,
                   onPressed: () => context.go('/'),
                 ),

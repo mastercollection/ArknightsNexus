@@ -766,7 +766,7 @@ class _DimensionSheetState extends ConsumerState<_DimensionSheet> {
                   ? i18n.t('rd.operators.filter.apply', {
                       'count': selectedCount,
                     })
-                  : i18n.t('rd.operators.filter.close'),
+                  : i18n.t('common.close'),
               variant: RdButtonVariant.primary,
               height: 48,
               expand: true,

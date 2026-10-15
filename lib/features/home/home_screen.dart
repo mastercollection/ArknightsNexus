@@ -170,7 +170,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 final title = Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(i18n.t('rd.home.eyebrow'), style: RdText.eyebrow),
+                    Text(i18n.t('home.hero.title'), style: RdText.eyebrow),
                     const SizedBox(height: 4),
                     Semantics(
                       header: true,

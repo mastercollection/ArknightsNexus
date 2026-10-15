@@ -424,7 +424,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         RdButton(
           key: const Key('sync-region-button'),
           label: syncing
-              ? i18n.t('rd.settings.syncBusy')
+              ? i18n.t('common.syncing')
               : i18n.t('home.settings.syncAction'),
           onPressed: loading ? null : _handleSettingsSync,
           variant: RdButtonVariant.tonal,
