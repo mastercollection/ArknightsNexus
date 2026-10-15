@@ -39,70 +39,94 @@ class CachedImage extends ConsumerStatefulWidget {
   ConsumerState<CachedImage> createState() => _CachedImageState();
 }
 
+/// Images already resolved this session, per [ImageCacheService]: a page
+/// that is opened again shows them in its first frame instead of a frame of
+/// placeholders while the (already settled) lookup completes. Missing images
+/// are not kept, so they are asked for again like before.
+final _readyImages = Expando<Map<String, ResolvedImage>>('readyImages');
+
 class _CachedImageState extends ConsumerState<CachedImage> {
-  late Future<ResolvedImage> _future;
+  /// The resolved image when it was known before the first build.
+  ResolvedImage? _ready;
+  Future<ResolvedImage>? _future;
 
   @override
   void initState() {
     super.initState();
-    _future = _resolve();
+    _resolve();
   }
 
   @override
   void didUpdateWidget(CachedImage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.kind != widget.kind || oldWidget.id != widget.id) {
-      _future = _resolve();
+      _resolve();
     }
   }
 
-  Future<ResolvedImage> _resolve() {
-    return ref.read(imageCacheServiceProvider).resolve(
-          ImageRequest(kind: widget.kind, id: widget.id),
-        );
+  void _resolve() {
+    final service = ref.read(imageCacheServiceProvider);
+    final request = ImageRequest(kind: widget.kind, id: widget.id);
+    final ready = _readyImages[service] ??= {};
+    _ready = ready[request.cacheKey];
+    if (_ready != null) {
+      _future = null;
+      return;
+    }
+    _future = service.resolve(request).then((image) {
+      if (image.isReady) {
+        ready[request.cacheKey] = image;
+      }
+      return image;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final ready = _ready;
     return SizedBox(
       width: widget.size,
       height: widget.size,
-      child: FutureBuilder<ResolvedImage>(
-        future: _future,
-        builder: (context, snapshot) {
-          final resolved = snapshot.data;
-          if (snapshot.connectionState != ConnectionState.done &&
-              widget.loading != null) {
-            return widget.loading!;
-          }
-          final provider =
-              resolved == null ? null : resolvedImageProvider(resolved);
-          if (provider == null) {
-            return widget.placeholder;
-          }
+      child: ready != null
+          ? _image(ready)
+          : FutureBuilder<ResolvedImage>(
+              future: _future,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done &&
+                    widget.loading != null) {
+                  return widget.loading!;
+                }
+                return _image(snapshot.data);
+              },
+            ),
+    );
+  }
 
-          final image = Image(
-            image: provider,
-            width: widget.size,
-            height: widget.size,
-            fit: widget.fit,
-            errorBuilder: (context, error, stackTrace) => widget.placeholder,
-          );
+  Widget _image(ResolvedImage? resolved) {
+    final provider = resolved == null ? null : resolvedImageProvider(resolved);
+    if (provider == null) {
+      return widget.placeholder;
+    }
 
-          if (widget.shape == BoxShape.rectangle &&
-              widget.borderRadius == BorderRadius.zero) {
-            return image;
-          }
-          if (widget.shape == BoxShape.circle) {
-            return ClipOval(child: image);
-          }
+    final image = Image(
+      image: provider,
+      width: widget.size,
+      height: widget.size,
+      fit: widget.fit,
+      errorBuilder: (context, error, stackTrace) => widget.placeholder,
+    );
 
-          return ClipRRect(
-            borderRadius: widget.borderRadius ?? BorderRadius.circular(8),
-            child: image,
-          );
-        },
-      ),
+    if (widget.shape == BoxShape.rectangle &&
+        widget.borderRadius == BorderRadius.zero) {
+      return image;
+    }
+    if (widget.shape == BoxShape.circle) {
+      return ClipOval(child: image);
+    }
+
+    return ClipRRect(
+      borderRadius: widget.borderRadius ?? BorderRadius.circular(8),
+      child: image,
     );
   }
 }
