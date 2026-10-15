@@ -3,8 +3,6 @@
 /// for all five locales (kr, cn, jp, tw, en).
 const Map<String, Map<String, String>> operatorsExtraMessages = {
   'kr': {
-    'rd.operators.eyebrow': 'OPERATORS',
-    'rd.operators.filterEyebrow': 'FILTER CONTROLS',
     'rd.operators.count': '{count}명',
     'rd.operators.chip.query': '검색: {value}',
     'rd.operators.chip.affiliation': '소속: {value}',
@@ -36,8 +34,6 @@ const Map<String, Map<String, String>> operatorsExtraMessages = {
     'rd.operators.detail.sections': '상세 섹션',
   },
   'cn': {
-    'rd.operators.eyebrow': 'OPERATORS',
-    'rd.operators.filterEyebrow': 'FILTER CONTROLS',
     'rd.operators.count': '{count}名',
     'rd.operators.chip.query': '搜索: {value}',
     'rd.operators.chip.affiliation': '所属: {value}',
@@ -69,8 +65,6 @@ const Map<String, Map<String, String>> operatorsExtraMessages = {
     'rd.operators.detail.sections': '详情分区',
   },
   'jp': {
-    'rd.operators.eyebrow': 'OPERATORS',
-    'rd.operators.filterEyebrow': 'FILTER CONTROLS',
     'rd.operators.count': '{count}名',
     'rd.operators.chip.query': '検索: {value}',
     'rd.operators.chip.affiliation': '所属: {value}',
@@ -102,8 +96,6 @@ const Map<String, Map<String, String>> operatorsExtraMessages = {
     'rd.operators.detail.sections': '詳細セクション',
   },
   'tw': {
-    'rd.operators.eyebrow': 'OPERATORS',
-    'rd.operators.filterEyebrow': 'FILTER CONTROLS',
     'rd.operators.count': '{count}名',
     'rd.operators.chip.query': '搜尋: {value}',
     'rd.operators.chip.affiliation': '所屬: {value}',
@@ -135,8 +127,6 @@ const Map<String, Map<String, String>> operatorsExtraMessages = {
     'rd.operators.detail.sections': '詳情分區',
   },
   'en': {
-    'rd.operators.eyebrow': 'OPERATORS',
-    'rd.operators.filterEyebrow': 'FILTER CONTROLS',
     'rd.operators.count': '{count}',
     'rd.operators.chip.query': 'Search: {value}',
     'rd.operators.chip.affiliation': 'Affiliation: {value}',

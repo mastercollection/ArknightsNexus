@@ -91,7 +91,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('오퍼레이터 선택'), findsOneWidget);
-      expect(find.text('PLAN OPERATORS'), findsOneWidget);
       expect(find.text('메딕'), findsOneWidget);
       expect(find.text('Kaltsit'), findsOneWidget);
       expect(find.text('추가'), findsOneWidget);

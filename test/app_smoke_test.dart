@@ -25,12 +25,11 @@ void main() {
     // The default 800x600 view is the medium layout: icon rail + the home
     // page with its own region / sync controls (the brand lives in the PC
     // sidebar and the phone header).
-    expect(find.text('오늘 무엇을 확인할까요?'), findsOneWidget);
     expect(find.text('KR · 한국어'), findsOneWidget);
-    expect(find.text('Operators'), findsOneWidget);
-    expect(find.text('Items'), findsOneWidget);
-    expect(find.text('Plan'), findsOneWidget);
-    expect(find.text('Enemies'), findsOneWidget);
+    expect(find.byKey(const Key('home-menu-operators')), findsOneWidget);
+    expect(find.byKey(const Key('home-menu-items')), findsOneWidget);
+    expect(find.byKey(const Key('home-menu-plan')), findsOneWidget);
+    expect(find.byKey(const Key('home-menu-enemies')), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('비공식 팬 프로젝트'),
       200,
@@ -51,12 +50,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Operators'));
+    await tester.tap(find.byKey(const Key('home-menu-operators')));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     await tester.pump();
 
-    expect(find.text('Enemies'), findsNothing);
+    expect(find.byKey(const Key('home-menu-enemies')), findsNothing);
   });
 }
 

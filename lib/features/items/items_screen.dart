@@ -382,7 +382,6 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
       onChanged: _setSearch,
     );
     final header = RdPageHeader(
-      eyebrow: compact ? null : i18n.t('rd.items.eyebrow'),
       title: i18n.t('itemsPage.topBar.title'),
       subtitle: i18n.t('itemsPage.topBar.description'),
       onBack: _back,

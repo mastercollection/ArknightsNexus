@@ -26,8 +26,8 @@ void main() {
       expect(find.byKey(const Key('home-search-button')), findsOneWidget);
       expect(find.text('육성 계획 요약'), findsOneWidget);
       expect(find.text('아직 육성 계획에 오퍼레이터가 없습니다.'), findsOneWidget);
-      for (final title in ['Operators', 'Plan', 'Items', 'Enemies']) {
-        expect(find.text(title), findsOneWidget);
+      for (final id in ['operators', 'plan', 'items', 'enemies']) {
+        expect(find.byKey(Key('home-menu-$id')), findsOneWidget);
       }
       expect(find.text('준비중'), findsOneWidget);
       // The shell's bottom tabs, not a sidebar.
@@ -54,7 +54,6 @@ void main() {
       expect(find.text('새로고침'), findsOneWidget);
       expect(find.byKey(const Key('home-sidebar-settings')), findsOneWidget);
 
-      expect(find.text('오늘 무엇을 확인할까요?'), findsOneWidget);
       expect(find.text('Enter'), findsOneWidget);
       expect(find.text('바로가기'), findsOneWidget);
       expect(find.text('비공식 팬 프로젝트'), findsOneWidget);
@@ -70,15 +69,18 @@ void main() {
       expect(find.byType(HomeSidebarPanel), findsNothing);
 
       // Other areas' tests open their page from these tiles at 800x600.
-      for (final title in ['Operators', 'Plan', 'Items', 'Enemies']) {
-        expect(tester.getCenter(find.text(title)).dy, lessThan(600));
+      for (final id in ['operators', 'plan', 'items', 'enemies']) {
+        expect(
+          tester.getCenter(find.byKey(Key('home-menu-$id'))).dy,
+          lessThan(600),
+        );
       }
-      await tester.tap(find.text('Items'));
+      await tester.tap(find.byKey(const Key('home-menu-items')));
       await tester.pumpAndSettle();
       expect(find.text('stub items'), findsOneWidget);
       router.pop();
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Operators'));
+      await tester.tap(find.byKey(const Key('home-menu-operators')));
       await tester.pumpAndSettle();
       expect(find.text('stub operators:'), findsOneWidget);
     });
@@ -112,7 +114,7 @@ void main() {
 
       await tester.tap(find.byKey(const Key('home-menu-enemies')));
       await tester.pumpAndSettle();
-      expect(find.text('Enemies'), findsOneWidget);
+      expect(find.byKey(const Key('home-menu-enemies')), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('home-menu-items')));
       await tester.pumpAndSettle();
@@ -132,7 +134,7 @@ void main() {
       await tester.tap(find.text('EN · English').last);
       await tester.pumpAndSettle();
 
-      expect(find.text('What would you like to check today?'), findsOneWidget);
+      expect(find.text('Operators'), findsWidgets);
       expect(find.text('EN · English'), findsOneWidget);
       expect(find.text('Ready · 415 operators'), findsOneWidget);
       expect(sync.statusRegions.last, RegionCode.en);

@@ -10,6 +10,7 @@ const Map<String, Map<String, String>> shellExtraMessages = {
     'shell.nav.planShort': '계획',
     'shell.nav.items': '아이템',
     'shell.nav.settings': '설정',
+    'shell.nav.enemies': '적',
   },
   'cn': {
     'shell.nav.label': '主菜单',
@@ -19,6 +20,7 @@ const Map<String, Map<String, String>> shellExtraMessages = {
     'shell.nav.planShort': '计划',
     'shell.nav.items': '道具',
     'shell.nav.settings': '设置',
+    'shell.nav.enemies': '敌人',
   },
   'jp': {
     'shell.nav.label': 'メインメニュー',
@@ -28,6 +30,7 @@ const Map<String, Map<String, String>> shellExtraMessages = {
     'shell.nav.planShort': '計画',
     'shell.nav.items': 'アイテム',
     'shell.nav.settings': '設定',
+    'shell.nav.enemies': '敵',
   },
   'tw': {
     'shell.nav.label': '主選單',
@@ -37,6 +40,7 @@ const Map<String, Map<String, String>> shellExtraMessages = {
     'shell.nav.planShort': '計畫',
     'shell.nav.items': '道具',
     'shell.nav.settings': '設定',
+    'shell.nav.enemies': '敵人',
   },
   'en': {
     'shell.nav.label': 'Main menu',
@@ -46,5 +50,6 @@ const Map<String, Map<String, String>> shellExtraMessages = {
     'shell.nav.planShort': 'Plan',
     'shell.nav.items': 'Items',
     'shell.nav.settings': 'Settings',
+    'shell.nav.enemies': 'Enemies',
   },
 };

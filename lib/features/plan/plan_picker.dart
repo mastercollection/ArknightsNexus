@@ -106,11 +106,6 @@ class _PlanOperatorPickerState extends ConsumerState<PlanOperatorPicker> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                i18n.t('rd.plan.pickerEyebrow'),
-                style: RdText.eyebrow.copyWith(fontSize: compact ? 11 : 12),
-              ),
-              SizedBox(height: compact ? 2 : 4),
               Semantics(
                 header: true,
                 child: Text(

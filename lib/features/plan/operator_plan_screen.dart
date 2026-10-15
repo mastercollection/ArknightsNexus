@@ -304,7 +304,6 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
         plan != null;
 
     final header = RdPageHeader(
-      eyebrow: compact ? null : i18n.t('rd.plan.detailEyebrow'),
       title: operator?.name ?? i18n.t('planPage.detail.title'),
       subtitle: i18n.t('planPage.detail.description'),
       onBack: _goBack,

@@ -3,7 +3,6 @@
 /// for all five locales (kr, cn, jp, tw, en).
 const Map<String, Map<String, String>> homeExtraMessages = {
   'kr': {
-    'rd.home.headline': '오늘 무엇을 확인할까요?',
     'rd.home.searchWithQuery': '“{query}” 오퍼레이터 검색',
     'rd.home.searchHint': 'Enter 또는 버튼 → 오퍼레이터 목록 (검색어 없음: 전체 목록)',
     'rd.home.searchHintQuery': 'Enter 또는 버튼 → 오퍼레이터 목록 (검색어 “{query}”)',
@@ -35,7 +34,6 @@ const Map<String, Map<String, String>> homeExtraMessages = {
     'rd.home.shortcuts': '바로가기',
   },
   'cn': {
-    'rd.home.headline': '今天想查看什么？',
     'rd.home.searchWithQuery': '搜索干员“{query}”',
     'rd.home.searchHint': '按 Enter 或按钮 → 干员列表（无关键词：全部列表）',
     'rd.home.searchHintQuery': '按 Enter 或按钮 → 干员列表（关键词“{query}”）',
@@ -67,7 +65,6 @@ const Map<String, Map<String, String>> homeExtraMessages = {
     'rd.home.shortcuts': '快捷入口',
   },
   'jp': {
-    'rd.home.headline': '今日は何を確認しますか？',
     'rd.home.searchWithQuery': '「{query}」でオペレーター検索',
     'rd.home.searchHint': 'Enter またはボタン → オペレーター一覧（検索語なし：全件）',
     'rd.home.searchHintQuery': 'Enter またはボタン → オペレーター一覧（検索語「{query}」）',
@@ -99,7 +96,6 @@ const Map<String, Map<String, String>> homeExtraMessages = {
     'rd.home.shortcuts': 'ショートカット',
   },
   'tw': {
-    'rd.home.headline': '今天想查看什麼？',
     'rd.home.searchWithQuery': '搜尋幹員「{query}」',
     'rd.home.searchHint': '按 Enter 或按鈕 → 幹員列表（無關鍵字：全部列表）',
     'rd.home.searchHintQuery': '按 Enter 或按鈕 → 幹員列表（關鍵字「{query}」）',
@@ -131,7 +127,6 @@ const Map<String, Map<String, String>> homeExtraMessages = {
     'rd.home.shortcuts': '快捷入口',
   },
   'en': {
-    'rd.home.headline': 'What would you like to check today?',
     'rd.home.searchWithQuery': 'Search operators for “{query}”',
     'rd.home.searchHint':
         'Enter or the button → operator list (no keyword: full list)',

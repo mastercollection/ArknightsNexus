@@ -3,8 +3,6 @@
 /// for all five locales (kr, cn, jp, tw, en).
 const Map<String, Map<String, String>> planExtraMessages = {
   'kr': {
-    'rd.plan.eyebrow': 'PLAN',
-    'rd.plan.detailEyebrow': 'PLAN · 육성 상세',
     'rd.plan.tabsLabel': '플랜 보기',
     'rd.plan.selectForRemoval': '제거할 오퍼레이터 선택',
     'rd.plan.removeSelected': '선택한 오퍼레이터 제거',
@@ -15,7 +13,6 @@ const Map<String, Map<String, String>> planExtraMessages = {
     'rd.plan.addToPlan': '+ 플랜에 추가',
     'rd.plan.addToPlanShort': '+ 추가',
     'rd.plan.addNamedToPlan': '{name} 플랜에 추가',
-    'rd.plan.pickerEyebrow': 'PLAN OPERATORS',
     'rd.plan.routesLabel': '오퍼레이터별 육성 경로',
     'rd.plan.backToPlan': '육성 계획으로 돌아가기',
     'rd.plan.saveIdle': '자동 저장',
@@ -31,8 +28,6 @@ const Map<String, Map<String, String>> planExtraMessages = {
     'rd.plan.loading': '불러오는 중',
   },
   'cn': {
-    'rd.plan.eyebrow': 'PLAN',
-    'rd.plan.detailEyebrow': 'PLAN · 培养详情',
     'rd.plan.tabsLabel': '计划视图',
     'rd.plan.selectForRemoval': '选择要移除的干员',
     'rd.plan.removeSelected': '移除所选干员',
@@ -43,7 +38,6 @@ const Map<String, Map<String, String>> planExtraMessages = {
     'rd.plan.addToPlan': '+ 加入计划',
     'rd.plan.addToPlanShort': '+ 添加',
     'rd.plan.addNamedToPlan': '将 {name} 加入计划',
-    'rd.plan.pickerEyebrow': 'PLAN OPERATORS',
     'rd.plan.routesLabel': '各干员培养路线',
     'rd.plan.backToPlan': '返回培养计划',
     'rd.plan.saveIdle': '自动保存',
@@ -59,8 +53,6 @@ const Map<String, Map<String, String>> planExtraMessages = {
     'rd.plan.loading': '加载中',
   },
   'jp': {
-    'rd.plan.eyebrow': 'PLAN',
-    'rd.plan.detailEyebrow': 'PLAN · 育成詳細',
     'rd.plan.tabsLabel': 'プラン表示',
     'rd.plan.selectForRemoval': '削除するオペレーターを選択',
     'rd.plan.removeSelected': '選択したオペレーターを削除',
@@ -71,7 +63,6 @@ const Map<String, Map<String, String>> planExtraMessages = {
     'rd.plan.addToPlan': '+ プランに追加',
     'rd.plan.addToPlanShort': '+ 追加',
     'rd.plan.addNamedToPlan': '{name}をプランに追加',
-    'rd.plan.pickerEyebrow': 'PLAN OPERATORS',
     'rd.plan.routesLabel': 'オペレーター別の育成ルート',
     'rd.plan.backToPlan': '育成計画に戻る',
     'rd.plan.saveIdle': '自動保存',
@@ -87,8 +78,6 @@ const Map<String, Map<String, String>> planExtraMessages = {
     'rd.plan.loading': '読み込み中',
   },
   'tw': {
-    'rd.plan.eyebrow': 'PLAN',
-    'rd.plan.detailEyebrow': 'PLAN · 培養詳情',
     'rd.plan.tabsLabel': '計畫檢視',
     'rd.plan.selectForRemoval': '選擇要移除的幹員',
     'rd.plan.removeSelected': '移除所選幹員',
@@ -99,7 +88,6 @@ const Map<String, Map<String, String>> planExtraMessages = {
     'rd.plan.addToPlan': '+ 加入計畫',
     'rd.plan.addToPlanShort': '+ 新增',
     'rd.plan.addNamedToPlan': '將 {name} 加入計畫',
-    'rd.plan.pickerEyebrow': 'PLAN OPERATORS',
     'rd.plan.routesLabel': '各幹員培養路線',
     'rd.plan.backToPlan': '返回培養計畫',
     'rd.plan.saveIdle': '自動儲存',
@@ -115,8 +103,6 @@ const Map<String, Map<String, String>> planExtraMessages = {
     'rd.plan.loading': '載入中',
   },
   'en': {
-    'rd.plan.eyebrow': 'PLAN',
-    'rd.plan.detailEyebrow': 'PLAN · Details',
     'rd.plan.tabsLabel': 'Plan view',
     'rd.plan.selectForRemoval': 'Select operators to remove',
     'rd.plan.removeSelected': 'Remove selected operators',
@@ -127,7 +113,6 @@ const Map<String, Map<String, String>> planExtraMessages = {
     'rd.plan.addToPlan': '+ Add to plan',
     'rd.plan.addToPlanShort': '+ Add',
     'rd.plan.addNamedToPlan': 'Add {name} to the plan',
-    'rd.plan.pickerEyebrow': 'PLAN OPERATORS',
     'rd.plan.routesLabel': 'Upgrade route per operator',
     'rd.plan.backToPlan': 'Back to the plan',
     'rd.plan.saveIdle': 'Autosave',

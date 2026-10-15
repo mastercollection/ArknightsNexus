@@ -165,42 +165,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               const SizedBox(height: 20),
             ],
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final title = Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(i18n.t('home.hero.title'), style: RdText.eyebrow),
-                    const SizedBox(height: 4),
-                    Semantics(
-                      header: true,
-                      child: Text(
-                        i18n.t('rd.home.headline'),
-                        style: RdText.pageTitle.copyWith(fontSize: 28),
-                      ),
-                    ),
-                  ],
-                );
-                final search = _SearchBlock(
-                  controller: _searchController,
-                  compact: false,
-                  onSubmit: _openOperatorSearch,
-                );
-                // flex: 1 1 280px | flex: 2 1 360px, wrapping when narrow.
-                if (constraints.maxWidth < 280 + 16 + 360) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [title, const SizedBox(height: 16), search],
-                  );
-                }
-                return Row(
-                  children: [
-                    Expanded(child: title),
-                    const SizedBox(width: 16),
-                    Expanded(flex: 2, child: search),
-                  ],
-                );
-              },
+            _SearchBlock(
+              controller: _searchController,
+              compact: false,
+              onSubmit: _openOperatorSearch,
             ),
             const SizedBox(height: 28),
             // Without the sidebar (medium) the icon rail has no labels, so
@@ -432,7 +400,7 @@ class _MenuGrid extends ConsumerWidget {
     final items = [
       _MenuItem(
         id: 'operators',
-        title: 'Operators',
+        title: i18n.t('shell.nav.operators'),
         caption: i18n.t('home.menu.operators.caption'),
         status: i18n.t('home.menu.status.active'),
         icon: 'assets/icons/home/operator.webp',
@@ -440,7 +408,7 @@ class _MenuGrid extends ConsumerWidget {
       ),
       _MenuItem(
         id: 'plan',
-        title: 'Plan',
+        title: i18n.t('shell.nav.plan'),
         caption: i18n.t('home.menu.plan.caption'),
         status: i18n.t('home.menu.status.active'),
         icon: 'assets/icons/home/prts.png',
@@ -448,7 +416,7 @@ class _MenuGrid extends ConsumerWidget {
       ),
       _MenuItem(
         id: 'items',
-        title: 'Items',
+        title: i18n.t('shell.nav.items'),
         caption: i18n.t('home.menu.items.caption'),
         status: i18n.t('home.menu.status.active'),
         icon: 'assets/icons/home/items.webp',
@@ -456,7 +424,7 @@ class _MenuGrid extends ConsumerWidget {
       ),
       _MenuItem(
         id: 'enemies',
-        title: 'Enemies',
+        title: i18n.t('shell.nav.enemies'),
         caption: i18n.t('home.menu.enemies.caption'),
         status: i18n.t('home.menu.status.pending'),
         icon: 'assets/icons/home/enemy.webp',

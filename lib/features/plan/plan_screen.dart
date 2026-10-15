@@ -404,8 +404,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     ];
 
     final header = RdPageHeader(
-      eyebrow: compact ? null : i18n.t('rd.plan.eyebrow'),
-      title: i18n.t('planPage.topBar.title'),
+      title: i18n.t('shell.nav.plan'),
       subtitle: i18n.t('planPage.topBar.description'),
       onBack: _goBack,
       backTooltip: i18n.t('common.back'),

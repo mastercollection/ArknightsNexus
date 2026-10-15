@@ -220,8 +220,6 @@ class _OperatorsFilterSidebarState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(i18n.t('rd.operators.eyebrow'), style: RdText.eyebrow),
-            const SizedBox(height: 6),
             Semantics(
               header: true,
               child: Text(
@@ -250,14 +248,6 @@ class _OperatorsFilterSidebarState
                       fontWeight: FontWeight.w700,
                       color: RdColors.text,
                     ),
-                  ),
-                ),
-                Text(
-                  i18n.t('rd.operators.filterEyebrow'),
-                  style: const TextStyle(
-                    fontSize: 11,
-                    letterSpacing: 1.3,
-                    color: RdColors.muted,
                   ),
                 ),
               ],
@@ -523,15 +513,6 @@ class _AllFiltersSheet extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              i18n.t('rd.operators.filterEyebrow'),
-              style: const TextStyle(
-                fontSize: 11,
-                letterSpacing: 1.5,
-                color: RdColors.muted,
-              ),
-            ),
-            const SizedBox(height: 2),
             Text(
               i18n.t('operatorsList.filters.title'),
               style: const TextStyle(
