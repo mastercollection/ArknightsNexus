@@ -7,6 +7,7 @@ import '../../app/providers.dart';
 import '../../domain/operator.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../services/operator_service.dart';
+import '../shared/operator_search.dart';
 
 /// `useInfiniteSlice` options used by the Vue page.
 const operatorsInitialCount = 36;
@@ -230,22 +231,14 @@ class OperatorsListController extends ChangeNotifier {
   void _applyLocalFilters() {
     final filters = _filters;
     final i18n = _ref.read(i18nProvider);
-    final query = filters.query.trim().toLowerCase();
+    final needle = operatorSearchNeedle(filters.query);
     operatorList = _allOperators.where((operator) {
-      final affiliations = [
-        ...operator.teams,
-        ...operator.nations,
-        ...operator.groups,
-      ];
-      final matchesQuery = query.isEmpty ||
-          [
-            operator.name,
-            operator.profession,
-            i18n.profession(operator.profession),
-            ...affiliations,
-          ].any((value) => value.toLowerCase().contains(query));
-      final matchesAffiliation = filters.affiliation == null ||
-          affiliations.contains(filters.affiliation);
+      final matchesQuery = operatorMatchesQuery(operator, needle, i18n);
+      final affiliation = filters.affiliation;
+      final matchesAffiliation = affiliation == null ||
+          operator.teams.contains(affiliation) ||
+          operator.nations.contains(affiliation) ||
+          operator.groups.contains(affiliation);
       final matchesRarity =
           filters.rarity == null || operator.rarity == filters.rarity;
       final matchesProfession = filters.profession == null ||

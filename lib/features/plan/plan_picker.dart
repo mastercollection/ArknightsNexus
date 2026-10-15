@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/operator.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../ui/redesign/rd_widgets.dart';
+import '../shared/operator_search.dart';
 
 /// Lets the plan page refresh or close the open picker.
 class PlanPickerController {
@@ -301,29 +302,20 @@ class _PickerRow extends StatelessWidget {
   }
 }
 
-/// `pickerOperators`: not yet in the plan and matching the query against the
-/// name, raw and translated profession, teams, nations and groups.
+/// `pickerOperators`: not yet in the plan and matching the query
+/// ([operatorMatchesQuery]).
 List<OperatorSummary> filterPlanPickerOperators({
   required List<OperatorSummary> operators,
   required List<String> selectedIds,
   required String query,
   required NexusI18n i18n,
 }) {
-  final needle = query.trim().toLowerCase();
-  return operators.where((operator) {
-    if (selectedIds.contains(operator.id)) {
-      return false;
-    }
-    if (needle.isEmpty) {
-      return true;
-    }
-    return [
-      operator.name,
-      operator.profession,
-      i18n.profession(operator.profession),
-      ...operator.teams,
-      ...operator.nations,
-      ...operator.groups,
-    ].any((value) => value.toLowerCase().contains(needle));
-  }).toList();
+  final needle = operatorSearchNeedle(query);
+  return operators
+      .where(
+        (operator) =>
+            !selectedIds.contains(operator.id) &&
+            operatorMatchesQuery(operator, needle, i18n),
+      )
+      .toList();
 }
