@@ -249,6 +249,62 @@ void main() {
       expect(find.text('Leader'), findsNothing);
     });
 
+    testWidgets('PC sidebar wraps long option lists and builds them on scroll',
+        (tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      operatorService._operators = [
+        for (var i = 0; i < 40; i++)
+          OperatorDetail(
+            id: 'char_${i.toString().padLeft(3, '0')}_op',
+            name: 'Op $i',
+            codename: 'Op $i',
+            rarity: 1 + i % 6,
+            profession: 'GUARD',
+            branch: 'Fighter',
+            teams: ['T${i.toString().padLeft(2, '0')}'],
+            thumbnailHue: i,
+            quote: '',
+            archetypeDescription: '',
+          ),
+      ];
+      await _pumpApp(
+        tester,
+        operatorService,
+        regionSyncService,
+        userDataRepository,
+      );
+      await tester.tap(find.byKey(const Key('sidebar-operators')));
+      await tester.pumpAndSettle();
+
+      Finder chip(int i) => find.byKey(
+            ValueKey(
+              'operators-filter-affiliation-T${i.toString().padLeft(2, '0')}',
+            ),
+          );
+      // Wrap layout: runs start at the same x, chips 6px apart in a run.
+      final first = tester.getRect(chip(0));
+      final second = tester.getRect(chip(1));
+      expect(second.top, first.top);
+      expect(second.left - first.right, 6);
+      final nextRun = [
+        for (var i = 2; i < 10; i++) tester.getRect(chip(i)),
+      ].firstWhere((rect) => rect.top > first.top);
+      expect(nextRun.left, first.left);
+      expect(nextRun.top - first.bottom, 6);
+
+      // Options far below the box's visible part are built when scrolled to.
+      expect(chip(39), findsNothing);
+      await tester.drag(chip(0), const Offset(0, -2000));
+      await tester.pumpAndSettle();
+      expect(chip(39), findsOneWidget);
+      await tester.tap(chip(39));
+      await tester.pumpAndSettle();
+      expect(find.text('Op 39'), findsOneWidget);
+      expect(find.text('Op 0'), findsNothing);
+    });
+
     testWidgets('phone layout pushes the detail page', (tester) async {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1;

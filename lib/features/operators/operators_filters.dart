@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+
+import 'package:flutter/foundation.dart' show precisionErrorTolerance;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -26,6 +29,16 @@ class _OptionButton extends StatelessWidget {
   /// BA tag colours (`TAG_ON`) for the selected state.
   final bool tag;
 
+  double get _horizontalPadding => height >= 44 ? 14 : 12;
+
+  /// The label style on top of the [Material]'s default text style; also
+  /// used by [_LazyOptionRuns] to measure the button.
+  TextStyle _labelStyle([Color? color]) => TextStyle(
+        fontSize: height >= 44 ? 14 : 13,
+        fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+        color: color,
+      );
+
   @override
   Widget build(BuildContext context) {
     final (Color border, Color fill, Color text) = selected
@@ -51,21 +64,145 @@ class _OptionButton extends StatelessWidget {
           onTap: onTap,
           child: Container(
             height: height,
-            padding: EdgeInsets.symmetric(horizontal: height >= 44 ? 14 : 12),
+            padding: EdgeInsets.symmetric(horizontal: _horizontalPadding),
             child: Center(
               widthFactor: 1,
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: height >= 44 ? 14 : 13,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
-                  color: text,
-                ),
-              ),
+              child: Text(label, style: _labelStyle(text)),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// A scroll box of [_OptionButton]s in the same runs a [Wrap] would make,
+/// building only the runs near the visible part of the box.
+///
+/// The affiliation and BA tag lists have dozens of options (44 and 55 in
+/// the KR data) of which a few runs fit the box; building every button
+/// eagerly was most of the cost of opening the operators page. Button
+/// widths come from measuring the labels with the style the buttons use,
+/// and runs break with [RenderWrap]'s rule, so the layout matches the
+/// [Wrap] it replaces.
+class _LazyOptionRuns extends StatefulWidget {
+  const _LazyOptionRuns({required this.buttons, required this.maxHeight});
+
+  final List<_OptionButton> buttons;
+  final double maxHeight;
+
+  static const spacing = 6.0;
+
+  @override
+  State<_LazyOptionRuns> createState() => _LazyOptionRunsState();
+}
+
+class _LazyOptionRunsState extends State<_LazyOptionRuns> {
+  /// Measured label widths by (label, bold); reset when the text setup or
+  /// the loaded fonts change.
+  final _widths = <(String, bool), double>{};
+  Object? _measuredWith;
+
+  @override
+  void initState() {
+    super.initState();
+    // Labels measured before a font finished loading (web) are stale.
+    PaintingBinding.instance.systemFonts.addListener(_fontsChanged);
+  }
+
+  @override
+  void dispose() {
+    PaintingBinding.instance.systemFonts.removeListener(_fontsChanged);
+    super.dispose();
+  }
+
+  void _fontsChanged() {
+    setState(_widths.clear);
+  }
+
+  List<List<_OptionButton>> _runs(BuildContext context, double maxWidth) {
+    // Inside the buttons' Material the default text style is bodyMedium.
+    final base = Theme.of(context).textTheme.bodyMedium!;
+    final textScaler = MediaQuery.textScalerOf(context);
+    final textDirection = Directionality.of(context);
+    final locale = Localizations.maybeLocaleOf(context);
+    final setup = (base, textScaler, textDirection, locale);
+    if (setup != _measuredWith) {
+      _widths.clear();
+      _measuredWith = setup;
+    }
+
+    double widthOf(_OptionButton button) {
+      final text = _widths.putIfAbsent((button.label, button.selected), () {
+        final painter = TextPainter(
+          text: TextSpan(
+            text: button.label,
+            style: base.merge(button._labelStyle()),
+          ),
+          textDirection: textDirection,
+          textScaler: textScaler,
+          locale: locale,
+        )..layout();
+        final width = painter.width;
+        painter.dispose();
+        return width;
+      });
+      return math.min(text + button._horizontalPadding * 2, maxWidth);
+    }
+
+    final runs = <List<_OptionButton>>[];
+    var runExtent = 0.0;
+    for (final button in widget.buttons) {
+      final width = widthOf(button);
+      if (runs.isEmpty ||
+          runExtent + width + _LazyOptionRuns.spacing - maxWidth >
+              precisionErrorTolerance) {
+        runs.add([button]);
+        runExtent = width;
+      } else {
+        runs.last.add(button);
+        runExtent += width + _LazyOptionRuns.spacing;
+      }
+    }
+    return runs;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxWidth = constraints.maxWidth;
+        final runs = _runs(context, maxWidth);
+        const spacing = _LazyOptionRuns.spacing;
+        final rowHeight =
+            widget.buttons.isEmpty ? 0.0 : widget.buttons.first.height;
+        final contentHeight = runs.isEmpty
+            ? 0.0
+            : runs.length * rowHeight + (runs.length - 1) * spacing;
+        return SizedBox(
+          height: math.min(contentHeight, widget.maxHeight),
+          child: ListView.builder(
+            padding: EdgeInsets.zero,
+            cacheExtent: rowHeight + spacing,
+            itemCount: runs.length,
+            itemBuilder: (context, index) => Padding(
+              padding: EdgeInsets.only(top: index == 0 ? 0 : spacing),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final (i, button) in runs[index].indexed) ...[
+                    if (i > 0) const SizedBox(width: spacing),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxWidth),
+                      child: button,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -186,10 +323,17 @@ class _OperatorsFilterSidebarState
   @override
   Widget build(BuildContext context) {
     final i18n = ref.watch(i18nProvider);
-    final list = ref.watch(operatorsListControllerProvider);
+    // Only the filters and the option lists show here; paging the list
+    // (`loadMore`) or loading state changes must not rebuild every chip.
+    ref.watch(
+      operatorsListControllerProvider.select(
+        (list) => (list.filters, list.options),
+      ),
+    );
+    final list = ref.read(operatorsListControllerProvider);
     final filters = list.filters;
 
-    List<Widget> optionButtons(
+    List<_OptionButton> optionButtons(
       OperatorFilterDimension dimension, {
       String query = '',
     }) {
@@ -286,16 +430,11 @@ class _OperatorsFilterSidebarState
                     onChanged: (_) => setState(() {}),
                   ),
                   const SizedBox(height: 10),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 176),
-                    child: SingleChildScrollView(
-                      child: _wrap(
-                        optionButtons(
-                          OperatorFilterDimension.affiliation,
-                          query: _affiliationQuery.text,
-                        ),
-                        spacing: 6,
-                      ),
+                  _LazyOptionRuns(
+                    maxHeight: 176,
+                    buttons: optionButtons(
+                      OperatorFilterDimension.affiliation,
+                      query: _affiliationQuery.text,
                     ),
                   ),
                 ],
@@ -316,16 +455,11 @@ class _OperatorsFilterSidebarState
                     onChanged: (_) => setState(() {}),
                   ),
                   const SizedBox(height: 10),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 210),
-                    child: SingleChildScrollView(
-                      child: _wrap(
-                        optionButtons(
-                          OperatorFilterDimension.baTags,
-                          query: _tagQuery.text,
-                        ),
-                        spacing: 6,
-                      ),
+                  _LazyOptionRuns(
+                    maxHeight: 210,
+                    buttons: optionButtons(
+                      OperatorFilterDimension.baTags,
+                      query: _tagQuery.text,
                     ),
                   ),
                 ],
