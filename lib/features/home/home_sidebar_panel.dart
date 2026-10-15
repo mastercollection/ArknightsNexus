@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../ui/redesign/rd_widgets.dart';
 import 'home_region_sync.dart';
+import '../shared/region_select.dart';
 
 /// Bottom block of the PC home sidebar (`Main.dc.html`): data region / UI
 /// language select, sync status with a sync button, and the settings link.

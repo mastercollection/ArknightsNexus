@@ -14,7 +14,6 @@ import '../../services/item_service.dart';
 import '../../ui/nexus_ui.dart' show ItemIcon;
 import '../../ui/redesign/rd_widgets.dart';
 import 'item_format.dart';
-import 'item_widgets.dart';
 
 enum PenguinSortKey { dropRate, sampleCount }
 
@@ -531,25 +530,25 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
       );
     }
 
-    final sortSelect = ItemsSelect<PenguinSortKey>(
+    final sortSelect = RdSelect<PenguinSortKey>(
       label: i18n.t('rd.items.sortLabel'),
       width: compact ? 96 : 112,
       height: compact ? 44 : 36,
       value: _penguinSortKey,
       options: [
         for (final key in PenguinSortKey.values)
-          ItemsSelectOption(key, i18n.t('itemsDetail.sort.${key.name}')),
+          RdSelectOption(key, i18n.t('itemsDetail.sort.${key.name}')),
       ],
       onChanged: (key) => setState(() => _penguinSortKey = key),
     );
-    final serverSelect = ItemsSelect<PenguinServer>(
+    final serverSelect = RdSelect<PenguinServer>(
       label: i18n.t('rd.items.serverLabel'),
       width: compact ? 76 : 120,
       height: compact ? 44 : 36,
       value: _penguinServer,
       options: [
         for (final server in ItemDetailScreen.penguinServers)
-          ItemsSelectOption(server, server.value),
+          RdSelectOption(server, server.value),
       ],
       onChanged: _setPenguinServer,
     );

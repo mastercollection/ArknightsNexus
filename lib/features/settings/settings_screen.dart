@@ -11,7 +11,7 @@ import '../../i18n/nexus_i18n.dart';
 import '../../services/diagnostics_service.dart';
 import '../../ui/nexus_ui.dart' show NexusMessageType, showNexusMessage;
 import '../../ui/redesign/rd_widgets.dart';
-import '../home/home_region_sync.dart' show RdRegionSelect;
+import '../shared/region_select.dart';
 import 'settings_dialogs.dart';
 
 const _globeIcon = 'assets/icons/globe.svg';

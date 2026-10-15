@@ -2,21 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
-import '../../data_sources/region_code.dart';
 import '../../domain/sync_status.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../ui/nexus_ui.dart' show NexusMessageType, showNexusMessage;
 import '../../ui/redesign/rd_widgets.dart';
-
-/// Region options with their native language name, as the canvas lists them
-/// ("KR · 한국어"). The names are endonyms, so they do not follow the locale.
-const homeRegionLanguageLabels = <RegionCode, String>{
-  RegionCode.kr: 'KR · 한국어',
-  RegionCode.cn: 'CN · 简体中文',
-  RegionCode.jp: 'JP · 日本語',
-  RegionCode.tw: 'TW · 繁體中文',
-  RegionCode.en: 'EN · English',
-};
 
 /// Sync status of the selected region (Vue `index.vue` loads it next to the
 /// featured operators). Reloads on region change and after a manual sync.
@@ -242,103 +231,6 @@ class HomeSyncIconButton extends ConsumerWidget {
           : i18n.t('rd.home.sync.tooltip'),
       spinning: syncing,
       onPressed: syncing ? null : () => runHomeSync(context, ref),
-    );
-  }
-}
-
-/// Region select of the redesign: the data region, which also sets the UI
-/// language (`useRegionPreference`). Not persisted, like the Tauri app.
-class RdRegionSelect extends ConsumerWidget {
-  const RdRegionSelect({
-    required this.semanticLabel,
-    this.codesOnly = false,
-    this.height = 40,
-    this.fontSize = 14,
-    super.key,
-  });
-
-  final String semanticLabel;
-
-  /// Shows "KR" instead of "KR · 한국어" in the closed select (the mobile
-  /// header); the menu always lists the language names.
-  final bool codesOnly;
-  final double height;
-  final double fontSize;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final region = ref.watch(regionProvider);
-    final label =
-        codesOnly ? regionLabels[region]! : homeRegionLanguageLabels[region]!;
-    return Semantics(
-      label: semanticLabel,
-      value: homeRegionLanguageLabels[region],
-      child: PopupMenuButton<RegionCode>(
-        key: const Key('region-select'),
-        tooltip: semanticLabel,
-        initialValue: region,
-        color: RdColors.inner2,
-        position: PopupMenuPosition.under,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(RdRadii.control),
-          side: const BorderSide(color: RdColors.line3),
-        ),
-        onSelected: (next) {
-          if (next != ref.read(regionProvider)) {
-            ref.read(regionProvider.notifier).state = next;
-          }
-        },
-        itemBuilder: (context) => [
-          for (final option in regionOptions)
-            PopupMenuItem<RegionCode>(
-              value: option,
-              height: 44,
-              child: Text(
-                homeRegionLanguageLabels[option]!,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: option == region ? RdColors.accent : RdColors.text,
-                  fontWeight:
-                      option == region ? FontWeight.w700 : FontWeight.w400,
-                ),
-              ),
-            ),
-        ],
-        child: Container(
-          height: height,
-          padding: const EdgeInsets.only(left: 10, right: 6),
-          decoration: BoxDecoration(
-            color: RdColors.field,
-            borderRadius: BorderRadius.circular(RdRadii.small),
-            border: Border.all(color: RdColors.line3),
-          ),
-          child: Row(
-            mainAxisSize: codesOnly ? MainAxisSize.min : MainAxisSize.max,
-            children: [
-              if (codesOnly)
-                Text(
-                  label,
-                  style: TextStyle(fontSize: fontSize, color: RdColors.text),
-                )
-              else
-                Expanded(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: fontSize, color: RdColors.text),
-                  ),
-                ),
-              const SizedBox(width: 4),
-              const Icon(
-                Icons.expand_more,
-                size: 18,
-                color: RdColors.muted,
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
