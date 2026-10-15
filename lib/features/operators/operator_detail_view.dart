@@ -1493,7 +1493,7 @@ class _TermContentState extends State<_TermContent> {
                         style: TextStyle(
                           fontSize: compact ? 15 : 14,
                           height: 1.75,
-                          color: detailBodyColor,
+                          color: RdColors.body,
                         ),
                         onTermTap: (key, label) {
                           final next = widget.terms[key];

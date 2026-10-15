@@ -372,39 +372,3 @@ class OpRangeControl extends StatelessWidget {
     );
   }
 }
-
-/// `h3 + p` heading pair of the detail panels.
-class OpHeading extends StatelessWidget {
-  const OpHeading(
-    this.title, {
-    this.description,
-    this.fontSize = 15,
-    super.key,
-  });
-
-  final String title;
-  final String? description;
-  final double fontSize;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: fontSize,
-            fontWeight: FontWeight.w700,
-            color: const Color(0xFFECF0FA),
-          ),
-        ),
-        if (description != null) ...[
-          const SizedBox(height: 4),
-          Text(description!, style: RdText.muted),
-        ],
-      ],
-    );
-  }
-}

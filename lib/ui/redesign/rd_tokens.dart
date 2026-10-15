@@ -22,6 +22,9 @@ class RdColors {
   static const portrait = Color(0xFF16223A);
 
   static const text = Color(0xFFF5F7FF);
+
+  /// Headings of the operator detail panels (`#ecf0fa`).
+  static const heading = Color(0xFFECF0FA);
   static const secondary = Color(0xFFC9D6EE);
   static const secondary2 = Color(0xFFB7C3D9);
   static const muted = Color(0xFF9AA6BD);
@@ -168,6 +171,13 @@ class RdText {
   static const secondary = TextStyle(fontSize: 14, color: RdColors.secondary2);
   static const muted = TextStyle(fontSize: 13, color: RdColors.muted);
   static const small = TextStyle(fontSize: 12, color: RdColors.muted);
+
+  /// Description line under a plan section heading.
+  static const caption = TextStyle(
+    fontSize: 12,
+    height: 1.45,
+    color: RdColors.secondary2,
+  );
 
   static TextStyle mono({
     double fontSize = 14,

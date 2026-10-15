@@ -11,26 +11,38 @@ export 'rd_tokens.dart';
 class RdCard extends StatelessWidget {
   const RdCard({
     required this.child,
-    this.padding = const EdgeInsets.all(22),
+    EdgeInsetsGeometry this.padding = const EdgeInsets.all(22),
     this.color = RdColors.card,
-    this.radius = RdRadii.card,
+    double this.radius = RdRadii.card,
     this.borderColor = RdColors.line2,
     super.key,
   });
 
+  /// Card of the list and detail pages: radius 18 (16 on phones) and, unless
+  /// [padding] is given, 18px padding (14 on phones).
+  const RdCard.tile({
+    required this.child,
+    this.padding,
+    this.color = RdColors.card,
+    this.borderColor = RdColors.line2,
+    super.key,
+  }) : radius = null;
+
   final Widget child;
-  final EdgeInsetsGeometry padding;
+  final EdgeInsetsGeometry? padding;
   final Color color;
-  final double radius;
+  final double? radius;
   final Color? borderColor;
 
   @override
   Widget build(BuildContext context) {
+    final compact = context.rdLayout == RdLayout.compact;
     return Container(
-      padding: padding,
+      padding: padding ?? EdgeInsets.all(compact ? 14 : 18),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(radius),
+        borderRadius:
+            BorderRadius.circular(radius ?? (compact ? 16 : RdRadii.tile)),
         border: borderColor == null ? null : Border.all(color: borderColor!),
       ),
       child: child,

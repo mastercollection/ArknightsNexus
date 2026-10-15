@@ -303,7 +303,7 @@ class _ModuleCard extends StatelessWidget {
     final rangeCell = compact ? 26.0 : 28.0;
     final typeLabel = module.typeIcon.toUpperCase();
 
-    return DetailInset(
+    return RdInset.section(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: 16,
@@ -391,7 +391,11 @@ class _ModuleCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: 8,
               children: [
-                _H4(i18n.t('operatorDetail.labels.moduleStage')),
+                RdHeading(
+                  i18n.t('operatorDetail.labels.moduleStage'),
+                  fontSize: 14,
+                  color: RdColors.heading,
+                ),
                 OpSegmented<int>(
                   key: const ValueKey('module-stage'),
                   semanticLabel: i18n.t('operatorDetail.labels.moduleStage'),
@@ -416,7 +420,11 @@ class _ModuleCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 spacing: 8,
                 children: [
-                  _H4(i18n.t('operatorDetail.labels.moduleStatBonus')),
+                  RdHeading(
+                    i18n.t('operatorDetail.labels.moduleStatBonus'),
+                    fontSize: 14,
+                    color: RdColors.heading,
+                  ),
                   RdAutoGrid(
                     minTileWidth: 110,
                     gap: 10,
@@ -462,7 +470,11 @@ class _ModuleCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 spacing: 10,
                 children: [
-                  _H4(i18n.t('operatorDetail.labels.moduleEffects')),
+                  RdHeading(
+                    i18n.t('operatorDetail.labels.moduleEffects'),
+                    fontSize: 14,
+                    color: RdColors.heading,
+                  ),
                   for (final part in effectParts)
                     Container(
                       key: ValueKey(
@@ -518,24 +530,6 @@ class _ModuleCard extends StatelessWidget {
   }
 }
 
-class _H4 extends StatelessWidget {
-  const _H4(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w700,
-        color: Color(0xFFECF0FA),
-      ),
-    );
-  }
-}
-
 /// Trait/talent override card of a module stage.
 class ModuleCandidateCard extends StatelessWidget {
   const ModuleCandidateCard({
@@ -552,7 +546,7 @@ class ModuleCandidateCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final variants = candidate.potentialVariants;
-    return DetailInset(
+    return RdInset.section(
       key: ValueKey(candidate.key),
       color: RdColors.white3,
       radius: 16,

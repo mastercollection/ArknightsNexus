@@ -324,7 +324,7 @@ class _MaterialTile extends StatelessWidget {
       );
     }
 
-    return PlanInset(
+    return RdInset(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       child: Column(
         mainAxisSize: MainAxisSize.min,

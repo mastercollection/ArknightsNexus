@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+import 'rd_tokens.dart';
+
 /// Column count of CSS `repeat(auto-fill, minmax(minTileWidth, 1fr))` with
 /// [gap] between tracks, clamped to [min]..[max].
 int rdAutoColumns(
@@ -86,6 +88,93 @@ class RdAutoGrid extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: rows,
+    );
+  }
+}
+
+/// Tinted block inside a card (`rgba(255,255,255,0.03)`, radius 14).
+class RdInset extends StatelessWidget {
+  const RdInset({
+    required this.child,
+    this.padding = const EdgeInsets.all(12),
+    this.radius = RdRadii.inner,
+    this.color = RdColors.white3,
+    super.key,
+  });
+
+  /// Section block of the operator detail panels (`rgba(255,255,255,0.04)`,
+  /// radius 20, padding 16).
+  const RdInset.section({
+    required this.child,
+    this.padding = const EdgeInsets.all(16),
+    this.radius = 20,
+    this.color = RdColors.soft2,
+    super.key,
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final double radius;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(radius),
+      ),
+      child: child,
+    );
+  }
+}
+
+/// Section heading: bold [title] (announced as a header) with an optional
+/// [description] line below it.
+class RdHeading extends StatelessWidget {
+  const RdHeading(
+    this.title, {
+    this.description,
+    this.fontSize = 15,
+    this.color = RdColors.text,
+    this.letterSpacing,
+    this.descriptionStyle = RdText.muted,
+    super.key,
+  });
+
+  final String title;
+  final String? description;
+  final double fontSize;
+  final Color color;
+  final double? letterSpacing;
+  final TextStyle descriptionStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    final heading = Semantics(
+      header: true,
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.w700,
+          letterSpacing: letterSpacing,
+          color: color,
+        ),
+      ),
+    );
+    if (description == null || description!.isEmpty) {
+      return heading;
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        heading,
+        const SizedBox(height: 4),
+        Text(description!, style: descriptionStyle),
+      ],
     );
   }
 }

@@ -384,7 +384,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
       return null;
     }
     final gap = compact ? 10.0 : 12.0;
-    return ItemsSurface(
+    return RdCard.tile(
       padding: compact
           ? const EdgeInsets.symmetric(horizontal: 14, vertical: 16)
           : const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
@@ -392,7 +392,11 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          ItemsSectionHeading(i18n.t('itemsDetail.sections.buildingRecipes')),
+          RdHeading(
+            i18n.t('itemsDetail.sections.buildingRecipes'),
+            fontSize: 16,
+            letterSpacing: -0.32,
+          ),
           SizedBox(height: gap),
           if (_buildingFormulaErrorMessage.isNotEmpty)
             ItemsInlineError(
@@ -434,7 +438,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
             for (var i = 0; i < 4; i++)
               Padding(
                 padding: EdgeInsets.only(top: i == 0 ? 0 : 8),
-                child: const ItemsSurface(
+                child: const RdCard.tile(
+                  padding: EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -537,7 +542,11 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
           spacing: 12,
           runSpacing: 8,
           children: [
-            ItemsSectionHeading(i18n.t('itemsDetail.sections.penguinDrops')),
+            RdHeading(
+              i18n.t('itemsDetail.sections.penguinDrops'),
+              fontSize: 16,
+              letterSpacing: -0.32,
+            ),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [sortSelect, const SizedBox(width: 8), serverSelect],
@@ -637,7 +646,7 @@ class _DetailLoading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const RdPulse(
-      child: ItemsSurface(
+      child: RdCard.tile(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

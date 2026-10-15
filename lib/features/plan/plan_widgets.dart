@@ -141,101 +141,6 @@ class PlanPageFrame extends StatelessWidget {
   }
 }
 
-/// Card shell of the plan pages (`#0c1426`, radius 18).
-class PlanCard extends StatelessWidget {
-  const PlanCard({required this.child, this.padding, super.key});
-
-  final Widget child;
-  final EdgeInsetsGeometry? padding;
-
-  @override
-  Widget build(BuildContext context) {
-    return RdCard(
-      radius: RdRadii.tile,
-      padding: padding ?? EdgeInsets.all(_isCompact(context) ? 14 : 18),
-      child: child,
-    );
-  }
-}
-
-/// `rgba(255,255,255,0.03)` block inside a card.
-class PlanInset extends StatelessWidget {
-  const PlanInset({
-    required this.child,
-    this.padding = const EdgeInsets.all(12),
-    this.radius = RdRadii.inner,
-    this.color = RdColors.white3,
-    super.key,
-  });
-
-  final Widget child;
-  final EdgeInsetsGeometry padding;
-  final double radius;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: padding,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(radius),
-      ),
-      child: child,
-    );
-  }
-}
-
-/// Section heading: bold title + secondary description.
-class PlanHeading extends StatelessWidget {
-  const PlanHeading({
-    required this.title,
-    this.description,
-    this.large = false,
-    super.key,
-  });
-
-  final String title;
-  final String? description;
-
-  /// 17px (16px on phones) section titles; otherwise 15px.
-  final bool large;
-
-  @override
-  Widget build(BuildContext context) {
-    final compact = _isCompact(context);
-    final titleSize = large ? (compact ? 16.0 : 17.0) : 15.0;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Semantics(
-          header: true,
-          child: Text(
-            title,
-            style: TextStyle(
-              fontSize: titleSize,
-              fontWeight: FontWeight.w700,
-              color: RdColors.text,
-            ),
-          ),
-        ),
-        if (description != null && description!.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          Text(
-            description!,
-            style: TextStyle(
-              fontSize: large && !compact ? 13 : 12,
-              height: 1.45,
-              color: RdColors.secondary2,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
 /// Empty state block (`rgba(255,255,255,0.03)`, radius 16).
 class PlanEmptyBox extends StatelessWidget {
   const PlanEmptyBox({
@@ -249,7 +154,7 @@ class PlanEmptyBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PlanInset(
+    return RdInset(
       padding: EdgeInsets.all(_isCompact(context) ? 16 : 18),
       radius: 16,
       child: Column(
@@ -290,7 +195,7 @@ class PlanErrorPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       liveRegion: true,
-      child: PlanCard(
+      child: RdCard.tile(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -710,7 +615,7 @@ class PlanResourceCard extends StatelessWidget {
       vertical: compact ? 12 : 14,
     );
     if (inset) {
-      return PlanInset(padding: padding, child: Center(child: content));
+      return RdInset(padding: padding, child: Center(child: content));
     }
     return RdCard(
       radius: RdRadii.tile,
@@ -783,7 +688,7 @@ class PlanFarmingRow extends StatelessWidget {
     if (!boxed) {
       return row;
     }
-    return PlanInset(
+    return RdInset(
       padding:
           EdgeInsets.symmetric(horizontal: 12, vertical: compact ? 10 : 12),
       child: row,

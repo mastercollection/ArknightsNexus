@@ -5,37 +5,6 @@ import '../../ui/redesign/rd_widgets.dart';
 /// Primary line of a state panel (`#d7dfef` on the redesign canvas).
 const itemsStateTitleColor = Color(0xFFD7DFEF);
 
-/// Surface of an item card / section on the canvas: `#0c1426`, 1px line,
-/// radius 18 (16 on phones).
-class ItemsSurface extends StatelessWidget {
-  const ItemsSurface({
-    required this.child,
-    this.padding = const EdgeInsets.all(16),
-    this.radius,
-    super.key,
-  });
-
-  final Widget child;
-  final EdgeInsetsGeometry padding;
-
-  /// Defaults to 18 on PC and 16 on phones.
-  final double? radius;
-
-  @override
-  Widget build(BuildContext context) {
-    final compact = context.rdLayout == RdLayout.compact;
-    return Container(
-      padding: padding,
-      decoration: BoxDecoration(
-        color: RdColors.card,
-        borderRadius: BorderRadius.circular(radius ?? (compact ? 16 : 18)),
-        border: Border.all(color: RdColors.line2),
-      ),
-      child: child,
-    );
-  }
-}
-
 /// Error / empty / not-found block of the items pages.
 ///
 /// Errors are announced as a live region (the canvas uses `role="alert"`).
@@ -60,7 +29,8 @@ class ItemsStatePanel extends StatelessWidget {
     final compact = context.rdLayout == RdLayout.compact;
     final panel = SizedBox(
       width: double.infinity,
-      child: ItemsSurface(
+      child: RdCard.tile(
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -91,29 +61,6 @@ class ItemsStatePanel extends StatelessWidget {
       ),
     );
     return alert ? Semantics(liveRegion: true, child: panel) : panel;
-  }
-}
-
-/// Section heading (`h2`, 16px bold, tight tracking).
-class ItemsSectionHeading extends StatelessWidget {
-  const ItemsSectionHeading(this.text, {super.key});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      header: true,
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.32,
-          color: RdColors.text,
-        ),
-      ),
-    );
   }
 }
 

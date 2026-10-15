@@ -280,7 +280,7 @@ class _OperatorSkillTableState extends State<OperatorSkillTable> {
                         fontSize: _fontSize,
                         color: i < levels.length && levels[i].level == selected
                             ? Colors.white
-                            : detailBodyColor,
+                            : RdColors.body,
                       ),
                     ),
                   ),

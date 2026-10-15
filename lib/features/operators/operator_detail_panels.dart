@@ -218,14 +218,17 @@ class OperatorAbilitiesPanel extends StatelessWidget {
             onChanged: onEliteTabChanged,
           ),
         if (range != null)
-          DetailInset(
+          RdInset.section(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: 10,
               children: [
                 DetailHeaderWrap(
                   children: [
-                    OpHeading(i18n.t('operatorDetail.labels.attackRange')),
+                    RdHeading(
+                      i18n.t('operatorDetail.labels.attackRange'),
+                      color: RdColors.heading,
+                    ),
                     DetailChip(
                       children: [
                         if (eliteIconAsset(eliteTab) != null)
@@ -245,12 +248,13 @@ class OperatorAbilitiesPanel extends StatelessWidget {
               ],
             ),
           ),
-        OpHeading(
+        RdHeading(
           i18n.t('operatorDetail.labels.trait'),
           description: i18n.t('operatorDetail.descriptions.trait'),
+          color: RdColors.heading,
         ),
         for (final trait in traits)
-          DetailInset(
+          RdInset.section(
             key: ValueKey('trait-${trait.key}'),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -286,9 +290,10 @@ class OperatorAbilitiesPanel extends StatelessWidget {
         if (operator.talents.isNotEmpty) ...[
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: OpHeading(
+            child: RdHeading(
               i18n.t('operatorDetail.labels.talent'),
               description: i18n.t('operatorDetail.descriptions.talent'),
+              color: RdColors.heading,
             ),
           ),
           if (talents.isNotEmpty)
@@ -322,7 +327,7 @@ class _TalentCardView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DetailInset(
+    return RdInset.section(
       key: ValueKey('talent-${talent.key}'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -411,7 +416,7 @@ class OperatorPotentialsPanel extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 14,
                       height: 1.5,
-                      color: detailBodyColor,
+                      color: RdColors.body,
                     ),
                   ),
                 ),
@@ -609,15 +614,16 @@ class OperatorSkillsPanel extends StatelessWidget {
           ),
         ],
       ),
-      DetailInset(
+      RdInset.section(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: 10,
           children: [
-            OpHeading(
+            RdHeading(
               i18n.t('operatorDetail.labels.displayLevel'),
               description:
                   i18n.t('operatorDetail.descriptions.skillDisplayLevel'),
+              color: RdColors.heading,
             ),
             OpRangeControl(
               key: const ValueKey('skill-level'),
@@ -640,18 +646,19 @@ class OperatorSkillsPanel extends StatelessWidget {
           ],
         ),
       ),
-      DetailInset(
+      RdInset.section(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: 12,
           children: [
-            OpHeading(
+            RdHeading(
               i18n.t('operatorDetail.labels.levelComparison'),
               description:
                   i18n.t('operatorDetail.descriptions.skillLevelComparison'),
+              color: RdColors.heading,
             ),
             if (range != null)
-              DetailInset(
+              RdInset.section(
                 radius: 18,
                 padding: const EdgeInsets.all(14),
                 child: Column(
@@ -660,9 +667,10 @@ class OperatorSkillsPanel extends StatelessWidget {
                   children: [
                     DetailHeaderWrap(
                       children: [
-                        OpHeading(
+                        RdHeading(
                           i18n.t('operatorDetail.labels.skillRange'),
                           fontSize: 14,
+                          color: RdColors.heading,
                         ),
                         if (levelInfo != null)
                           _levelChip(levelInfo.level, selectedText: false),

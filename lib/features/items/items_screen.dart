@@ -751,7 +751,7 @@ class _LoadingGrid extends StatelessWidget {
               for (var i = 0; i < 18; i++)
                 SizedBox(
                   width: width,
-                  child: ItemsSurface(
+                  child: RdCard.tile(
                     padding: EdgeInsets.all(compact ? 10 : 12),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,

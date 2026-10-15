@@ -513,7 +513,7 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
       );
     }
 
-    return PlanCard(
+    return RdCard.tile(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -557,14 +557,15 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
             ],
           ),
           SizedBox(height: compact ? 12 : 14),
-          PlanInset(
+          RdInset(
             padding: EdgeInsets.all(compact ? 12 : 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                PlanHeading(
-                  title: i18n.t('planPage.detail.stateTitle'),
+                RdHeading(
+                  i18n.t('planPage.detail.stateTitle'),
                   description: i18n.t('planPage.detail.stateDescription'),
+                  descriptionStyle: RdText.caption,
                 ),
                 SizedBox(height: compact ? 10 : 12),
                 comparison,
@@ -610,18 +611,19 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
       );
     }
 
-    return PlanCard(
+    return RdCard.tile(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          PlanHeading(
-            title: i18n.t('planPage.detail.skillsTitle'),
+          RdHeading(
+            i18n.t('planPage.detail.skillsTitle'),
             description: '${i18n.t('planPage.detail.skillsDescription')} '
                 '${i18n.t('planPage.detail.skillLevelHint')}',
+            descriptionStyle: RdText.caption,
           ),
           for (var index = 0; index < operator.skills.length; index++) ...[
             SizedBox(height: compact ? 10 : 12),
-            PlanInset(
+            RdInset(
               padding: EdgeInsets.all(compact ? 12 : 14),
               radius: compact ? RdRadii.inner : 16,
               child: Column(
@@ -699,13 +701,14 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
     UserPlanOperator plan,
     bool compact,
   ) {
-    return PlanCard(
+    return RdCard.tile(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          PlanHeading(
-            title: i18n.t('planPage.detail.modulesTitle'),
+          RdHeading(
+            i18n.t('planPage.detail.modulesTitle'),
             description: i18n.t('planPage.detail.modulesDescription'),
+            descriptionStyle: RdText.caption,
           ),
           for (final module in _visibleModules(operator)) ...[
             SizedBox(height: compact ? 10 : 12),
@@ -771,7 +774,7 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
       );
     }
 
-    return PlanInset(
+    return RdInset(
       padding: EdgeInsets.all(compact ? 12 : 14),
       radius: compact ? RdRadii.inner : 16,
       child: Column(
@@ -868,13 +871,14 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
     final expLabel = i18n.t('planPage.summary.expLabel');
     final lmdLabel = i18n.t('planPage.summary.lmdLabel');
 
-    final result = PlanCard(
+    final result = RdCard.tile(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          PlanHeading(
-            title: i18n.t('planPage.detail.summaryTitle'),
+          RdHeading(
+            i18n.t('planPage.detail.summaryTitle'),
             description: i18n.t('planPage.detail.summaryDescription'),
+            descriptionStyle: RdText.caption,
           ),
           if (showOverview) ...[
             SizedBox(height: compact ? 10 : 12),
@@ -918,7 +922,7 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
               ],
             ),
             SizedBox(height: compact ? 10 : 12),
-            PlanInset(
+            RdInset(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -978,9 +982,10 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
       ),
     );
 
-    final heading = PlanHeading(
-      title: i18n.t('planPage.summary.materialsTitle'),
+    final heading = RdHeading(
+      i18n.t('planPage.summary.materialsTitle'),
       description: i18n.t('planPage.summary.materialsDescription'),
+      descriptionStyle: RdText.caption,
     );
     final grid = PlanMaterialsGrid(
       materials: breakdown.materials,
@@ -998,7 +1003,7 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [heading, const SizedBox(height: 10), grid],
           )
-        : PlanCard(
+        : RdCard.tile(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [heading, const SizedBox(height: 14), grid],
@@ -1172,7 +1177,7 @@ class _DetailSkeleton extends StatelessWidget {
     return Semantics(
       label: label,
       container: true,
-      child: const PlanCard(
+      child: const RdCard.tile(
         child: RdPulse(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -9,17 +9,11 @@ import 'potential_diff_display.dart';
 
 typedef TermTapCallback = void Function(String key, String label);
 
-/// Body copy colour used for descriptions (`#e6ecf8`).
-const detailBodyColor = RdColors.body;
-
-/// `rgba(255,255,255,0.04)` section surface.
-const detailInsetFill = RdColors.soft2;
-
 /// Description paragraph style of the detail canvas (14px, line-height 1.75).
 const detailBodyStyle = TextStyle(
   fontSize: 14,
   height: 1.75,
-  color: detailBodyColor,
+  color: RdColors.body,
 );
 
 /// Port of `components/RichTextContent.vue`.
@@ -264,34 +258,6 @@ class ConditionChip extends StatelessWidget {
           EliteIcon(elite!, height: 18),
         Text(level != null ? 'Lv.$level' : label),
       ],
-    );
-  }
-}
-
-/// `rgba(255,255,255,0.04)` section card (radius 20, padding 16).
-class DetailInset extends StatelessWidget {
-  const DetailInset({
-    required this.child,
-    this.color = detailInsetFill,
-    this.radius = 20,
-    this.padding = const EdgeInsets.all(16),
-    super.key,
-  });
-
-  final Widget child;
-  final Color color;
-  final double radius;
-  final EdgeInsetsGeometry padding;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: padding,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(radius),
-      ),
-      child: child,
     );
   }
 }

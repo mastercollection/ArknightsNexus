@@ -510,13 +510,12 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
       );
     }
 
-    return PlanCard(
+    return RdCard.tile(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          PlanHeading(
-            large: true,
-            title: hasSelected
+          RdHeading(
+            hasSelected
                 ? i18n.t('planPage.sections.selected')
                 : i18n.t('planPage.sections.favorites'),
             description: _selectionMode
@@ -524,6 +523,10 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                 : hasSelected
                     ? i18n.t('planPage.states.selectedDescription')
                     : i18n.t('planPage.states.favoritesDescription'),
+            fontSize: compact ? 16 : 17,
+            descriptionStyle: compact
+                ? RdText.caption
+                : RdText.caption.copyWith(fontSize: 13),
           ),
           SizedBox(height: compact ? 12 : 14),
           content,
@@ -617,14 +620,15 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
       ],
     );
 
-    final farmingCard = PlanCard(
+    final farmingCard = RdCard.tile(
       padding: EdgeInsets.all(compact ? 14 : 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          PlanHeading(
-            title: i18n.t('planPage.summary.farmingTitle'),
+          RdHeading(
+            i18n.t('planPage.summary.farmingTitle'),
             description: i18n.t('planPage.summary.farmingDescription'),
+            descriptionStyle: RdText.caption,
           ),
           if (showExp) ...[
             const SizedBox(height: 10),
@@ -668,10 +672,12 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
             messages: totals.errors,
           );
 
-    final materialsHeading = PlanHeading(
-      large: !compact,
-      title: i18n.t('planPage.summary.materialsTitle'),
+    final materialsHeading = RdHeading(
+      i18n.t('planPage.summary.materialsTitle'),
       description: i18n.t('planPage.summary.materialsDescription'),
+      fontSize: compact ? 15 : 17,
+      descriptionStyle:
+          compact ? RdText.caption : RdText.caption.copyWith(fontSize: 13),
     );
     final materialsGrid = PlanMaterialsGrid(
       materials: totals.materials,
@@ -750,7 +756,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
         routes,
       ]),
     );
-    final right = PlanCard(
+    final right = RdCard.tile(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [materialsHeading, const SizedBox(height: 14), materialsGrid],
@@ -908,7 +914,7 @@ class _OperatorsSkeleton extends StatelessWidget {
     return Semantics(
       label: label,
       container: true,
-      child: PlanCard(
+      child: RdCard.tile(
         child: RdPulse(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -966,7 +972,7 @@ class _SummarySkeleton extends StatelessWidget {
     return Semantics(
       label: label,
       container: true,
-      child: PlanCard(
+      child: RdCard.tile(
         child: RdPulse(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
