@@ -50,6 +50,7 @@ final regionReadinessProvider = Provider<RegionReadiness>((ref) {
   return RegionReadiness(
     ref.watch(regionSyncServiceProvider),
     ref.watch(appLoggerProvider),
+    cache: ref.watch(regionCacheRepositoryProvider),
   );
 });
 
