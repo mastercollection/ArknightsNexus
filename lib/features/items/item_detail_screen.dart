@@ -262,11 +262,24 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     final compact = context.rdLayout == RdLayout.compact;
     final item = _item;
 
-    final header = _DetailHeader(
+    final header = RdPageHeader(
       title: item?.name ?? i18n.t('itemsDetail.topBar.title'),
-      item: item,
+      compactTitleStyle: RdText.mobileTitle.copyWith(
+        fontSize: 17,
+        fontWeight: FontWeight.w700,
+      ),
       backTooltip: i18n.t('rd.items.backToList'),
       onBack: _backToList,
+      leading: item == null
+          ? null
+          : ExcludeSemantics(
+              child: ItemIcon(
+                itemId: item.itemId,
+                iconId: item.iconId,
+                name: item.name,
+                size: 44,
+              ),
+            ),
     );
 
     final Widget body;
@@ -565,86 +578,6 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         SizedBox(height: compact ? 10 : 12),
         body,
       ],
-    );
-  }
-}
-
-/// Header of the detail page: back button, 44px item icon, title. Same
-/// surfaces as [RdPageHeader] (full-width bar on phones, a card on PC).
-class _DetailHeader extends StatelessWidget {
-  const _DetailHeader({
-    required this.title,
-    required this.item,
-    required this.backTooltip,
-    required this.onBack,
-  });
-
-  final String title;
-  final ItemEntry? item;
-  final String backTooltip;
-  final VoidCallback onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    final compact = context.rdLayout == RdLayout.compact;
-    final item = this.item;
-    final row = Row(
-      children: [
-        RdIconButton(
-          icon: Icons.chevron_left,
-          tooltip: backTooltip,
-          filled: !compact,
-          onPressed: onBack,
-        ),
-        SizedBox(width: compact ? 8 : 12),
-        if (item != null) ...[
-          ExcludeSemantics(
-            child: ItemIcon(
-              itemId: item.itemId,
-              iconId: item.iconId,
-              name: item.name,
-              size: 44,
-            ),
-          ),
-          SizedBox(width: compact ? 8 : 12),
-        ],
-        Expanded(
-          child: Semantics(
-            header: true,
-            child: Text(
-              title,
-              maxLines: compact ? 1 : 2,
-              overflow: TextOverflow.ellipsis,
-              style: compact
-                  ? const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      color: RdColors.text,
-                    )
-                  : RdText.pageTitle,
-            ),
-          ),
-        ),
-      ],
-    );
-    if (compact) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: const BoxDecoration(
-          color: RdColors.header,
-          border: Border(bottom: BorderSide(color: RdColors.line)),
-        ),
-        child: SafeArea(bottom: false, child: row),
-      );
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      decoration: BoxDecoration(
-        color: RdColors.header,
-        borderRadius: BorderRadius.circular(RdRadii.card),
-        border: Border.all(color: RdColors.line),
-      ),
-      child: row,
     );
   }
 }

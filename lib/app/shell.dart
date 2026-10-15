@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/home/home_sidebar_panel.dart';
 import '../i18n/nexus_i18n.dart';
-import '../ui/redesign/rd_tokens.dart';
+import '../ui/redesign/rd_widgets.dart';
 
 /// Top-level sections of the app, in navigation order.
 enum NexusSection {
@@ -262,21 +261,7 @@ class _Sidebar extends StatelessWidget {
                         ),
                         child: Row(
                           children: [
-                            Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0D1730),
-                                borderRadius: BorderRadius.circular(9),
-                                border: Border.all(
-                                  color: const Color(0x598BD6FF),
-                                ),
-                              ),
-                              padding: const EdgeInsets.all(6),
-                              child: SvgPicture.asset(
-                                'assets/icons/app/nexus-beacon.svg',
-                              ),
-                            ),
+                            const RdAppMark(),
                             const SizedBox(width: 12),
                             const Expanded(
                               child: Text(

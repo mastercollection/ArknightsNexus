@@ -778,15 +778,13 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
             bottom: false,
             child: Align(
               alignment: Alignment.centerLeft,
-              child: _HeaderButton(
+              child: RdIconButton(
+                icon: Icons.chevron_left,
                 tooltip: i18n.t('rd.operators.back'),
-                size: 44,
                 onPressed: widget.onBack,
-                child: const Icon(
-                  Icons.chevron_left,
-                  size: 22,
-                  color: Color(0xFFEBF0FF),
-                ),
+                size: 44,
+                iconSize: 22,
+                iconColor: const Color(0xFFEBF0FF),
               ),
             ),
           ),
@@ -834,53 +832,6 @@ class _StickyTabsDelegate extends SliverPersistentHeaderDelegate {
 // Header / hero / actions
 // ---------------------------------------------------------------------------
 
-/// 14px-radius soft button of the detail header.
-class _HeaderButton extends StatelessWidget {
-  const _HeaderButton({
-    required this.tooltip,
-    required this.onPressed,
-    required this.child,
-    this.size = 40,
-    this.pressed,
-  });
-
-  final String tooltip;
-  final VoidCallback onPressed;
-  final Widget child;
-  final double size;
-  final bool? pressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      waitDuration: const Duration(milliseconds: 400),
-      child: Semantics(
-        button: true,
-        toggled: pressed,
-        label: tooltip,
-        excludeSemantics: true,
-        child: Material(
-          color: RdColors.white5,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: const BorderSide(color: RdColors.white8),
-          ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(14),
-            onTap: onPressed,
-            child: SizedBox(
-              width: size,
-              height: size,
-              child: Center(child: child),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _DetailHeader extends StatelessWidget {
   const _DetailHeader({
     required this.name,
@@ -907,15 +858,13 @@ class _DetailHeader extends StatelessWidget {
     final size = compact ? 44.0 : 40.0;
     final row = Row(
       children: [
-        _HeaderButton(
+        RdIconButton(
+          icon: Icons.chevron_left,
           tooltip: backTooltip,
-          size: size,
           onPressed: onBack,
-          child: const Icon(
-            Icons.chevron_left,
-            size: 22,
-            color: Color(0xFFEBF0FF),
-          ),
+          size: size,
+          iconSize: 22,
+          iconColor: const Color(0xFFEBF0FF),
         ),
         SizedBox(width: compact ? 8 : 10),
         Flexible(
@@ -992,16 +941,14 @@ class _FavoriteButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _HeaderButton(
+    return RdIconButton(
+      icon: favorite ? Icons.star : Icons.star_border,
       tooltip: tooltip,
-      size: size,
-      pressed: favorite,
       onPressed: onPressed,
-      child: Icon(
-        favorite ? Icons.star : Icons.star_border,
-        size: 20,
-        color: RdColors.gold,
-      ),
+      size: size,
+      toggled: favorite,
+      iconSize: 20,
+      iconColor: RdColors.gold,
     );
   }
 }

@@ -15,7 +15,6 @@ import '../home/home_region_sync.dart' show RdRegionSelect;
 import 'settings_dialogs.dart';
 
 const _globeIcon = 'assets/icons/globe.svg';
-const _appIcon = 'assets/icons/app/nexus-beacon.svg';
 
 /// Port of `src/pages/settings.vue` (`layout: 'home'`), redesigned after
 /// `DesktopSettings.dc.html` / `MobileSettings.dc.html`: header with back and
@@ -253,20 +252,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     });
     final compact = context.rdLayout == RdLayout.compact;
 
-    final header = _SettingsHeader(
-      compact: compact,
+    final header = RdPageHeader(
       title: i18n.t('home.settings.title'),
-      description: i18n.t('home.settings.pageDescription'),
+      subtitle: i18n.t('home.settings.pageDescription'),
+      subtitleMaxLines: compact ? 1 : 2,
+      compactTitleStyle: RdText.mobileTitle.copyWith(fontSize: 18),
+      backKey: const Key('settings-back'),
       backTooltip: i18n.t('common.back'),
       // settings.vue: `router.push('/')`.
       onBack: () => context.go('/'),
-      refresh: RdIconButton(
-        key: const Key('settings-topbar-sync'),
-        icon: Icons.refresh,
-        tooltip: i18n.t('rd.settings.refreshTooltip'),
-        spinning: _isSyncing,
-        onPressed: _isLoading ? null : _handleSettingsSync,
-      ),
+      leading: const RdAppMark(size: 28),
+      actions: [
+        RdIconButton(
+          key: const Key('settings-topbar-sync'),
+          icon: Icons.refresh,
+          tooltip: i18n.t('rd.settings.refreshTooltip'),
+          spinning: _isSyncing,
+          onPressed: _isLoading ? null : _handleSettingsSync,
+        ),
+      ],
     );
 
     final cards = [
@@ -581,105 +585,6 @@ TextStyle _descriptionStyle(bool compact) => TextStyle(
       height: 1.6,
       color: RdColors.muted,
     );
-
-/// Settings header: back, app mark, title + description, refresh. A rounded
-/// bar inside the page on PC, a full-width bar on phones.
-class _SettingsHeader extends StatelessWidget {
-  const _SettingsHeader({
-    required this.compact,
-    required this.title,
-    required this.description,
-    required this.backTooltip,
-    required this.onBack,
-    required this.refresh,
-  });
-
-  final bool compact;
-  final String title;
-  final String description;
-  final String backTooltip;
-  final VoidCallback onBack;
-  final Widget refresh;
-
-  @override
-  Widget build(BuildContext context) {
-    final row = Row(
-      children: [
-        RdIconButton(
-          key: const Key('settings-back'),
-          icon: Icons.chevron_left,
-          tooltip: backTooltip,
-          filled: !compact,
-          onPressed: onBack,
-        ),
-        SizedBox(width: compact ? 10 : 14),
-        Container(
-          width: 28,
-          height: 28,
-          padding: const EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            color: const Color(0xFF0D1730),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0x598BD6FF)),
-          ),
-          child: ExcludeSemantics(child: SvgPicture.asset(_appIcon)),
-        ),
-        SizedBox(width: compact ? 10 : 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Semantics(
-                header: true,
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: compact
-                      ? const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: RdColors.text,
-                        )
-                      : RdText.pageTitle,
-                ),
-              ),
-              SizedBox(height: compact ? 2 : 4),
-              Text(
-                description,
-                maxLines: compact ? 1 : 2,
-                overflow: TextOverflow.ellipsis,
-                style: compact ? RdText.small : RdText.secondary,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 10),
-        refresh,
-      ],
-    );
-    if (compact) {
-      return Container(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-        decoration: const BoxDecoration(
-          color: RdColors.header,
-          border: Border(bottom: BorderSide(color: RdColors.line)),
-        ),
-        child: SafeArea(bottom: false, child: row),
-      );
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      decoration: BoxDecoration(
-        color: RdColors.header,
-        borderRadius: BorderRadius.circular(RdRadii.card),
-        border: Border.all(color: RdColors.line),
-      ),
-      child: row,
-    );
-  }
-}
 
 /// `role="status"` spinner line shown while loading or syncing.
 class _LoadingLine extends StatelessWidget {

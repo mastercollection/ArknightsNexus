@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../i18n/nexus_i18n.dart';
 import '../../ui/redesign/rd_widgets.dart';
 import 'home_plan_summary.dart';
 import 'home_region_sync.dart';
-
-const _appIcon = 'assets/icons/app/nexus-beacon.svg';
 
 /// Home dashboard (port of `src/pages/index.vue`, redesigned after
 /// `Main.dc.html` / `MobileHome.dc.html`).
@@ -239,17 +236,7 @@ class _Brand extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: 44),
         child: Row(
           children: [
-            Container(
-              width: 32,
-              height: 32,
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0D1730),
-                borderRadius: BorderRadius.circular(9),
-                border: Border.all(color: const Color(0x598BD6FF)),
-              ),
-              child: SvgPicture.asset(_appIcon),
-            ),
+            const RdAppMark(),
             const SizedBox(width: 10),
             const Flexible(
               child: Text(

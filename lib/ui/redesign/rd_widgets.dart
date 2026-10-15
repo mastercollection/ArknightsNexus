@@ -5,6 +5,7 @@ import 'rd_tokens.dart';
 
 export 'rd_feedback.dart';
 export 'rd_layout.dart';
+export 'rd_media.dart';
 export 'rd_tokens.dart';
 
 /// Card surface (`#0c1426`, 1px line, radius 20).
@@ -61,6 +62,9 @@ class RdIconButton extends StatelessWidget {
     this.filled = true,
     this.active = false,
     this.spinning = false,
+    this.iconColor,
+    this.iconSize = 20,
+    this.toggled,
     super.key,
   });
 
@@ -70,6 +74,13 @@ class RdIconButton extends StatelessWidget {
   final double size;
   final bool filled;
   final bool active;
+
+  /// Overrides the icon colour while enabled (gold favorite star).
+  final Color? iconColor;
+  final double iconSize;
+
+  /// Announces a toggle button in this state (favorite on/off).
+  final bool? toggled;
 
   /// Rotates the icon (sync in progress).
   final bool spinning;
@@ -84,12 +95,10 @@ class RdIconButton extends StatelessWidget {
             : Colors.transparent;
     Widget glyph = Icon(
       icon,
-      size: 20,
+      size: iconSize,
       color: !enabled
           ? RdColors.muted
-          : active
-              ? RdColors.text
-              : RdColors.secondary,
+          : iconColor ?? (active ? RdColors.text : RdColors.secondary),
     );
     if (spinning) {
       glyph = RdSpin(child: glyph);
@@ -100,6 +109,7 @@ class RdIconButton extends StatelessWidget {
       child: Semantics(
         button: true,
         enabled: enabled,
+        toggled: toggled,
         label: tooltip,
         excludeSemantics: true,
         child: Material(
@@ -522,7 +532,8 @@ class RdSegmented<T> extends StatelessWidget {
 ///
 /// PC (medium/expanded): a rounded `#070c19` card inside the page padding.
 /// Compact: a full-width bar with a bottom border. [onBack] adds the 44px
-/// back button.
+/// back button; [leading] sits between it and the title (app mark, item
+/// icon).
 class RdPageHeader extends StatelessWidget {
   const RdPageHeader({
     required this.title,
@@ -530,9 +541,13 @@ class RdPageHeader extends StatelessWidget {
     this.eyebrow,
     this.onBack,
     this.backTooltip = '',
+    this.backKey,
+    this.leading,
     this.actions = const [],
     this.trailingTitle,
     this.bottom,
+    this.compactTitleStyle = RdText.mobileTitle,
+    this.subtitleMaxLines,
     super.key,
   });
 
@@ -541,7 +556,15 @@ class RdPageHeader extends StatelessWidget {
   final String? eyebrow;
   final VoidCallback? onBack;
   final String backTooltip;
+  final Key? backKey;
+  final Widget? leading;
   final List<Widget> actions;
+
+  /// Title style on phones (PC uses [RdText.pageTitle]).
+  final TextStyle compactTitleStyle;
+
+  /// Clamps the subtitle (with an ellipsis); unlimited when null.
+  final int? subtitleMaxLines;
 
   /// Small widget right after the title (e.g. a count on phones).
   final Widget? trailingTitle;
@@ -560,16 +583,21 @@ class RdPageHeader extends StatelessWidget {
           Text(eyebrow!, style: RdText.eyebrow),
           const SizedBox(height: 4),
         ],
-        Text(
-          title,
-          maxLines: compact ? 1 : 2,
-          overflow: TextOverflow.ellipsis,
-          style: compact ? RdText.mobileTitle : RdText.pageTitle,
+        Semantics(
+          header: true,
+          child: Text(
+            title,
+            maxLines: compact ? 1 : 2,
+            overflow: TextOverflow.ellipsis,
+            style: compact ? compactTitleStyle : RdText.pageTitle,
+          ),
         ),
         if (subtitle != null && subtitle!.isNotEmpty) ...[
-          const SizedBox(height: 4),
+          SizedBox(height: compact ? 2 : 4),
           Text(
             subtitle!,
+            maxLines: subtitleMaxLines,
+            overflow: subtitleMaxLines == null ? null : TextOverflow.ellipsis,
             style: compact ? RdText.small : RdText.secondary,
           ),
         ],
@@ -579,12 +607,17 @@ class RdPageHeader extends StatelessWidget {
       children: [
         if (onBack != null) ...[
           RdIconButton(
+            key: backKey,
             icon: Icons.chevron_left,
             tooltip: backTooltip,
             filled: !compact,
             onPressed: onBack,
           ),
-          SizedBox(width: compact ? 6 : 14),
+          SizedBox(width: compact ? 8 : 14),
+        ],
+        if (leading != null) ...[
+          leading!,
+          SizedBox(width: compact ? 10 : 14),
         ],
         Expanded(child: titleBlock),
         if (trailingTitle != null) ...[
