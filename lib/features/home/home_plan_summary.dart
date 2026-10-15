@@ -12,7 +12,6 @@ import '../../i18n/nexus_i18n.dart';
 import '../../services/item_service.dart';
 import '../../services/operator_service.dart';
 import '../../services/plan_cost_service.dart';
-import '../../ui/nexus_media.dart' show OperatorPortrait, PortraitSize;
 import '../../ui/redesign/rd_widgets.dart';
 
 const _lmdItemId = '4001';
@@ -367,11 +366,11 @@ class _PlannedOperatorRow extends StatelessWidget {
             padding: const EdgeInsets.all(10),
             child: Row(
               children: [
-                OperatorPortrait(
+                RdPortrait(
                   charId: summary.id,
                   name: summary.name,
-                  size: PortraitSize.sm,
-                  dimension: compact ? 44 : 56,
+                  size: compact ? 44 : 56,
+                  radius: 18,
                 ),
                 SizedBox(width: compact ? 12 : 14),
                 Expanded(

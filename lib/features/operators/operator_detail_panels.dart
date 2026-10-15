@@ -19,7 +19,7 @@ String _eliteLabel(NexusI18n i18n, int elite) =>
     '${i18n.t('operatorDetail.labels.elite')} $elite';
 
 Widget? _eliteLeading(int elite) {
-  return eliteIconAsset(elite) == null ? null : EliteIcon(elite, height: 20);
+  return rdEliteAsset(elite) == null ? null : RdEliteIcon(elite, size: 20);
 }
 
 // ---------------------------------------------------------------------------
@@ -231,8 +231,8 @@ class OperatorAbilitiesPanel extends StatelessWidget {
                     ),
                     DetailChip(
                       children: [
-                        if (eliteIconAsset(eliteTab) != null)
-                          EliteIcon(eliteTab)
+                        if (rdEliteAsset(eliteTab) != null)
+                          RdEliteIcon(eliteTab)
                         else
                           Text(
                             i18n.t(
@@ -528,11 +528,11 @@ class OperatorSkillsPanel extends StatelessWidget {
 
   /// Mastery icon for levels 8-10, else the level text.
   Widget _levelChip(int level, {required bool selectedText}) {
-    final asset = skillLevelIconAsset(level);
+    final asset = rdMasteryAsset(level);
     return DetailChip(
       children: [
         if (asset != null)
-          MasteryIcon(level, semanticLabel: _masteryLabel(level - 7))
+          RdMasteryIcon(level, semanticLabel: _masteryLabel(level - 7))
         else
           Text(
             selectedText
@@ -581,8 +581,8 @@ class OperatorSkillsPanel extends StatelessWidget {
                 caution: true,
                 children: [
                   Text(i18n.t('operatorDetail.labels.unlockCondition')),
-                  if (eliteIconAsset(skill.unlockElite) != null)
-                    EliteIcon(skill.unlockElite, height: 18),
+                  if (rdEliteAsset(skill.unlockElite) != null)
+                    RdEliteIcon(skill.unlockElite, size: 18),
                   Text(
                     i18n.t(
                       'operatorDetail.labels.conditionLevel',
@@ -635,8 +635,8 @@ class OperatorSkillsPanel extends StatelessWidget {
               semanticLabel: i18n.t('rd.operators.detail.skillLevel'),
               decreaseTooltip: i18n.t('rd.operators.detail.skillLevelDown'),
               increaseTooltip: i18n.t('rd.operators.detail.skillLevelUp'),
-              readout: skillLevelIconAsset(shownLevel) != null
-                  ? MasteryIcon(
+              readout: rdMasteryAsset(shownLevel) != null
+                  ? RdMasteryIcon(
                       shownLevel,
                       size: 26,
                       semanticLabel: _masteryLabel(shownLevel - 7),

@@ -278,7 +278,7 @@ class _OperatorTileState extends State<OperatorTile> {
         padding: const EdgeInsets.fromLTRB(6, 10, 6, 12),
         child: Column(
           children: [
-            OpPortrait(
+            RdPortrait(
               charId: operator.id,
               name: operator.name,
               size: 76,
@@ -316,7 +316,7 @@ class _OperatorTileState extends State<OperatorTile> {
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  OpPortrait(
+                  RdPortrait(
                     charId: operator.id,
                     name: operator.name,
                     size: 80,

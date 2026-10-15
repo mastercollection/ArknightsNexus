@@ -60,7 +60,7 @@ String planSkillLevelLabel(int level) =>
     level <= 7 ? 'Lv.$level' : 'Rank ${level - 7}';
 
 /// Mastery badge images the user asked for wherever M1-M3 is shown.
-String? planMasteryAsset(int level) =>
+String? rdMasteryAsset(int level) =>
     level >= 8 && level <= 10 ? 'assets/icons/skill/$level.png' : null;
 
 bool _isCompact(BuildContext context) => context.rdLayout == RdLayout.compact;
@@ -300,10 +300,11 @@ class PlanOperatorTile extends StatelessWidget {
                 Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    OperatorPortrait(
+                    RdPortrait(
                       charId: operatorId,
                       name: name,
-                      dimension: portrait,
+                      size: portrait,
+                      radius: 24,
                     ),
                     Positioned(
                       left: 0,
@@ -813,7 +814,7 @@ class PlanSkillLevelPicker extends StatelessWidget {
 
   Widget _chip(int level, double height) {
     final on = level == selected;
-    final mastery = planMasteryAsset(level);
+    final mastery = rdMasteryAsset(level);
     final (Color fill, Color border, Color text) = on
         ? (RdColors.segmentOn, const Color(0xB385B6FF), RdColors.onSegment)
         : mastery != null
@@ -844,15 +845,10 @@ class PlanSkillLevelPicker extends StatelessWidget {
                   ? Text('$level', style: planMono(13, color: text))
                   : Padding(
                       padding: const EdgeInsets.all(2),
-                      child: Image.asset(
-                        mastery,
-                        width: 24,
-                        height: 24,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => Text(
-                          'M${level - 7}',
-                          style: planMono(12, color: text),
-                        ),
+                      child: RdMasteryIcon(
+                        level,
+                        size: 24,
+                        fallbackStyle: planMono(12, color: text),
                       ),
                     ),
             ),
@@ -878,47 +874,17 @@ class PlanSkillLevelBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final asset = planMasteryAsset(level);
-    if (asset == null) {
+    if (rdMasteryAsset(level) == null) {
       return Text(
         planSkillLevelLabel(level),
         style: planMono(fontSize, color: RdColors.secondary),
       );
     }
-    return Semantics(
-      label: masteryLabel(level - 7),
-      excludeSemantics: true,
-      child: Image.asset(
-        asset,
-        width: fontSize + 8,
-        height: fontSize + 8,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) => Text(
-          'M${level - 7}',
-          style: planMono(fontSize, color: RdColors.gold),
-        ),
-      ),
-    );
-  }
-}
-
-/// Elite phase icon (`assets/icons/elite/N.webp`) used in the elite picker.
-class PlanEliteIcon extends StatelessWidget {
-  const PlanEliteIcon({required this.elite, this.size = 18, super.key});
-
-  final int elite;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return ExcludeSemantics(
-      child: Image.asset(
-        'assets/icons/elite/$elite.webp',
-        width: size,
-        height: size,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
-      ),
+    return RdMasteryIcon(
+      level,
+      size: fontSize + 8,
+      semanticLabel: masteryLabel(level - 7),
+      fallbackStyle: planMono(fontSize, color: RdColors.gold),
     );
   }
 }

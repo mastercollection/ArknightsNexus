@@ -11,7 +11,6 @@ import '../../domain/user_data.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../services/operator_service.dart';
 import '../../services/plan_cost_service.dart';
-import '../../ui/nexus_media.dart';
 import '../../ui/redesign/rd_widgets.dart';
 import 'plan_auto_persist.dart';
 import 'plan_materials_grid.dart';
@@ -871,11 +870,11 @@ class _RouteCard extends StatelessWidget {
           : const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
         children: [
-          OperatorPortrait(
+          RdPortrait(
             charId: entry.detail.id,
             name: entry.detail.name,
-            size: PortraitSize.sm,
-            dimension: compact ? 44 : 48,
+            size: compact ? 44 : 48,
+            radius: 18,
           ),
           SizedBox(width: compact ? 10 : 12),
           Expanded(

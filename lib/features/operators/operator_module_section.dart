@@ -365,7 +365,7 @@ class _ModuleCard extends StatelessWidget {
                           style: cautionLabel,
                         ),
                         if (unlockElite != null)
-                          EliteIcon(unlockElite, height: 18),
+                          RdEliteIcon(unlockElite, size: 18),
                         Text('Lv.${module.unlockLevel}'),
                       ],
                     ),

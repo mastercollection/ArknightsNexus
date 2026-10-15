@@ -14,7 +14,6 @@ import '../../domain/operator.dart';
 import '../../domain/user_data.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../services/user_data_service.dart';
-import '../../ui/nexus_media.dart';
 import '../../ui/redesign/rd_widgets.dart';
 import 'plan_auto_persist.dart';
 import 'plan_materials_grid.dart';
@@ -428,7 +427,7 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
             RdSegment(
               elite,
               'E$elite',
-              leading: PlanEliteIcon(elite: elite),
+              leading: RdEliteIcon(elite, excludeSemantics: true),
               key: Key('plan-$side-elite-$elite'),
             ),
         ],
@@ -531,10 +530,11 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
         children: [
           Row(
             children: [
-              OperatorPortrait(
+              RdPortrait(
                 charId: operator.id,
                 name: operator.name,
-                dimension: compact ? 60 : 72,
+                size: compact ? 60 : 72,
+                radius: 24,
               ),
               SizedBox(width: compact ? 12 : 14),
               Expanded(

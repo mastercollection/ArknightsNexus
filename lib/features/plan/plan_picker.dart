@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/operator.dart';
 import '../../i18n/nexus_i18n.dart';
-import '../../ui/nexus_media.dart';
 import '../../ui/redesign/rd_widgets.dart';
 
 /// Lets the plan page refresh or close the open picker.
@@ -237,11 +236,11 @@ class _PickerRow extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  OperatorPortrait(
+                  RdPortrait(
                     charId: operator.id,
                     name: operator.name,
-                    size: PortraitSize.sm,
-                    dimension: 44,
+                    size: 44,
+                    radius: 18,
                   ),
                   const SizedBox(width: 12),
                   Expanded(

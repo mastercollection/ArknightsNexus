@@ -3,7 +3,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../data_sources/image_source.dart';
 import '../widgets/cached_image.dart';
-import 'nexus_tokens.dart';
 
 const _operatorSilhouetteAsset = 'assets/icons/operator-silhouette.svg';
 
@@ -41,79 +40,6 @@ class _SilhouetteSkeleton extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-enum PortraitSize { sm, md, lg }
-
-/// `OperatorPortrait.vue`.
-class OperatorPortrait extends StatelessWidget {
-  const OperatorPortrait({
-    required this.charId,
-    required this.name,
-    this.size = PortraitSize.md,
-    this.dimension,
-    super.key,
-  });
-
-  final String? charId;
-  final String name;
-  final PortraitSize size;
-
-  /// Overrides the size preset's width.
-  final double? dimension;
-
-  String get _initials {
-    return name
-        .split(RegExp(r'\s+'))
-        .where((part) => part.isNotEmpty)
-        .take(2)
-        .map((part) => part[0].toUpperCase())
-        .join();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final (double width, double radius, double fontSize) = switch (size) {
-      PortraitSize.sm => (64.0, 18.0, 16.0),
-      PortraitSize.md => (84.0, 24.0, 20.0),
-      PortraitSize.lg => (116.0, 28.0, 26.4),
-    };
-    final dim = dimension ?? width;
-    final fallback = Center(
-      child: Text(
-        _initials,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: fontSize,
-          fontWeight: FontWeight.w800,
-          letterSpacing: fontSize * 0.08,
-        ),
-      ),
-    );
-    final id = charId?.trim() ?? '';
-
-    return Container(
-      width: dim,
-      height: dim,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: const Color(0xEB0A0F1E),
-        borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: NexusColors.line),
-      ),
-      child: id.isEmpty
-          ? fallback
-          : CachedImage(
-              kind: CachedImageKind.portrait,
-              id: id,
-              size: dim,
-              shape: BoxShape.rectangle,
-              borderRadius: BorderRadius.zero,
-              loading: const _SilhouetteSkeleton(iconFraction: 0.58),
-              placeholder: fallback,
-            ),
     );
   }
 }

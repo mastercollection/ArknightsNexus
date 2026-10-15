@@ -1,67 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../data_sources/image_source.dart';
 import '../../ui/redesign/rd_widgets.dart';
-import '../../widgets/cached_image.dart';
 
 /// Shared visual pieces of the redesigned operators screens.
 
 /// `rgba(10,15,30,0.78)` panel fill of the operators canvas.
 const opPanelFill = Color(0xC70A0F1E);
-
-/// Cached operator portrait in a rounded `#16223a` box; the initial letter
-/// stands in while the image is missing.
-class OpPortrait extends StatelessWidget {
-  const OpPortrait({
-    required this.charId,
-    required this.name,
-    required this.size,
-    required this.radius,
-    super.key,
-  });
-
-  final String charId;
-  final String name;
-  final double size;
-  final double radius;
-
-  @override
-  Widget build(BuildContext context) {
-    final initial = name.trim().isEmpty
-        ? ''
-        : String.fromCharCode(name.trim().runes.first).toUpperCase();
-    final fallback = Center(
-      child: Text(
-        initial,
-        style: TextStyle(
-          fontSize: size * 0.32,
-          fontWeight: FontWeight.w800,
-          color: RdColors.cyan,
-        ),
-      ),
-    );
-    final id = charId.trim();
-    return Container(
-      width: size,
-      height: size,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: RdColors.portrait,
-        borderRadius: BorderRadius.circular(radius),
-      ),
-      child: id.isEmpty
-          ? fallback
-          : CachedImage(
-              kind: CachedImageKind.portrait,
-              id: id,
-              size: size,
-              shape: BoxShape.rectangle,
-              borderRadius: BorderRadius.zero,
-              placeholder: fallback,
-            ),
-    );
-  }
-}
 
 /// Colour kinds of the canvas chips (`CHIP_KIND`).
 enum OpChipKind { team, nation, group, prof, branch, plain, ba, caution }

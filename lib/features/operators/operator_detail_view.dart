@@ -1051,7 +1051,7 @@ class _HeroCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 spacing: compact ? 8 : 10,
                 children: [
-                  OpPortrait(
+                  RdPortrait(
                     charId: operator.id,
                     name: operator.name,
                     size: portrait,

@@ -189,53 +189,6 @@ class DetailChip extends StatelessWidget {
   }
 }
 
-/// Elite phase icon.
-class EliteIcon extends StatelessWidget {
-  const EliteIcon(this.elite, {this.height = 18, super.key});
-
-  final int elite;
-  final double height;
-
-  @override
-  Widget build(BuildContext context) {
-    final asset = eliteIconAsset(elite);
-    if (asset == null) {
-      return Text('E$elite');
-    }
-    return Image.asset(
-      asset,
-      height: height,
-      fit: BoxFit.contain,
-      semanticLabel: 'Elite $elite',
-    );
-  }
-}
-
-/// Mastery icon (`assets/icons/skill/8|9|10.png`) for skill levels 8-10.
-class MasteryIcon extends StatelessWidget {
-  const MasteryIcon(
-    this.level, {
-    this.size = 22,
-    this.semanticLabel,
-    super.key,
-  });
-
-  final int level;
-  final double size;
-  final String? semanticLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    return Image.asset(
-      skillLevelIconAsset(level)!,
-      width: size,
-      height: size,
-      fit: BoxFit.contain,
-      semanticLabel: semanticLabel ?? 'M${level - 7}',
-    );
-  }
-}
-
 /// Condition chip: elite icon + `Lv.N`, or the plain [label] when there is no
 /// level (common trait fallback).
 class ConditionChip extends StatelessWidget {
@@ -254,8 +207,8 @@ class ConditionChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return DetailChip(
       children: [
-        if (elite != null && eliteIconAsset(elite) != null)
-          EliteIcon(elite!, height: 18),
+        if (elite != null && rdEliteAsset(elite) != null)
+          RdEliteIcon(elite!, size: 18),
         Text(level != null ? 'Lv.$level' : label),
       ],
     );
