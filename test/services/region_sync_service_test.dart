@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_app_directories.dart';
 import '../support/fake_http_client.dart';
+import '../support/raw_fixtures.dart';
 
 void main() {
   group('DartRegionSyncService', () {
@@ -24,7 +25,7 @@ void main() {
       http = FakeHttpClient();
       cache = JsonRegionCacheRepository(FakeAppDirectories(tempRoot));
       service = DartRegionSyncService(httpClient: http, cache: cache);
-      await _registerFixtures(http, RegionCode.kr);
+      await registerRawFixtures(http, RegionCode.kr);
     });
 
     tearDown(() async {
@@ -176,34 +177,4 @@ void main() {
       );
     });
   });
-}
-
-Future<void> _registerFixtures(FakeHttpClient http, RegionCode region) async {
-  final descriptor = region.descriptor;
-  http.registerText(
-    descriptor.dataVersionUri,
-    'Stream://torappu-data/v068/rel68.0\n'
-    'Change:100033 on 2025/12/09\n'
-    'VersionControl:68.2.0\n',
-  );
-
-  final fixtureByFile = {
-    ArknightsDataSource.characterTableFile: 'character_table.json',
-    ArknightsDataSource.skillTableFile: 'skill_table.json',
-    ArknightsDataSource.gamedataConstFile: 'gamedata_const.json',
-    ArknightsDataSource.uniequipTableFile: 'uniequip_table.json',
-    ArknightsDataSource.handbookTeamTableFile: 'handbook_team_table.json',
-    ArknightsDataSource.rangeTableFile: 'range_table.json',
-    ArknightsDataSource.itemTableFile: 'item_table.json',
-    ArknightsDataSource.stageTableFile: 'stage_table.json',
-    ArknightsDataSource.buildingDataFile: 'building_data.json',
-    ArknightsDataSource.battleEquipTableFile: 'battle_equip_table.json',
-    ArknightsDataSource.favorTableFile: 'favor_table.json',
-  };
-
-  for (final entry in fixtureByFile.entries) {
-    final content =
-        await File('test/support/fixtures/raw/${entry.value}').readAsString();
-    http.registerText(descriptor.tableUri(entry.key), content);
-  }
 }
