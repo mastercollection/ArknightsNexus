@@ -1,7 +1,9 @@
 name: Pages
 
-# Publishes the site (site/) and pre-normalized game data per region
-# (tool/build_snapshots.dart) to GitHub Pages. The hourly run only builds
+# Publishes the Flutter web app (at the site root), the static pages (site/)
+# and pre-normalized game data per region (tool/build_snapshots.dart, under
+# data/) to GitHub Pages. Every deploy replaces the whole site, so every build
+# builds all three. The hourly run only builds
 # when an upstream region's data_version.txt changed or the generator inputs
 # differ from the published manifest's fingerprint; pushes and manual runs
 # always build. Unchanged regions are copied from the published site.
@@ -12,16 +14,12 @@ on:
   push:
     branches: [main]
     paths:
-      - 'tool/**'
+      - 'lib/**'
+      - 'web/**'
+      - 'assets/**'
+      - 'pubspec.*'
       - 'site/**'
-      - 'lib/core/errors/**'
-      - 'lib/core/http/**'
-      - 'lib/data_sources/**'
-      - 'lib/domain/**'
-      - 'lib/raw_models/**'
-      - 'lib/services/normalizers/**'
-      - 'lib/services/region_source.dart'
-      - 'pubspec.lock'
+      - 'tool/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -36,11 +34,12 @@ concurrency:
 
 env:
   FLUTTER_VERSION: '3.27.1'
-  # Must match the paths above: everything the generator and site are built
-  # from. The fingerprint is stored in the manifest.
+  # Everything the snapshot generator and the static pages are built from.
+  # The fingerprint is stored in the manifest; unchanged regions are reused
+  # only while it matches. The web app is rebuilt on every run regardless.
   FINGERPRINT_PATHS: >-
-    tool site lib/core/errors lib/core/http lib/data_sources
-    lib/domain lib/raw_models lib/services/normalizers
+    tool site lib/core/concurrency lib/core/errors lib/core/http
+    lib/data_sources lib/domain lib/raw_models lib/services/normalizers
     lib/services/region_source.dart pubspec.lock .github/workflows/pages.yml
   REGIONS: 'cn kr jp tw en'
   UPSTREAM: 'https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/refs/heads/master'
@@ -131,8 +130,24 @@ jobs:
             --fingerprint "$FINGERPRINT" \
             --previous-manifest "$PAGES_URL/data/manifest.json"
 
-      - name: Assemble site
+      - name: Build web app
+        env:
+          REPO: ${{ github.event.repository.name }}
+        # CanvasKit is served from this site rather than Google's CDN; no
+        # service worker, so a reload always picks up a new deploy.
         run: |
+          flutter build web --release --base-href "/$REPO/" \
+            --no-web-resources-cdn --pwa-strategy=none
+
+      - name: Assemble site
+        # The app at the root, data/ from the step above, then the static
+        # pages. site/ must not ship an index.html: that is the app's.
+        run: |
+          if [ -e site/index.html ]; then
+            echo "::error::site/index.html would replace the web app's index.html"
+            exit 1
+          fi
+          cp -R build/web/. build/site/
           cp -R site/. build/site/
           touch build/site/.nojekyll
           find build/site -type f -printf '%8s %p\n'

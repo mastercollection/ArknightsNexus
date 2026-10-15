@@ -1,8 +1,9 @@
 # ArknightsNexus
 
 ArknightsNexus is an app that helps Arknights players with operator data, item
-data and operator promotion planning. It is a Flutter app for Windows and
-Android; layouts adapt to the window width (bottom tabs on phones, an icon
+data and operator promotion planning. It is a Flutter app for Windows,
+Android and the web (https://mastercollection.github.io/ArknightsNexus/);
+layouts adapt to the window width (bottom tabs on phones, an icon
 rail on wider windows, master-detail operators on PC).
 
 ## Layout
@@ -17,7 +18,8 @@ rail on wider windows, master-detail operators on PC).
 | `lib/services/` | Region sync, data normalizers, cache-backed queries, plan costs, Penguin Stats, image cache, diagnostics |
 | `lib/raw_models/`, `lib/domain/` | Upstream table models and the cached snapshot DTOs |
 | `tool/` | `build_snapshots.dart`: builds the published region snapshots |
-| `site/` | Static GitHub Pages site (homepage, privacy policy) |
+| `web/` | Web entry page, manifest and icons |
+| `site/` | Static pages published next to the web app (about, privacy policy, 404 redirect) |
 
 ## Develop
 
@@ -90,10 +92,13 @@ which installs KR from that site and compares it with a raw sync.
 
 ### GitHub Pages
 
-`site/` holds the static homepage (`index.html`) and privacy policy
-(`privacy.html`); the workflow copies it next to `data/`. The workflow runs
-hourly, on pushes to `main` that touch the generator inputs or `site/`, and
-manually. The hourly run only builds when an upstream `data_version.txt`
+The site root is the Flutter web app (`flutter build web --base-href
+/ArknightsNexus/ --no-web-resources-cdn --pwa-strategy=none`); `site/` adds
+`about.html`, `privacy.html` and `404.html` (it must not contain an
+`index.html`), and `data/` holds the snapshots. Every deploy replaces the
+whole site, so every build runs all three steps. The workflow runs hourly, on
+pushes to `main` that touch `lib/`, `web/`, `assets/`, `pubspec.*`,
+`site/` or `tool/`, and manually. The hourly run only builds when an upstream `data_version.txt`
 differs from the published manifest or the generator inputs' fingerprint
 changed; unchanged regions are copied from the published site after
 checking their SHA-256, and a region that fails to build keeps its
@@ -102,6 +107,29 @@ published copy.
 One-time setup by the repository owner: **Settings → Pages → Build and
 deployment → Source: "GitHub Actions"**. Then run the "Pages" workflow once
 from the Actions tab (or push to `main`).
+
+## Web build
+
+`lib/app/providers.dart` picks its implementations from
+`platform_providers_io.dart` (Windows, Android) or `platform_providers_web.dart`
+through a conditional import, so no `dart:io` code is reachable on the web:
+
+| | Native | Web |
+| --- | --- | --- |
+| User data | `user_data.json` file (+ Tauri import) | same JSON in `localStorage` |
+| Region data | files under the cache dir, published snapshot then raw fallback | in memory, published snapshot of the same site (`data/` next to the app) only |
+| Images | file cache | bytes fetched from the image URLs, kept for the session |
+| Logs | `app.log`, export / open folder | browser console |
+| Export / import | save / open dialogs | download / browser file picker |
+
+Routes use hash URLs (`/ArknightsNexus/#/operators/<id>`), so a reload never
+hits a missing path on Pages; `site/404.html` forwards path-style links
+(`/ArknightsNexus/operators/<id>`) to the hash form. Text renders with the
+fonts CanvasKit fetches from `fonts.gstatic.com` (no bundled font).
+
+```sh
+flutter build web --release --base-href /ArknightsNexus/ --no-web-resources-cdn --pwa-strategy=none
+```
 
 ## Compatibility with the earlier Tauri app
 

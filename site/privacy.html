@@ -12,9 +12,10 @@
 <body>
   <header class="site-header">
     <div class="wrap">
-      <a class="brand" href="./"><img src="icon.svg" alt="" width="32" height="32">ArknightsNexus</a>
+      <a class="brand" href="about.html"><img src="icon.svg" alt="" width="32" height="32">ArknightsNexus</a>
       <nav class="site-nav" aria-label="사이트">
-        <a href="./">소개</a>
+        <a href="./">웹 앱</a>
+        <a href="about.html">소개</a>
         <a href="privacy.html" aria-current="page">개인정보처리방침</a>
         <a href="https://github.com/mastercollection/ArknightsNexus">GitHub</a>
       </nav>
@@ -26,7 +27,7 @@
     <p class="muted">시행일: 2026년 10월 15일</p>
     <p class="lang-switch"><a href="#en">English version below</a></p>
 
-    <p>ArknightsNexus(이하 "앱")는 명일방주 플레이어를 위한 비공식 팬 메이드 앱입니다. 앱에는 회원 가입이나 로그인이 없고, 개발자가 운영하는 서버도 없습니다. 이 방침은 앱이 어떤 데이터를 어디에 저장하고, 어떤 외부 서비스와 통신하는지 설명합니다.</p>
+    <p>ArknightsNexus(이하 "앱")는 명일방주 플레이어를 위한 비공식 팬 메이드 앱으로, Windows·Android 앱과 이 사이트에서 실행되는 웹 버전이 있습니다. 앱에는 회원 가입이나 로그인이 없고, 개발자가 운영하는 서버도 없습니다(이 사이트는 GitHub Pages가 제공하는 정적 파일입니다). 이 방침은 앱이 어떤 데이터를 어디에 저장하고, 어떤 외부 서비스와 통신하는지 설명합니다.</p>
 
     <section>
       <h2>1. 기기에 저장되는 데이터</h2>
@@ -44,7 +45,8 @@
           </tbody>
         </table>
       </div>
-      <p>설정에서 사용자 데이터를 직접 고른 위치에 파일로 내보내거나 가져올 수 있고, 로그를 내보낼 수 있습니다. 이렇게 만든 파일을 다른 곳에 공유할지는 사용자가 결정합니다. Android에서는 앱을 삭제하면 위 데이터도 삭제됩니다. Windows에서는 <code>%APPDATA%</code>와 <code>%LOCALAPPDATA%</code> 아래의 앱 폴더를 지우면 삭제됩니다. 내보낸 파일은 사용자가 직접 관리합니다.</p>
+      <p><strong>웹 버전</strong>에서는 <code>user_data.json</code>과 같은 내용(육성 계획, 즐겨찾기, 아이템 보유 수량)을 브라우저의 로컬 저장소(<code>localStorage</code>)에 저장합니다. 게임 데이터와 이미지는 페이지가 열려 있는 동안 메모리에만 두며, 다음 방문 때는 브라우저의 일반 HTTP 캐시가 다시 쓰일 수 있습니다. 웹 버전은 로그 파일을 만들지 않고 브라우저 개발자 도구의 콘솔에만 기록합니다. 브라우저 설정에서 <code>mastercollection.github.io</code>의 사이트 데이터를 지우면 웹 버전의 데이터도 삭제됩니다.</p>
+      <p>설정에서 사용자 데이터를 직접 고른 위치에 파일로 내보내거나 가져올 수 있고, Windows·Android 앱에서는 로그를 내보낼 수 있습니다. 이렇게 만든 파일을 다른 곳에 공유할지는 사용자가 결정합니다. Android에서는 앱을 삭제하면 위 데이터도 삭제됩니다. Windows에서는 <code>%APPDATA%</code>와 <code>%LOCALAPPDATA%</code> 아래의 앱 폴더를 지우면 삭제됩니다. 내보낸 파일은 사용자가 직접 관리합니다.</p>
     </section>
 
     <section>
@@ -55,7 +57,12 @@
         <li><strong>GitHub Pages</strong> (<code>mastercollection.github.io</code>): 이 사이트에서 제공하는 정리된 게임 데이터 스냅샷</li>
         <li><strong>Penguin Stats</strong> (<code>penguin-stats.io</code>): 아이템 드롭 통계</li>
       </ul>
-      <p>관련 정책: <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub 개인정보 처리방침</a>, <a href="https://penguin-stats.io/">Penguin Stats</a>.</p>
+      <p><strong>웹 버전</strong>은 위 주소에 더해 다음 주소에 접속합니다. 웹 버전의 요청에는 앱 이름 대신 브라우저의 User-Agent가 담기며, 브라우저는 요청한 페이지 주소(Referer)를 함께 보낼 수 있습니다.</p>
+      <ul>
+        <li><strong>GitHub Pages</strong> (<code>mastercollection.github.io</code>): 웹 앱 파일 자체</li>
+        <li><strong>Google Fonts</strong> (<code>fonts.gstatic.com</code>): 화면을 그리는 Flutter 엔진이 기본 글꼴(Roboto)과 한국어·중국어·일본어 등을 표시할 Noto 글꼴을 이 서버에서 내려받습니다.</li>
+      </ul>
+      <p>관련 정책: <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub 개인정보 처리방침</a>, <a href="https://penguin-stats.io/">Penguin Stats</a>, <a href="https://developers.google.com/fonts/faq/privacy">Google Fonts 개인정보 FAQ</a>.</p>
     </section>
 
     <section>
@@ -98,7 +105,7 @@
       <h1>Privacy Policy</h1>
       <p class="muted">Effective date: October 15, 2026</p>
 
-      <p>ArknightsNexus ("the app") is an unofficial, fan-made app for Arknights players. It has no sign-up or login, and the developer runs no servers. This policy explains what data the app stores, where, and which external services it contacts.</p>
+      <p>ArknightsNexus ("the app") is an unofficial, fan-made app for Arknights players, available as Windows and Android apps and as a web version that runs on this site. It has no sign-up or login, and the developer runs no servers (this site is static files served by GitHub Pages). This policy explains what data the app stores, where, and which external services it contacts.</p>
 
       <h2>1. Data stored on your device</h2>
       <p>Everything the app works with is stored only on your device and is never sent to the developer.</p>
@@ -115,7 +122,8 @@
           </tbody>
         </table>
       </div>
-      <p>From the settings you can export or import your user data as a file at a location you choose, and export the log. Whether to share such files is up to you. On Android, uninstalling the app removes this data. On Windows, delete the app's folders under <code>%APPDATA%</code> and <code>%LOCALAPPDATA%</code>. Exported files are yours to manage.</p>
+      <p>The <strong>web version</strong> stores the same content as <code>user_data.json</code> (promotion plans, favorites, owned item counts) in your browser's local storage (<code>localStorage</code>). Game data and images are kept in memory only while the page is open; on later visits the browser's ordinary HTTP cache may be reused. The web version writes no log file and logs only to the browser developer tools console. Clearing the site data of <code>mastercollection.github.io</code> in your browser removes the web version's data.</p>
+      <p>From the settings you can export or import your user data as a file at a location you choose, and the Windows and Android apps can export the log. Whether to share such files is up to you. On Android, uninstalling the app removes this data. On Windows, delete the app's folders under <code>%APPDATA%</code> and <code>%LOCALAPPDATA%</code>. Exported files are yours to manage.</p>
 
       <h2>2. External services</h2>
       <p>To download game data and images, the app connects to the public addresses below. These requests contain none of your user data. As with any internet request, each service may record your IP address, the request time and the User-Agent (which names the app) under its own policy.</p>
@@ -124,7 +132,12 @@
         <li><strong>GitHub Pages</strong> (<code>mastercollection.github.io</code>): the pre-processed game data snapshots published on this site</li>
         <li><strong>Penguin Stats</strong> (<code>penguin-stats.io</code>): item drop statistics</li>
       </ul>
-      <p>See the <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub General Privacy Statement</a> and <a href="https://penguin-stats.io/">Penguin Stats</a>.</p>
+      <p>The <strong>web version</strong> also connects to the addresses below. Its requests carry your browser's User-Agent instead of the app name, and the browser may send the address of the page (Referer).</p>
+      <ul>
+        <li><strong>GitHub Pages</strong> (<code>mastercollection.github.io</code>): the web app files themselves</li>
+        <li><strong>Google Fonts</strong> (<code>fonts.gstatic.com</code>): the Flutter engine that draws the page downloads its default font (Roboto) and the Noto fonts for Korean, Chinese, Japanese and other scripts from this server.</li>
+      </ul>
+      <p>See the <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub General Privacy Statement</a>, <a href="https://penguin-stats.io/">Penguin Stats</a> and the <a href="https://developers.google.com/fonts/faq/privacy">Google Fonts privacy FAQ</a>.</p>
 
       <h2>3. What the app does not do</h2>
       <ul>
@@ -156,7 +169,7 @@
 
   <footer class="site-footer">
     <div class="wrap">
-      <p><a href="./">ArknightsNexus</a> · <a href="https://github.com/mastercollection/ArknightsNexus/issues">문의 / Contact</a></p>
+      <p><a href="./">ArknightsNexus</a> · <a href="about.html">소개 / About</a> · <a href="https://github.com/mastercollection/ArknightsNexus/issues">문의 / Contact</a></p>
       <p>ArknightsNexus는 비공식 팬 프로젝트입니다. / ArknightsNexus is an unofficial fan-made project.</p>
     </div>
   </footer>
