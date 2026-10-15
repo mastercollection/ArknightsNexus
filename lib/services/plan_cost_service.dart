@@ -842,13 +842,8 @@ int _compareState(UserPlanOperatorState left, UserPlanOperatorState right) {
   return left.level - right.level;
 }
 
-int _getMaxModuleStage(OperatorModule module) {
-  final maxBattlePhase = module.battlePhases.fold<int>(
-    0,
-    (max, phase) => phase.equipLevel > max ? phase.equipLevel : max,
-  );
-  return _clamp(maxBattlePhase, 0, _maxModuleStage);
-}
+int _getMaxModuleStage(OperatorModule module) =>
+    _clamp(module.maxStage, 0, _maxModuleStage);
 
 List<int> _buildDefaultSkillLevels(int skillCount) {
   return List.filled(skillCount > 3 ? skillCount : 3, 1);

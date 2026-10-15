@@ -414,7 +414,7 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
     UserPlanOperatorState withElite(UserPlanOperatorState state, int elite) {
       // watch(() => localPlan.*.elite): clamp the level to the new cap.
       final cap = costService.getEliteLevelCap(operator, elite);
-      return _copyState(state, elite: elite, level: math.min(state.level, cap));
+      return state.copyWith(elite: elite, level: math.min(state.level, cap));
     }
 
     Widget elitePicker({required bool target}) {
@@ -435,8 +435,8 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
         semanticLabel: '${target ? targetTitle : currentTitle} $eliteLabel',
         onChanged: (elite) => _updatePlan(
           (plan) => target
-              ? _copyPlan(plan, target: withElite(plan.target, elite))
-              : _copyPlan(plan, current: withElite(plan.current, elite)),
+              ? plan.copyWith(target: withElite(plan.target, elite))
+              : plan.copyWith(current: withElite(plan.current, elite)),
         ),
       );
     }
@@ -453,11 +453,8 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
         increaseLabel: i18n.t('rd.plan.levelIncrease', {'side': sideTitle}),
         onChanged: (level) => _updatePlan(
           (plan) => target
-              ? _copyPlan(plan, target: _copyState(plan.target, level: level))
-              : _copyPlan(
-                  plan,
-                  current: _copyState(plan.current, level: level),
-                ),
+              ? plan.copyWith(target: plan.target.copyWith(level: level))
+              : plan.copyWith(current: plan.current.copyWith(level: level)),
         ),
       );
     }
@@ -611,13 +608,10 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
         masteryLabel: masteryLabel,
         onChanged: (level) => _updatePlan((plan) {
           final source = target ? plan.target : plan.current;
-          final next = _copyState(
-            source,
-            skillLevels: _replaceIntAt(source.skillLevels, index, level),
-          );
+          final next = source.withSkillLevel(index, level);
           return target
-              ? _copyPlan(plan, target: next)
-              : _copyPlan(plan, current: next);
+              ? plan.copyWith(target: next)
+              : plan.copyWith(current: next);
         }),
       );
     }
@@ -736,7 +730,7 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
     UserPlanOperator plan,
     bool compact,
   ) {
-    final maxStage = _moduleMaxStage(module);
+    final maxStage = module.maxStage;
     final stages = [for (var stage = 0; stage <= maxStage; stage++) stage];
     final locked = i18n.t('planPage.detail.moduleLocked');
     final icon = _moduleTypeIcons[module.uniEquipId];
@@ -758,33 +752,20 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
             ),
         ],
         selected: target
-            ? _findModule(plan.target.modules, id)?.targetStage
-            : _findModule(plan.current.modules, id)?.currentStage,
+            ? plan.target.module(id)?.targetStage
+            : plan.current.module(id)?.currentStage,
         height: compact ? 44 : 40,
         semanticLabel:
             '${module.uniEquipName} ${target ? targetLabel : currentLabel}',
         onChanged: (stage) => _updatePlan(
           (plan) => target
-              ? _copyPlan(
-                  plan,
-                  target: _copyState(
-                    plan.target,
-                    modules: _replaceModuleStage(
-                      plan.target.modules,
-                      id,
-                      targetStage: stage,
-                    ),
-                  ),
+              ? plan.copyWith(
+                  target: plan.target.withModuleStage(id, targetStage: stage),
                 )
-              : _copyPlan(
-                  plan,
-                  current: _copyState(
-                    plan.current,
-                    modules: _replaceModuleStage(
-                      plan.current.modules,
-                      id,
-                      currentStage: stage,
-                    ),
+              : plan.copyWith(
+                  current: plan.current.withModuleStage(
+                    id,
+                    currentStage: stage,
                   ),
                 ),
         ),
@@ -1232,77 +1213,5 @@ String _buildTrackedPlanSignature(UserPlanOperator? plan) {
   ].join('|');
 }
 
-int _moduleMaxStage(OperatorModule module) {
-  var maxStage = 0;
-  for (final phase in module.battlePhases) {
-    maxStage = math.max(maxStage, phase.equipLevel);
-  }
-  return maxStage;
-}
-
 List<OperatorModule> _visibleModules(OperatorDetail detail) =>
-    detail.modules.where((module) => _moduleMaxStage(module) > 0).toList();
-
-UserPlanModule? _findModule(List<UserPlanModule> modules, String moduleId) {
-  for (final module in modules) {
-    if (module.moduleId == moduleId) {
-      return module;
-    }
-  }
-  return null;
-}
-
-UserPlanOperator _copyPlan(
-  UserPlanOperator plan, {
-  UserPlanOperatorState? current,
-  UserPlanOperatorState? target,
-}) {
-  return UserPlanOperator(
-    operatorId: plan.operatorId,
-    current: current ?? plan.current,
-    target: target ?? plan.target,
-  );
-}
-
-UserPlanOperatorState _copyState(
-  UserPlanOperatorState state, {
-  int? elite,
-  int? level,
-  List<int>? skillLevels,
-  List<UserPlanModule>? modules,
-}) {
-  return UserPlanOperatorState(
-    elite: elite ?? state.elite,
-    level: level ?? state.level,
-    skillLevels: skillLevels ?? state.skillLevels,
-    modules: modules ?? state.modules,
-  );
-}
-
-List<int> _replaceIntAt(List<int> values, int index, int value) {
-  final next = List<int>.of(values);
-  while (next.length <= index) {
-    next.add(1);
-  }
-  next[index] = value;
-  return next;
-}
-
-List<UserPlanModule> _replaceModuleStage(
-  List<UserPlanModule> modules,
-  String moduleId, {
-  int? currentStage,
-  int? targetStage,
-}) {
-  return [
-    for (final module in modules)
-      if (module.moduleId == moduleId)
-        UserPlanModule(
-          moduleId: module.moduleId,
-          currentStage: currentStage ?? module.currentStage,
-          targetStage: targetStage ?? module.targetStage,
-        )
-      else
-        module,
-  ];
-}
+    detail.modules.where((module) => module.maxStage > 0).toList();

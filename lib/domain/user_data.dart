@@ -91,6 +91,17 @@ class UserPlanOperator {
       'target': target.toJson(),
     };
   }
+
+  UserPlanOperator copyWith({
+    UserPlanOperatorState? current,
+    UserPlanOperatorState? target,
+  }) {
+    return UserPlanOperator(
+      operatorId: operatorId,
+      current: current ?? this.current,
+      target: target ?? this.target,
+    );
+  }
 }
 
 class UserPlanOperatorState {
@@ -125,6 +136,63 @@ class UserPlanOperatorState {
       'skillLevels': skillLevels,
       'modules': modules.map((entry) => entry.toJson()).toList(),
     };
+  }
+
+  UserPlanOperatorState copyWith({
+    int? elite,
+    int? level,
+    List<int>? skillLevels,
+    List<UserPlanModule>? modules,
+  }) {
+    return UserPlanOperatorState(
+      elite: elite ?? this.elite,
+      level: level ?? this.level,
+      skillLevels: skillLevels ?? this.skillLevels,
+      modules: modules ?? this.modules,
+    );
+  }
+
+  /// Skill [index] set to [level]; skills before it that have no level yet
+  /// start at 1.
+  UserPlanOperatorState withSkillLevel(int index, int level) {
+    final next = List<int>.of(skillLevels);
+    while (next.length <= index) {
+      next.add(1);
+    }
+    next[index] = level;
+    return copyWith(skillLevels: next);
+  }
+
+  /// The plan entry of [moduleId], if the state has one.
+  UserPlanModule? module(String moduleId) {
+    for (final module in modules) {
+      if (module.moduleId == moduleId) {
+        return module;
+      }
+    }
+    return null;
+  }
+
+  /// [moduleId]'s entry with the given stages replaced; other modules (and
+  /// a module the state does not list) stay as they are.
+  UserPlanOperatorState withModuleStage(
+    String moduleId, {
+    int? currentStage,
+    int? targetStage,
+  }) {
+    return copyWith(
+      modules: [
+        for (final module in modules)
+          if (module.moduleId == moduleId)
+            UserPlanModule(
+              moduleId: module.moduleId,
+              currentStage: currentStage ?? module.currentStage,
+              targetStage: targetStage ?? module.targetStage,
+            )
+          else
+            module,
+      ],
+    );
   }
 }
 
