@@ -150,6 +150,9 @@ class _OperatorsGridViewState extends ConsumerState<OperatorsGridView> {
               compact: widget.compact,
               selected: operator.id == widget.selectedId,
               professionLabel: i18n.profession(operator.profession),
+              unreleasedLabel: operator.unreleasedSource == null
+                  ? null
+                  : unreleasedLabel(i18n, operator.unreleasedSource!),
               onTap: () => widget.onSelect(operator),
             );
           },
@@ -221,6 +224,7 @@ class OperatorTile extends StatefulWidget {
     required this.selected,
     required this.professionLabel,
     required this.onTap,
+    this.unreleasedLabel,
     super.key,
   });
 
@@ -229,6 +233,9 @@ class OperatorTile extends StatefulWidget {
   final bool selected;
   final String professionLabel;
   final VoidCallback onTap;
+
+  /// Badge text of an operator the region has not released yet.
+  final String? unreleasedLabel;
 
   @override
   State<OperatorTile> createState() => _OperatorTileState();
@@ -253,6 +260,22 @@ class _OperatorTileState extends State<OperatorTile> {
             ? const Color(0xFF12203A)
             : opPanelFill;
     final radius = widget.compact ? 16.0 : 22.0;
+    final unreleased = widget.unreleasedLabel;
+    // Over the bottom edge of the portrait, so the tile keeps its height.
+    final badge = unreleased == null
+        ? null
+        : Positioned(
+            left: -6,
+            right: -6,
+            bottom: -4,
+            child: Center(
+              child: UnreleasedBadge(
+                key: ValueKey('operator-unreleased-${operator.id}'),
+                label: unreleased,
+                small: true,
+              ),
+            ),
+          );
 
     final name = Text(
       operator.name,
@@ -278,11 +301,21 @@ class _OperatorTileState extends State<OperatorTile> {
         padding: const EdgeInsets.fromLTRB(6, 10, 6, 12),
         child: Column(
           children: [
-            RdPortrait(
-              charId: operator.id,
-              name: operator.name,
-              size: 76,
-              radius: 18,
+            SizedBox(
+              width: 76,
+              height: 76,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  RdPortrait(
+                    charId: operator.id,
+                    name: operator.name,
+                    size: 76,
+                    radius: 18,
+                  ),
+                  if (badge != null) badge,
+                ],
+              ),
             ),
             const SizedBox(height: 6),
             SizedBox(
@@ -339,6 +372,7 @@ class _OperatorTileState extends State<OperatorTile> {
                       ),
                     ),
                   ),
+                  if (badge != null) badge,
                 ],
               ),
             ),
@@ -364,7 +398,12 @@ class _OperatorTileState extends State<OperatorTile> {
     return Semantics(
       button: true,
       selected: selected,
-      label: '${operator.name}, $stars, ${widget.professionLabel}',
+      label: [
+        operator.name,
+        stars,
+        widget.professionLabel,
+        if (unreleased != null) unreleased,
+      ].join(', '),
       excludeSemantics: true,
       child: MouseRegion(
         onEnter: (_) => setState(() => _hovered = true),

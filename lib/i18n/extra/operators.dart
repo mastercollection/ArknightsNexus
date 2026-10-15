@@ -32,6 +32,11 @@ const Map<String, Map<String, String>> operatorsExtraMessages = {
     'rd.operators.detail.skillLevelUp': '스킬 레벨 올리기',
     'rd.operators.detail.mastery': '특화 {value}',
     'rd.operators.detail.sections': '상세 섹션',
+    'rd.operators.unreleased': '미실장 · {source}',
+    'rd.operators.unreleased.description':
+        '선택한 서버에 아직 실장되지 않은 오퍼레이터입니다. {source} 서버의 공식 데이터로 표시합니다.',
+    'rd.operators.filter.unreleased': '미실장',
+    'rd.operators.filter.hideUnreleased': '미실장 숨기기',
   },
   'cn': {
     'rd.operators.count': '{count}名',
@@ -63,6 +68,11 @@ const Map<String, Map<String, String>> operatorsExtraMessages = {
     'rd.operators.detail.skillLevelUp': '提高技能等级',
     'rd.operators.detail.mastery': '专精 {value}',
     'rd.operators.detail.sections': '详情分区',
+    'rd.operators.unreleased': '未实装 · {source}',
+    'rd.operators.unreleased.description':
+        '所选服务器尚未实装的干员，显示的是 {source} 服务器的官方数据。',
+    'rd.operators.filter.unreleased': '未实装',
+    'rd.operators.filter.hideUnreleased': '隐藏未实装',
   },
   'jp': {
     'rd.operators.count': '{count}名',
@@ -94,6 +104,11 @@ const Map<String, Map<String, String>> operatorsExtraMessages = {
     'rd.operators.detail.skillLevelUp': 'スキルレベルを上げる',
     'rd.operators.detail.mastery': '特化 {value}',
     'rd.operators.detail.sections': '詳細セクション',
+    'rd.operators.unreleased': '未実装 · {source}',
+    'rd.operators.unreleased.description':
+        '選択したサーバーにはまだ実装されていないオペレーターです。{source} サーバーの公式データで表示しています。',
+    'rd.operators.filter.unreleased': '未実装',
+    'rd.operators.filter.hideUnreleased': '未実装を隠す',
   },
   'tw': {
     'rd.operators.count': '{count}名',
@@ -125,6 +140,11 @@ const Map<String, Map<String, String>> operatorsExtraMessages = {
     'rd.operators.detail.skillLevelUp': '提高技能等級',
     'rd.operators.detail.mastery': '專精 {value}',
     'rd.operators.detail.sections': '詳情分區',
+    'rd.operators.unreleased': '未實裝 · {source}',
+    'rd.operators.unreleased.description':
+        '所選伺服器尚未實裝的幹員，顯示的是 {source} 伺服器的官方資料。',
+    'rd.operators.filter.unreleased': '未實裝',
+    'rd.operators.filter.hideUnreleased': '隱藏未實裝',
   },
   'en': {
     'rd.operators.count': '{count}',
@@ -159,5 +179,10 @@ const Map<String, Map<String, String>> operatorsExtraMessages = {
     'rd.operators.detail.skillLevelUp': 'Raise skill level',
     'rd.operators.detail.mastery': 'Mastery {value}',
     'rd.operators.detail.sections': 'Detail sections',
+    'rd.operators.unreleased': 'Unreleased · {source}',
+    'rd.operators.unreleased.description':
+        'Not yet released on the selected server; shown with the official {source} server data.',
+    'rd.operators.filter.unreleased': 'Unreleased',
+    'rd.operators.filter.hideUnreleased': 'Hide unreleased',
   },
 };

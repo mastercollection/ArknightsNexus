@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../i18n/nexus_i18n.dart';
 import '../../ui/redesign/rd_widgets.dart';
 
 /// Shared visual pieces of the redesigned operators screens.
@@ -92,6 +93,63 @@ class OpChip extends StatelessWidget {
     );
   }
 }
+
+/// "미실장 · EN": the label of an operator the selected region has not
+/// released, shown with the official data of the [source] region.
+String unreleasedLabel(NexusI18n i18n, String source) =>
+    i18n.t('rd.operators.unreleased', {'source': source.toUpperCase()});
+
+/// Badge of an unreleased operator: [label] from [unreleasedLabel], and
+/// [tooltip] the full explanation when there is room for one.
+class UnreleasedBadge extends StatelessWidget {
+  const UnreleasedBadge({
+    required this.label,
+    this.tooltip,
+    this.small = false,
+    super.key,
+  });
+
+  final String label;
+  final String? tooltip;
+
+  /// The list tile size (over the portrait).
+  final bool small;
+
+  @override
+  Widget build(BuildContext context) {
+    final badge = Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: small ? 6 : 10,
+        vertical: small ? 2 : 5,
+      ),
+      decoration: BoxDecoration(
+        color: small ? const Color(0xE6402A12) : const Color(0x1FFF8A5C),
+        borderRadius: BorderRadius.circular(RdRadii.pill),
+        border: Border.all(color: const Color(0x80FF9A66)),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        softWrap: false,
+        overflow: TextOverflow.fade,
+        style: TextStyle(
+          fontSize: small ? 10 : 12,
+          height: small ? 1.3 : 1.2,
+          fontWeight: FontWeight.w700,
+          color: const Color(0xFFFFE4D6),
+        ),
+      ),
+    );
+    final message = tooltip;
+    return message == null ? badge : Tooltip(message: message, child: badge);
+  }
+}
+
+/// [UnreleasedBadge]'s tooltip for an operator from [source].
+String unreleasedDescription(NexusI18n i18n, String source) => i18n.t(
+      'rd.operators.unreleased.description',
+      {'source': source.toUpperCase()},
+    );
 
 /// `− slider +` row with a monospace readout (level and skill level).
 class OpRangeControl extends StatelessWidget {

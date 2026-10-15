@@ -476,6 +476,13 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
       favoriteTooltip: i18n.t('rd.operators.detail.favorite'),
       onBack: widget.onBack,
       onToggleFavorite: _toggleFavorite,
+      unreleased: operator.unreleasedSource == null
+          ? null
+          : UnreleasedBadge(
+              key: const Key('operator-detail-unreleased'),
+              label: unreleasedLabel(i18n, operator.unreleasedSource!),
+              tooltip: unreleasedDescription(i18n, operator.unreleasedSource!),
+            ),
     );
     final hero = _HeroCard(operator: operator, i18n: i18n, compact: _compact);
     final tabs = RdSegmented<DetailSection>(
@@ -843,10 +850,14 @@ class _DetailHeader extends StatelessWidget {
     required this.favoriteTooltip,
     required this.onBack,
     required this.onToggleFavorite,
+    this.unreleased,
   });
 
   final String name;
   final String sectionLabel;
+
+  /// [UnreleasedBadge] of an operator the region has not released yet.
+  final Widget? unreleased;
   final bool favorite;
   final bool compact;
   final String backTooltip;
@@ -892,6 +903,10 @@ class _DetailHeader extends StatelessWidget {
             style: const TextStyle(fontSize: 12, color: Color(0xFFD8E5FF)),
           ),
         ),
+        if (unreleased != null) ...[
+          const SizedBox(width: 6),
+          Flexible(child: unreleased!),
+        ],
         const Spacer(),
         _FavoriteButton(
           favorite: favorite,

@@ -331,6 +331,20 @@ class _OperatorsFilterSidebarState
                 ],
               ),
             ),
+            if (list.options.hasUnreleased) ...[
+              const SizedBox(height: 22),
+              _group(
+                i18n.t('rd.operators.filter.unreleased'),
+                _wrap([
+                  _OptionButton(
+                    key: const ValueKey('operators-filter-hide-unreleased'),
+                    label: i18n.t('rd.operators.filter.hideUnreleased'),
+                    selected: filters.hideUnreleased,
+                    onTap: list.toggleHideUnreleased,
+                  ),
+                ]),
+              ),
+            ],
             const SizedBox(height: 22),
             Align(
               alignment: Alignment.centerLeft,
@@ -480,6 +494,16 @@ class OperatorsFilterChipRow extends ConsumerWidget {
                       : () => showOperatorFilterSheet(context, dimension),
                 );
               },
+            ),
+          ],
+          if (list.options.hasUnreleased) ...[
+            const SizedBox(width: 8),
+            pill(
+              key: const Key('operators-filter-hide-unreleased'),
+              label: i18n.t('rd.operators.filter.hideUnreleased'),
+              on: filters.hideUnreleased,
+              mark: filters.hideUnreleased ? '✕' : null,
+              onTap: list.toggleHideUnreleased,
             ),
           ],
         ],

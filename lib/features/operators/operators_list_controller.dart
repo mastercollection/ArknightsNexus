@@ -70,6 +70,7 @@ class OperatorFilters {
     this.rarity,
     this.profession,
     this.baTags = const [],
+    this.hideUnreleased = false,
   });
 
   final String query;
@@ -78,12 +79,18 @@ class OperatorFilters {
   final String? profession;
   final List<String> baTags;
 
-  /// Any of the four drawer filters (the search text is not one of them).
+  /// Hides the operators the region has not released yet
+  /// ([OperatorSummary.isUnreleased]); they are listed by default.
+  final bool hideUnreleased;
+
+  /// Any of the drawer filters or the unreleased toggle (the search text is
+  /// not one of them).
   bool get hasDimension =>
       affiliation != null ||
       rarity != null ||
       profession != null ||
-      baTags.isNotEmpty;
+      baTags.isNotEmpty ||
+      hideUnreleased;
 
   OperatorFilters copyWith({
     String? query,
@@ -91,6 +98,7 @@ class OperatorFilters {
     int? Function()? rarity,
     String? Function()? profession,
     List<String>? baTags,
+    bool? hideUnreleased,
   }) {
     return OperatorFilters(
       query: query ?? this.query,
@@ -98,6 +106,7 @@ class OperatorFilters {
       rarity: rarity == null ? this.rarity : rarity(),
       profession: profession == null ? this.profession : profession(),
       baTags: baTags ?? this.baTags,
+      hideUnreleased: hideUnreleased ?? this.hideUnreleased,
     );
   }
 }
@@ -108,6 +117,7 @@ class OperatorFilterOptions {
     required this.baTags,
     required this.rarities,
     required this.professions,
+    this.hasUnreleased = false,
   });
 
   factory OperatorFilterOptions.from(List<OperatorSummary> operators) {
@@ -127,6 +137,7 @@ class OperatorFilterOptions {
       professions:
           {for (final operator in operators) operator.profession}.toList()
             ..sort(),
+      hasUnreleased: operators.any((operator) => operator.isUnreleased),
     );
   }
 
@@ -134,6 +145,9 @@ class OperatorFilterOptions {
   final List<String> baTags;
   final List<int> rarities;
   final List<String> professions;
+
+  /// The list has unreleased operators, so the toggle hiding them is shown.
+  final bool hasUnreleased;
 }
 
 /// State of the operators list (`src/pages/operators.vue`).
@@ -245,14 +259,20 @@ class OperatorsListController extends ChangeNotifier {
     }
   }
 
-  /// `clearFilters`: resets the four drawer filters and keeps the search.
+  /// `clearFilters`: resets the four drawer filters and the unreleased
+  /// toggle, and keeps the search.
   void clearFilters() {
     filters = _filters.copyWith(
       affiliation: () => null,
       rarity: () => null,
       profession: () => null,
       baTags: const [],
+      hideUnreleased: false,
     );
+  }
+
+  void toggleHideUnreleased() {
+    filters = _filters.copyWith(hideUnreleased: !_filters.hideUnreleased);
   }
 
   void toggleBaTag(String tag) {
@@ -398,6 +418,9 @@ class OperatorsListController extends ChangeNotifier {
           operator.profession == filters.profession;
       final matchesBaTags =
           filters.baTags.every((tag) => operator.baTags.contains(tag));
+      if (filters.hideUnreleased && operator.isUnreleased) {
+        return false;
+      }
       return matchesQuery &&
           matchesAffiliation &&
           matchesRarity &&
@@ -422,6 +445,7 @@ class OperatorsListController extends ChangeNotifier {
       if (_filters.profession != null) i18n.profession(_filters.profession!),
       for (final tag in _filters.baTags)
         '${i18n.t('operatorsList.filters.baTags')}: $tag',
+      if (_filters.hideUnreleased) i18n.t('rd.operators.filter.hideUnreleased'),
     ];
   }
 

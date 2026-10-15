@@ -336,6 +336,147 @@ void main() {
       expect(find.text(description), findsOneWidget);
     });
 
+    group('unreleased operators', () {
+      const badge = '미실장 · CN';
+
+      setUp(() => operatorService.addUnreleased());
+
+      testWidgets(
+          'are listed first with a badge, found by name and hidden '
+          'by the toggle', (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await _pumpApp(
+          tester,
+          operatorService,
+          regionSyncService,
+          userDataRepository,
+        );
+        await tester.tap(find.byKey(const Key('tab-operators')));
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(find.text('Nova'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('operator-unreleased-char_900_nova')),
+          findsOneWidget,
+        );
+        expect(find.text(badge), findsOneWidget);
+        expect(
+          tester.getTopLeft(find.text('Nova')).dy,
+          lessThan(tester.getTopLeft(find.text('Amiya')).dy + 1),
+        );
+
+        // The borrowed name is searchable like any other.
+        await tester.enterText(find.byType(TextField), 'nov');
+        await tester.pumpAndSettle();
+        expect(find.text('Nova'), findsOneWidget);
+        expect(find.text('Amiya'), findsNothing);
+        await tester.enterText(find.byType(TextField), '');
+        await tester.pumpAndSettle();
+
+        final toggle =
+            find.byKey(const Key('operators-filter-hide-unreleased'));
+        await tester.ensureVisible(toggle);
+        await tester.tap(toggle);
+        await tester.pumpAndSettle();
+        expect(find.text('Nova'), findsNothing);
+        expect(find.text(badge), findsNothing);
+        expect(find.text('Amiya'), findsOneWidget);
+
+        // The reset chip shows it again.
+        final reset = find.byKey(const Key('operators-filter-chip-reset'));
+        await tester.ensureVisible(reset);
+        await tester.pumpAndSettle();
+        await tester.tap(reset);
+        await tester.pumpAndSettle();
+        expect(find.text('Nova'), findsOneWidget);
+      });
+
+      testWidgets('show the badge in the detail header', (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await _pumpApp(
+          tester,
+          operatorService,
+          regionSyncService,
+          userDataRepository,
+        );
+        await tester.tap(find.byKey(const Key('tab-operators')));
+        await tester.pumpAndSettle();
+
+        await tester
+            .tap(find.byKey(const ValueKey('operator-tile-char_900_nova')));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final header = find.byKey(const Key('operator-detail-unreleased'));
+        expect(header, findsOneWidget);
+        expect(
+          find.descendant(of: header, matching: find.text(badge)),
+          findsOneWidget,
+        );
+
+        await tester.tap(find.byTooltip('뒤로가기'));
+        await tester.pumpAndSettle();
+        await tester
+            .tap(find.byKey(const ValueKey('operator-tile-char_002_amiya')));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('operator-detail-unreleased')),
+          findsNothing,
+        );
+      });
+
+      testWidgets('PC sidebar toggle hides them', (tester) async {
+        tester.view.physicalSize = const Size(1440, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await _pumpApp(
+          tester,
+          operatorService,
+          regionSyncService,
+          userDataRepository,
+        );
+        await tester.tap(find.byKey(const Key('sidebar-operators')));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Nova'), findsOneWidget);
+        final toggle =
+            find.byKey(const ValueKey('operators-filter-hide-unreleased'));
+        await tester.ensureVisible(toggle);
+        await tester.tap(toggle);
+        await tester.pumpAndSettle();
+        expect(find.text('Nova'), findsNothing);
+        expect(find.text('Kaltsit'), findsOneWidget);
+        await tester.tap(toggle);
+        await tester.pumpAndSettle();
+        expect(find.text('Nova'), findsOneWidget);
+      });
+    });
+
+    testWidgets('has no unreleased toggle without unreleased operators',
+        (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await _pumpApp(
+        tester,
+        operatorService,
+        regionSyncService,
+        userDataRepository,
+      );
+      await tester.tap(find.byKey(const Key('tab-operators')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('operators-filter-hide-unreleased')),
+        findsNothing,
+      );
+      expect(find.text('미실장 · CN'), findsNothing);
+    });
+
     testWidgets(
         'shows the error state when the freshness check fails, like Tauri',
         (tester) async {
@@ -464,6 +605,26 @@ class _FakeOperatorService implements OperatorService {
     _operators = List.of(_fixtureOperators);
   }
 
+  /// Puts an operator the region has not released (CN data) first, as the
+  /// published snapshots do.
+  void addUnreleased() {
+    _operators = [
+      const OperatorDetail(
+        id: 'char_900_nova',
+        name: 'Nova',
+        codename: 'Nova',
+        rarity: 6,
+        profession: 'CASTER',
+        branch: 'Core Caster',
+        thumbnailHue: 20,
+        unreleasedSource: 'cn',
+        quote: 'Soon.',
+        archetypeDescription: 'Core Caster',
+      ),
+      ..._fixtureOperators,
+    ];
+  }
+
   static const _fixtureOperators = [
     OperatorDetail(
       id: 'char_002_amiya',
@@ -539,6 +700,7 @@ class _FakeOperatorService implements OperatorService {
             groups: operator.groups,
             baTags: operator.baTags,
             thumbnailHue: operator.thumbnailHue,
+            unreleasedSource: operator.unreleasedSource,
           ),
         )
         .toList();
