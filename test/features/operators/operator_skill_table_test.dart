@@ -37,6 +37,12 @@ final _rows = [
     label: _longLabel,
     values: [for (var level = 1; level <= 10; level++) '${level * 10}%'],
   ),
+  SkillComparisonRow(
+    key: 'radius',
+    label: 'ability_range_radius',
+    values: [for (var level = 1; level <= 10; level++) '1.7'],
+    kind: SkillRowKind.internal,
+  ),
 ];
 
 Future<void> _pump(WidgetTester tester, double width) {
@@ -52,6 +58,7 @@ Future<void> _pump(WidgetTester tester, double width) {
               rows: _rows,
               selectedLevel: 1,
               itemLabel: '항목',
+              internalLabel: '내부 수치',
             ),
           ),
         ),
@@ -92,5 +99,27 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(scrollable.position.pixels, greaterThan(100));
+  });
+
+  testWidgets('the internal values heading hides the row scrolled under it',
+      (tester) async {
+    await _pump(tester, 400);
+    await tester.pumpAndSettle();
+    final scrollable = tester.state<ScrollableState>(
+      find.descendant(
+        of: find.byType(OperatorSkillTable),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    scrollable.position.jumpTo(40);
+    await tester.pumpAndSettle();
+
+    // The scrolled row and its pinned copy.
+    final headings = find.byKey(const ValueKey('skill-table-internal'));
+    expect(headings, findsNWidgets(2));
+    for (final heading in tester.widgetList<Container>(headings)) {
+      final fill = (heading.decoration! as BoxDecoration).color;
+      expect(fill?.a, 1.0);
+    }
   });
 }
