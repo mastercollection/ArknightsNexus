@@ -353,7 +353,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           decoration: BoxDecoration(
             color: RdColors.white3,
-            borderRadius: BorderRadius.circular(RdRadii.pill),
+            borderRadius: BorderRadius.circular(RdRadii.chip),
           ),
           child: Row(
             children: [
@@ -363,7 +363,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 alignment: Alignment.center,
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Color(0x1F6DA9FF),
+                  color: RdColors.accentSoft,
                 ),
                 child: ExcludeSemantics(
                   child: Opacity(
@@ -408,7 +408,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 height: 8,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: ready ? RdColors.success : RdColors.gold,
+                  color: ready ? RdColors.success : RdColors.warning,
                 ),
               ),
               const SizedBox(width: 8),
@@ -517,7 +517,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             padding: const EdgeInsets.only(right: 12, bottom: 6),
             child: Text(
               label,
-              style: const TextStyle(fontSize: 13, color: Color(0xBDD6E5FF)),
+              style: const TextStyle(fontSize: 13, color: RdColors.text3),
             ),
           ),
           Padding(
@@ -661,7 +661,7 @@ class _LoadingLine extends StatelessWidget {
             child: CircularProgressIndicator(
               strokeWidth: 2,
               color: RdColors.accent,
-              backgroundColor: Color(0x4085B6FF),
+              backgroundColor: RdColors.accentSoft,
             ),
           ),
           const SizedBox(width: 10),

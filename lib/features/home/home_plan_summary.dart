@@ -352,7 +352,7 @@ class _PlannedOperatorRow extends StatelessWidget {
                   charId: summary.id,
                   name: summary.name,
                   size: compact ? 44 : 56,
-                  radius: 18,
+                  radius: RdRadii.control,
                 ),
                 SizedBox(width: compact ? 12 : 14),
                 Expanded(
@@ -385,7 +385,7 @@ class _PlannedOperatorRow extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   '★${summary.rarity}',
-                  style: const TextStyle(fontSize: 13, color: RdColors.gold),
+                  style: const TextStyle(fontSize: 13, color: RdColors.rarity),
                 ),
               ],
             ),

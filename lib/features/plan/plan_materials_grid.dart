@@ -207,9 +207,8 @@ class PlanRecipeSwitch extends StatelessWidget {
       width: 38,
       height: 20,
       decoration: BoxDecoration(
-        color: value ? const Color(0xE62890FF) : RdColors.white8,
+        color: value ? RdColors.accent : RdColors.border,
         borderRadius: BorderRadius.circular(RdRadii.pill),
-        border: Border.all(color: const Color(0x4D7A90B8)),
       ),
       child: Stack(
         children: [
@@ -220,16 +219,9 @@ class PlanRecipeSwitch extends StatelessWidget {
             child: Container(
               width: 14,
               height: 14,
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: value ? RdColors.onAccent : RdColors.text2,
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0x47000000),
-                    offset: Offset(0, 1),
-                    blurRadius: 4,
-                  ),
-                ],
               ),
             ),
           ),

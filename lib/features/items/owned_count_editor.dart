@@ -212,9 +212,7 @@ class OwnedCountEditorState extends ConsumerState<OwnedCountEditor> {
                     height: stepSize,
                     fontSize: 20,
                     radius: RdRadii.inner,
-                    color: compact
-                        ? RdColors.sheetOption
-                        : const Color(0xFF0B1222),
+                    color: compact ? RdColors.sheetOption : RdColors.surface3,
                     borderColor: RdColors.tonalBorder,
                     semanticLabel: i18n.t('rd.items.countInput'),
                     inputFormatters: const [_OwnedCountFormatter()],
@@ -349,14 +347,15 @@ class _HoldHints extends StatelessWidget {
   final List<String> steps;
   final String inputHint;
 
+  /// Accent at 14 / 24 / 34%: the larger the step, the stronger the tint.
   static const _stepFills = [
-    RdColors.chipOnFill, // rgba(133,182,255,0.16)
-    Color(0x3D85B6FF), // 0.24
-    Color(0x5785B6FF), // 0.34
+    RdColors.accentSoft,
+    Color(0x3D7C8CFF),
+    Color(0x577C8CFF),
   ];
   static const _stepText = [
-    RdColors.blueText,
-    Color(0xFFE7EFFF),
+    RdColors.accentText,
+    RdColors.text,
     RdColors.text,
   ];
 

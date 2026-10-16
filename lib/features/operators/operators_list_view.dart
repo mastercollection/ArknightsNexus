@@ -249,17 +249,10 @@ class _OperatorTileState extends State<OperatorTile> {
     final operator = widget.operator;
     final stars = '★' * operator.rarity;
     final selected = widget.selected;
-    final borderColor = selected
-        ? const Color(0xB385B6FF)
-        : _hovered
-            ? const Color(0x5985B6FF)
-            : RdColors.line2;
-    final background = widget.compact
-        ? RdColors.card
-        : selected
-            ? const Color(0xFF12203A)
-            : opPanelFill;
-    final radius = widget.compact ? 16.0 : 22.0;
+    final borderColor =
+        selected || _hovered ? RdColors.accentLine : RdColors.hairline;
+    final background = selected ? RdColors.accentSoft : RdColors.surface2;
+    const radius = RdRadii.card;
     final unreleased = widget.unreleasedLabel;
     // Over the bottom edge of the portrait, so the tile keeps its height.
     final badge = unreleased == null
@@ -311,7 +304,7 @@ class _OperatorTileState extends State<OperatorTile> {
                     charId: operator.id,
                     name: operator.name,
                     size: 76,
-                    radius: 18,
+                    radius: RdRadii.control,
                   ),
                   if (badge != null) badge,
                 ],
@@ -329,7 +322,7 @@ class _OperatorTileState extends State<OperatorTile> {
                   fontSize: 10,
                   height: 1.4,
                   letterSpacing: 0.4,
-                  color: RdColors.gold,
+                  color: RdColors.rarity,
                 ),
               ),
             ),
@@ -353,7 +346,7 @@ class _OperatorTileState extends State<OperatorTile> {
                     charId: operator.id,
                     name: operator.name,
                     size: 80,
-                    radius: 22,
+                    radius: RdRadii.control,
                   ),
                   Positioned(
                     top: 6,
@@ -367,7 +360,7 @@ class _OperatorTileState extends State<OperatorTile> {
                         fontSize: 10,
                         height: 1,
                         letterSpacing: 0.2,
-                        color: RdColors.gold,
+                        color: RdColors.rarity,
                         shadows: [Shadow(blurRadius: 4)],
                       ),
                     ),
@@ -433,8 +426,8 @@ class _LoadingTile extends StatelessWidget {
     return Container(
       padding: EdgeInsets.fromLTRB(6, compact ? 10 : 14, 6, 14),
       decoration: BoxDecoration(
-        color: compact ? RdColors.card : opPanelFill,
-        borderRadius: BorderRadius.circular(compact ? 16 : 22),
+        color: RdColors.surface2,
+        borderRadius: BorderRadius.circular(RdRadii.card),
         border: Border.all(color: RdColors.line2),
       ),
       child: Column(
@@ -445,13 +438,13 @@ class _LoadingTile extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: RdColors.portrait,
-              borderRadius: BorderRadius.circular(compact ? 18 : 22),
+              borderRadius: BorderRadius.circular(RdRadii.control),
             ),
             child: const RdPulse(
               child: RdSkeleton(
                 width: 44,
                 height: 44,
-                radius: 16,
+                radius: RdRadii.control,
                 color: RdColors.soft,
               ),
             ),

@@ -882,7 +882,7 @@ class _RouteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RdCard(
-      radius: compact ? 16 : RdRadii.tile,
+      radius: RdRadii.tile,
       padding: compact
           ? const EdgeInsets.symmetric(horizontal: 12, vertical: 10)
           : const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -892,7 +892,7 @@ class _RouteCard extends StatelessWidget {
             charId: entry.detail.id,
             name: entry.detail.name,
             size: compact ? 44 : 48,
-            radius: 18,
+            radius: RdRadii.control,
           ),
           SizedBox(width: compact ? 10 : 12),
           Expanded(
@@ -962,7 +962,7 @@ class _OperatorsSkeleton extends StatelessWidget {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: RdColors.inner,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(RdRadii.card),
                       ),
                       child: const Column(
                         children: [
@@ -997,7 +997,7 @@ class _SummarySkeleton extends StatelessWidget {
     final compact = context.rdLayout == RdLayout.compact;
     const block = RdSkeleton(
       height: 96,
-      radius: 16,
+      radius: RdRadii.card,
       color: RdColors.white5,
     );
     return Semantics(

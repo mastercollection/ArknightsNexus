@@ -547,7 +547,7 @@ class _RightsNotice extends ConsumerWidget {
           : const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: BoxDecoration(
         color: RdColors.rail,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(RdRadii.card),
         border: compact ? Border.all(color: RdColors.line) : null,
       ),
       child: Column(

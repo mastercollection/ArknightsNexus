@@ -103,7 +103,7 @@ class _RichTextContentState extends State<RichTextContent> {
             spans.add(
               TextSpan(
                 style: const TextStyle(
-                  color: Color(0xFF6ECFFF),
+                  color: RdColors.accentHover,
                   fontWeight: FontWeight.w600,
                 ),
                 children: spansFor(children),
@@ -114,8 +114,7 @@ class _RichTextContentState extends State<RichTextContent> {
             final recognizer = _recognizerAt(index)
               ..onTap = () => widget.onTermTap?.call(key, text);
             final hovered = _hoveredTerm == index;
-            final color =
-                hovered ? const Color(0xFFA6DDFF) : const Color(0xFF7CCFFF);
+            final color = hovered ? RdColors.accentText : RdColors.accentHover;
             spans.add(
               TextSpan(
                 text: text,
@@ -160,7 +159,7 @@ class _InlineBadge extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(icon != null ? 3 : 8, 1, 8, 1),
       decoration: BoxDecoration(
         color: RdColors.soft,
-        borderRadius: BorderRadius.circular(RdRadii.pill),
+        borderRadius: BorderRadius.circular(RdRadii.chip),
         border: Border.all(color: RdColors.white8),
       ),
       child: Row(
@@ -177,7 +176,7 @@ class _InlineBadge extends StatelessWidget {
               height: 1.4,
               fontWeight: FontWeight.w500,
               decoration: TextDecoration.none,
-              color: const Color(0xFFEEF2FB),
+              color: RdColors.text,
             ),
           ),
         ],
@@ -254,9 +253,9 @@ class RangeGrid extends StatelessWidget {
             key: ValueKey('range-${matrix.id}'),
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xD6070A12),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: RdColors.white8),
+              color: RdColors.surface3,
+              borderRadius: BorderRadius.circular(RdRadii.inner),
+              border: Border.all(color: RdColors.hairline),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -287,35 +286,18 @@ class _RangeCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (Color border, Gradient? gradient, Color? fill) = cell.isOrigin
-        ? (
-            const Color(0x6BFFD078),
-            const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0x57FFD166), Color(0x33FFA554)],
-            ),
-            null,
-          )
+    final (Color border, Color fill) = cell.isOrigin
+        ? (RdColors.warning, RdColors.warningFill)
         : cell.isActive
-            ? (
-                const Color(0x5C70C6FF),
-                const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0x3D54A8FF), Color(0x296FE9FF)],
-                ),
-                null,
-              )
-            : (RdColors.soft, null, RdColors.white3);
+            ? (RdColors.accentLine, RdColors.accentSoft)
+            : (RdColors.hairline, RdColors.white3);
     return Container(
       width: size,
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: fill,
-        gradient: gradient,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(RdRadii.chip),
         border: Border.all(color: border),
       ),
       child: cell.isOrigin
@@ -324,7 +306,7 @@ class _RangeCell extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFFFFF5D6),
+                color: RdColors.warningText,
               ),
             )
           : null,
@@ -369,7 +351,7 @@ class PotentialVariantList extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
                   color: RdColors.white3,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(RdRadii.card),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -382,7 +364,7 @@ class PotentialVariantList extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 13,
                           height: 1.6,
-                          color: Color(0xFFDDE4F4),
+                          color: RdColors.text,
                         ),
                         onTermTap: onTermTap,
                       ),

@@ -348,14 +348,14 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                   text: item.itemId,
                   style: RdText.mono(
                     fontSize: 12,
-                    color: const Color(0xFF8A96AD),
+                    color: RdColors.text3,
                   ),
                 ),
                 TextSpan(text: ' · ${i18n.t('rd.items.devOnly')}'),
               ],
             ),
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF8A96AD)),
+            style: const TextStyle(fontSize: 12, color: RdColors.text3),
           ),
           SizedBox(height: compact ? 14 : 18),
         ],
@@ -608,7 +608,7 @@ class _DetailLoading extends StatelessWidget {
               ),
             ),
             SizedBox(height: 12),
-            RdSkeleton(height: 72, radius: 18, color: RdColors.soft2),
+            RdSkeleton(height: 72, radius: RdRadii.card, color: RdColors.soft2),
           ],
         ),
       ),
@@ -640,7 +640,7 @@ class _FormulaCostRow extends StatelessWidget {
       link: onOpen != null,
       label: onOpen == null ? null : openLabel,
       child: Material(
-        color: const Color(0x09FFFFFF),
+        color: RdColors.white3,
         shape: RoundedRectangleBorder(borderRadius: radius),
         child: InkWell(
           borderRadius: radius,
@@ -725,7 +725,7 @@ class _PenguinDropCard extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(compact ? 14 : 16),
       decoration: BoxDecoration(
-        color: const Color(0x09FFFFFF),
+        color: RdColors.white3,
         borderRadius: BorderRadius.circular(RdRadii.inner),
       ),
       child: Column(
@@ -748,8 +748,8 @@ class _PenguinDropCard extends StatelessWidget {
               _DropChip(label: times, mono: true),
               _DropChip(
                 label: source,
-                color: RdColors.goldFill,
-                textColor: RdColors.warnText,
+                color: RdColors.warningFill,
+                textColor: RdColors.warningText,
               ),
             ],
           ),
@@ -778,7 +778,7 @@ class _DropChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(RdRadii.pill),
+        borderRadius: BorderRadius.circular(RdRadii.chip),
       ),
       child: Text(
         label,

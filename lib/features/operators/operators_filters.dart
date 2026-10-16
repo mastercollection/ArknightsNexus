@@ -16,7 +16,6 @@ class _OptionButton extends StatelessWidget {
     required this.onTap,
     this.height = 34,
     this.background = Colors.transparent,
-    this.tag = false,
     super.key,
   });
 
@@ -26,41 +25,32 @@ class _OptionButton extends StatelessWidget {
   final double height;
   final Color background;
 
-  /// BA tag colours (`TAG_ON`) for the selected state.
-  final bool tag;
-
   double get _horizontalPadding => height >= 44 ? 14 : 12;
 
   /// The label style on top of the [Material]'s default text style; also
   /// used by [_LazyOptionRuns] to measure the button.
   TextStyle _labelStyle([Color? color]) => TextStyle(
         fontSize: height >= 44 ? 14 : 13,
-        fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+        fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
         color: color,
       );
 
   @override
   Widget build(BuildContext context) {
     final (Color border, Color fill, Color text) = selected
-        ? tag
-            ? (
-                const Color(0xB35EB6FF),
-                const Color(0x801C3560),
-                const Color(0xFFE0EFFF),
-              )
-            : (RdColors.chipOnBorder, RdColors.chipOnFill, RdColors.text)
-        : (RdColors.line3, background, RdColors.secondary);
+        ? (RdColors.accentLine, RdColors.accentSoft, RdColors.accentText)
+        : (RdColors.border, background, RdColors.text2);
     return Semantics(
       button: true,
       selected: selected,
       child: Material(
         color: fill,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(height >= 44 ? 12 : 10),
+          borderRadius: BorderRadius.circular(RdRadii.chip),
           side: BorderSide(color: border),
         ),
         child: InkWell(
-          borderRadius: BorderRadius.circular(height >= 44 ? 12 : 10),
+          borderRadius: BorderRadius.circular(RdRadii.chip),
           onTap: onTap,
           child: Container(
             height: height,
@@ -349,7 +339,6 @@ class _OperatorsFilterSidebarState
               ),
               label: option.label,
               selected: option.selected,
-              tag: dimension == OperatorFilterDimension.baTags,
               onTap: () => list.applyFilterOption(option),
             ),
       ];
@@ -483,14 +472,14 @@ class _OperatorsFilterSidebarState
             Align(
               alignment: Alignment.centerLeft,
               child: Material(
-                color: const Color(0x1A5984FF),
+                color: RdColors.accentSoft,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  side: const BorderSide(color: Color(0x52679EFF)),
+                  borderRadius: BorderRadius.circular(RdRadii.control),
+                  side: const BorderSide(color: RdColors.accentLine),
                 ),
                 child: InkWell(
                   key: const Key('operators-filter-reset'),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(RdRadii.control),
                   onTap: list.clearFilters,
                   child: Container(
                     height: 42,
@@ -581,7 +570,7 @@ class OperatorsFilterChipRow extends ConsumerWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: RdColors.white5,
-                borderRadius: BorderRadius.circular(RdRadii.pill),
+                borderRadius: BorderRadius.circular(RdRadii.chip),
               ),
               child: Text(
                 i18n.t('operatorsList.states.noFilters'),
@@ -687,12 +676,12 @@ class _AllFiltersSheet extends ConsumerWidget {
                   return Material(
                     color: RdColors.sheetOption,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(RdRadii.control),
                       side: const BorderSide(color: RdColors.white10),
                     ),
                     child: InkWell(
                       key: Key('operators-filter-row-${dimension.keyName}'),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(RdRadii.control),
                       onTap: () {
                         Navigator.of(context).pop();
                         showOperatorFilterSheet(context, dimension);

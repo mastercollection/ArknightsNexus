@@ -737,7 +737,7 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
                     child: CircularProgressIndicator(
                       strokeWidth: 2.4,
                       color: RdColors.accent,
-                      backgroundColor: Color(0x4085B6FF),
+                      backgroundColor: RdColors.accentSoft,
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -792,7 +792,7 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
                 onPressed: widget.onBack,
                 size: 44,
                 iconSize: 22,
-                iconColor: const Color(0xFFEBF0FF),
+                iconColor: RdColors.text,
               ),
             ),
           ),
@@ -876,7 +876,7 @@ class _DetailHeader extends StatelessWidget {
           onPressed: onBack,
           size: size,
           iconSize: 22,
-          iconColor: const Color(0xFFEBF0FF),
+          iconColor: RdColors.text,
         ),
         SizedBox(width: compact ? 8 : 10),
         Flexible(
@@ -895,12 +895,12 @@ class _DetailHeader extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: const Color(0x246890FF),
-            borderRadius: BorderRadius.circular(RdRadii.pill),
+            color: RdColors.accentSoft,
+            borderRadius: BorderRadius.circular(RdRadii.chip),
           ),
           child: Text(
             sectionLabel,
-            style: const TextStyle(fontSize: 12, color: Color(0xFFD8E5FF)),
+            style: const TextStyle(fontSize: 12, color: RdColors.text),
           ),
         ),
         if (unreleased != null) ...[
@@ -929,13 +929,9 @@ class _DetailHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: RdColors.white8),
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xF2080C18), Color(0xC7080C18)],
-        ),
+        borderRadius: BorderRadius.circular(RdRadii.card),
+        color: RdColors.surface1,
+        border: Border.all(color: RdColors.hairline),
       ),
       child: row,
     );
@@ -964,7 +960,7 @@ class _FavoriteButton extends StatelessWidget {
       size: size,
       toggled: favorite,
       iconSize: 20,
-      iconColor: RdColors.gold,
+      iconColor: RdColors.rarity,
     );
   }
 }
@@ -987,7 +983,7 @@ class _HeroCard extends StatelessWidget {
       padding: EdgeInsets.all(compact ? 16 : 20),
       decoration: BoxDecoration(
         color: opPanelFill,
-        borderRadius: BorderRadius.circular(compact ? 24 : 28),
+        borderRadius: BorderRadius.circular(RdRadii.card),
         border: Border.all(color: RdColors.line2),
       ),
       child: Column(
@@ -1071,14 +1067,14 @@ class _HeroCard extends StatelessWidget {
                     charId: operator.id,
                     name: operator.name,
                     size: portrait,
-                    radius: compact ? 24 : 28,
+                    radius: RdRadii.control,
                   ),
                   Text(
                     '★' * operator.rarity,
                     style: TextStyle(
                       fontSize: compact ? 12 : 13,
                       letterSpacing: compact ? 1.2 : 1.56,
-                      color: RdColors.gold,
+                      color: RdColors.rarity,
                     ),
                   ),
                 ],
@@ -1173,9 +1169,9 @@ class _PlanActions extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: const Color(0x1F6EE7A8),
+                color: RdColors.successFill,
                 borderRadius: BorderRadius.circular(RdRadii.control),
-                border: Border.all(color: const Color(0x666EE7A8)),
+                border: Border.all(color: RdColors.success),
               ),
               child: Text(
                 i18n.t('rd.operators.detail.inPlan'),
@@ -1184,7 +1180,7 @@ class _PlanActions extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFFC8F5DC),
+                  color: RdColors.success,
                 ),
               ),
             ),
@@ -1251,7 +1247,7 @@ class _PlanActions extends StatelessWidget {
                     child: Icon(
                       favorite ? Icons.star : Icons.star_border,
                       size: 20,
-                      color: RdColors.gold,
+                      color: RdColors.rarity,
                     ),
                   ),
                 ),
@@ -1323,8 +1319,8 @@ class _TermContentState extends State<_TermContent> {
   Widget build(BuildContext context) {
     final compact = widget.compact;
     final radius = compact
-        ? const BorderRadius.vertical(top: Radius.circular(22))
-        : BorderRadius.circular(22);
+        ? const BorderRadius.vertical(top: Radius.circular(RdRadii.sheet))
+        : BorderRadius.circular(RdRadii.sheet);
     return Material(
       type: MaterialType.transparency,
       child: Semantics(
@@ -1337,116 +1333,99 @@ class _TermContentState extends State<_TermContent> {
           decoration: BoxDecoration(
             borderRadius: radius,
             border: compact
-                ? const Border(top: BorderSide(color: Color(0x2E82AAFF)))
-                : Border.all(color: const Color(0x2E82AAFF)),
-            gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF0B1120), Color(0xFF09101D)],
-            ),
-            boxShadow: compact
-                ? null
-                : const [BoxShadow(color: Color(0x8C000000), blurRadius: 60)],
+                ? const Border(top: BorderSide(color: RdColors.hairline))
+                : Border.all(color: RdColors.hairline),
+            color: RdColors.surface2,
           ),
           child: ClipRRect(
             borderRadius: radius,
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.topCenter,
-                  radius: 0.9,
-                  colors: [Color(0x246DCCFF), Color(0x006DCCFF)],
-                  stops: [0, 0.34],
+            child: SafeArea(
+              top: false,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  compact ? 16 : 20,
+                  compact ? 12 : 18,
+                  compact ? 16 : 20,
+                  compact ? 28 : 22,
                 ),
-              ),
-              child: SafeArea(
-                top: false,
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(
-                    compact ? 16 : 20,
-                    compact ? 12 : 18,
-                    compact ? 16 : 20,
-                    compact ? 28 : 22,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (compact) ...[
-                        Center(
-                          child: Container(
-                            width: 40,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: RdColors.white20,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (compact) ...[
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: RdColors.white20,
+                            borderRadius: BorderRadius.circular(4),
                           ),
                         ),
-                        const SizedBox(height: 12),
-                      ],
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              spacing: 4,
-                              children: [
-                                Text(
-                                  widget.i18n
-                                      .t('operatorDetail.labels.termSheet'),
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    letterSpacing: 1.4,
-                                    color: RdColors.muted,
-                                  ),
-                                ),
-                                Text(
-                                  _label,
-                                  style: const TextStyle(
-                                    fontSize: 19,
-                                    fontWeight: FontWeight.w700,
-                                    color: RdColors.text,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          RdIconButton(
-                            icon: Icons.close,
-                            tooltip: widget.i18n.t('common.close'),
-                            size: compact ? 44 : 40,
-                            filled: false,
-                            onPressed: () => Navigator.of(context).maybePop(),
-                          ),
-                        ],
                       ),
-                      SizedBox(height: compact ? 12 : 10),
-                      RichTextContent(
-                        segments: parseRichDescription(_description),
-                        style: TextStyle(
-                          fontSize: compact ? 15 : 14,
-                          height: 1.75,
-                          color: RdColors.body,
-                        ),
-                        onTermTap: (key, label) {
-                          final next = widget.terms[key];
-                          if (next == null || next.isEmpty) {
-                            return;
-                          }
-                          setState(() {
-                            _label = label;
-                            _description = next;
-                          });
-                          SemanticsService.announce(
-                            label,
-                            Directionality.of(context),
-                          );
-                        },
-                      ),
+                      const SizedBox(height: 12),
                     ],
-                  ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            spacing: 4,
+                            children: [
+                              Text(
+                                widget.i18n
+                                    .t('operatorDetail.labels.termSheet'),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  letterSpacing: 1.4,
+                                  color: RdColors.muted,
+                                ),
+                              ),
+                              Text(
+                                _label,
+                                style: const TextStyle(
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.w700,
+                                  color: RdColors.text,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        RdIconButton(
+                          icon: Icons.close,
+                          tooltip: widget.i18n.t('common.close'),
+                          size: compact ? 44 : 40,
+                          filled: false,
+                          onPressed: () => Navigator.of(context).maybePop(),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: compact ? 12 : 10),
+                    RichTextContent(
+                      segments: parseRichDescription(_description),
+                      style: TextStyle(
+                        fontSize: compact ? 15 : 14,
+                        height: 1.75,
+                        color: RdColors.body,
+                      ),
+                      onTermTap: (key, label) {
+                        final next = widget.terms[key];
+                        if (next == null || next.isEmpty) {
+                          return;
+                        }
+                        setState(() {
+                          _label = label;
+                          _description = next;
+                        });
+                        SemanticsService.announce(
+                          label,
+                          Directionality.of(context),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),

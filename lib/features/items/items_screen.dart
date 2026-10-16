@@ -555,7 +555,7 @@ class _ItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(compact ? 16 : RdRadii.tile);
+    final radius = BorderRadius.circular(RdRadii.tile);
     return Container(
       constraints: BoxConstraints(minHeight: compact ? 0 : 168),
       decoration: BoxDecoration(
@@ -636,7 +636,7 @@ class _ItemCard extends StatelessWidget {
                       textAlign: compact ? TextAlign.center : TextAlign.start,
                       style: RdText.mono(
                         fontSize: compact ? 10 : 11,
-                        color: const Color(0xFF8A96AD),
+                        color: RdColors.text3,
                       ),
                     ),
                   ],
@@ -670,14 +670,14 @@ class _OwnedCountButton extends StatelessWidget {
       button: true,
       label: semanticsLabel,
       child: Material(
-        color: const Color(0x294D75BC),
+        color: RdColors.accentSoft,
         shape: RoundedRectangleBorder(
           borderRadius: radius,
-          side: const BorderSide(color: Color(0x3D85B6FF)),
+          side: const BorderSide(color: RdColors.accentLine),
         ),
         child: InkWell(
           borderRadius: radius,
-          hoverColor: const Color(0x144D75BC),
+          hoverColor: RdColors.white5,
           onTap: onPressed,
           child: Container(
             constraints: BoxConstraints(minHeight: compact ? 44 : 40),
@@ -691,7 +691,7 @@ class _OwnedCountButton extends StatelessWidget {
               style: RdText.mono(
                 fontSize: compact ? 13 : 14,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFFE7EFFF),
+                color: RdColors.text,
               ),
             ),
           ),
@@ -876,9 +876,8 @@ class _ItemCountImportFormState extends ConsumerState<_ItemCountImportForm> {
                       color: RdColors.placeholder,
                     ),
                     filled: true,
-                    fillColor: compact
-                        ? RdColors.sheetOption
-                        : const Color(0xFF0B1222),
+                    fillColor:
+                        compact ? RdColors.sheetOption : RdColors.surface3,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 12,
@@ -907,7 +906,7 @@ class _ItemCountImportFormState extends ConsumerState<_ItemCountImportForm> {
                   child: IgnorePointer(
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        color: const Color(0x8C050914),
+                        color: RdColors.disabledVeil,
                         borderRadius: radius,
                       ),
                     ),

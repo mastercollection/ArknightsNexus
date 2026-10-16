@@ -236,7 +236,7 @@ class _PickerRow extends StatelessWidget {
                     charId: operator.id,
                     name: operator.name,
                     size: 44,
-                    radius: 18,
+                    radius: RdRadii.control,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -275,7 +275,7 @@ class _PickerRow extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: RdColors.chipOnFill,
-                      borderRadius: BorderRadius.circular(RdRadii.pill),
+                      borderRadius: BorderRadius.circular(RdRadii.chip),
                       border: Border.all(color: RdColors.linkBorder),
                     ),
                     child: Text(

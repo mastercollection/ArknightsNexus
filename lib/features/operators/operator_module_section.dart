@@ -126,16 +126,11 @@ BoxDecoration detailToggleDecoration({
   return BoxDecoration(
     borderRadius: BorderRadius.circular(radius),
     border: Border.all(
-      color: selected ? const Color(0x7381D6FF) : RdColors.white8,
+      color: selected ? RdColors.accentLine : RdColors.border,
     ),
-    color: selected ? null : (hovered ? RdColors.line2 : RdColors.soft2),
-    gradient: selected
-        ? const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0x4059B5FF), Color(0x298AF8FF)],
-          )
-        : null,
+    color: selected
+        ? RdColors.accentSoft
+        : (hovered ? RdColors.white5 : RdColors.surface3),
   );
 }
 
@@ -219,7 +214,7 @@ class _ModulePill extends StatelessWidget {
     final label = module.typeIcon.toUpperCase();
     return DetailToggle(
       selected: selected,
-      radius: RdRadii.pill,
+      radius: RdRadii.control,
       height: 48,
       padding: const EdgeInsets.fromLTRB(7, 0, 16, 0),
       onTap: onTap,
@@ -233,8 +228,8 @@ class _ModulePill extends StatelessWidget {
             padding: const EdgeInsets.all(4),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: const Color(0xBF060A12),
-              borderRadius: BorderRadius.circular(10),
+              color: RdColors.surface1,
+              borderRadius: BorderRadius.circular(RdRadii.chip),
             ),
             child: icon != null
                 ? Image(image: icon!, fit: BoxFit.contain)
@@ -243,7 +238,7 @@ class _ModulePill extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
-                      color: RdColors.cyan,
+                      color: RdColors.text2,
                     ),
                   ),
           ),
@@ -253,7 +248,7 @@ class _ModulePill extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 13, color: Color(0xFFDBE4F5)),
+              style: const TextStyle(fontSize: 13, color: RdColors.text),
             ),
           ),
         ],
@@ -296,7 +291,7 @@ class _ModuleCard extends StatelessWidget {
     final effectParts = buildModuleEffectParts(phase, i18n);
     final unlockElite = elitePhaseFromCode(module.unlockEvolvePhase);
     final favor = _favorPercent;
-    const cautionLabel = TextStyle(color: Color(0xCCFFD6C0));
+    const cautionLabel = TextStyle(color: RdColors.warningText);
     final rangeCell = compact ? 26.0 : 28.0;
     final typeLabel = module.typeIcon.toUpperCase();
 
@@ -322,9 +317,9 @@ class _ModuleCard extends StatelessWidget {
                 padding: const EdgeInsets.all(8),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: const Color(0xD1070A12),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: RdColors.white8),
+                  color: RdColors.surface3,
+                  borderRadius: BorderRadius.circular(RdRadii.inner),
+                  border: Border.all(color: RdColors.hairline),
                 ),
                 child: equipIcon != null
                     ? Image(image: equipIcon!, fit: BoxFit.contain)
@@ -333,7 +328,7 @@ class _ModuleCard extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
-                          color: RdColors.cyan,
+                          color: RdColors.text2,
                         ),
                       ),
               ),
@@ -434,8 +429,8 @@ class _ModuleCard extends StatelessWidget {
                             vertical: 12,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0x09FFFFFF),
-                            borderRadius: BorderRadius.circular(18),
+                            color: RdColors.surface3,
+                            borderRadius: BorderRadius.circular(RdRadii.inner),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -452,7 +447,7 @@ class _ModuleCard extends StatelessWidget {
                                 bonus.value,
                                 style: RdText.mono(
                                   fontSize: 17,
-                                  color: const Color(0xFFEFF6FF),
+                                  color: RdColors.text,
                                 ),
                               ),
                             ],
@@ -479,8 +474,8 @@ class _ModuleCard extends StatelessWidget {
                       ),
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: const Color(0x09FFFFFF),
-                        borderRadius: BorderRadius.circular(18),
+                        color: RdColors.surface3,
+                        borderRadius: BorderRadius.circular(RdRadii.inner),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -545,8 +540,8 @@ class ModuleCandidateCard extends StatelessWidget {
     final variants = candidate.potentialVariants;
     return RdInset.section(
       key: ValueKey(candidate.key),
-      color: RdColors.white3,
-      radius: 16,
+      color: RdColors.surface3,
+      radius: RdRadii.inner,
       padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

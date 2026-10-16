@@ -94,7 +94,7 @@ class OperatorStatsPanel extends StatelessWidget {
                 children: [
                   TextSpan(
                     text: '/$maxLevel',
-                    style: const TextStyle(color: Color(0xFF8592AB)),
+                    style: const TextStyle(color: RdColors.text3),
                   ),
                 ],
               ),
@@ -140,7 +140,7 @@ class OperatorStatsPanel extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
                   color: opPanelFill,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(RdRadii.card),
                   border: Border.all(color: RdColors.white8),
                 ),
                 child: Column(
@@ -388,7 +388,7 @@ class OperatorPotentialsPanel extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: RdColors.white3,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(RdRadii.card),
             ),
             child: Row(
               spacing: 12,
@@ -598,7 +598,7 @@ class OperatorSkillsPanel extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               height: 1.75,
-              color: Color(0xFFB9C4D8),
+              color: RdColors.text2,
             ),
             onTermTap: onTermTap,
           ),
@@ -656,8 +656,7 @@ class OperatorSkillsPanel extends StatelessWidget {
               color: RdColors.heading,
             ),
             if (range != null)
-              RdInset.section(
-                radius: 18,
+              RdInset(
                 padding: const EdgeInsets.all(14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -715,7 +714,7 @@ class _SkillButton extends StatelessWidget {
       child: DetailToggle(
         key: ValueKey('skill-${skill.id}'),
         selected: selected,
-        radius: 20,
+        radius: RdRadii.control,
         width: 72,
         height: 72,
         padding: const EdgeInsets.all(6),
@@ -738,7 +737,7 @@ class _SkillButton extends StatelessWidget {
                   fontSize: 11,
                   height: 1.25,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFFDBE4F5),
+                  color: RdColors.text,
                 ),
               ),
       ),

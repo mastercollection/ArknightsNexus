@@ -5,13 +5,14 @@ import '../../ui/redesign/rd_widgets.dart';
 
 /// Shared visual pieces of the redesigned operators screens.
 
-/// `rgba(10,15,30,0.78)` panel fill of the operators canvas.
-const opPanelFill = Color(0xC70A0F1E);
+/// Fill of the operator list tiles and detail panels (a surface-2 card).
+const opPanelFill = RdColors.surface2;
 
 /// Colour kinds of the canvas chips (`CHIP_KIND`).
 enum OpChipKind { team, nation, group, prof, branch, plain, ba, caution }
 
-/// Small pill chip of the detail canvas. [children] may mix text and icons.
+/// Small chip (radius 6) of the detail canvas. [children] may mix text and
+/// icons.
 class OpChip extends StatelessWidget {
   const OpChip({
     required this.children,
@@ -27,46 +28,29 @@ class OpChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Palette A keeps one neutral chip; only the profession (accent), the
+    // base-skill tags (accent outline) and cautions (warning) stand out.
     final (Color border, Color fill, Color text) = switch (kind) {
-      OpChipKind.team => (
-          const Color(0x4771A5FF),
-          RdColors.blueFill,
-          RdColors.blueText,
-        ),
-      OpChipKind.nation => (
-          const Color(0x47C4B5FD),
-          const Color(0x29C4B5FD),
-          const Color(0xFFE9DDFF),
-        ),
-      OpChipKind.group => (
-          const Color(0x47F472B6),
-          const Color(0x29F472B6),
-          const Color(0xFFFFD3E7),
-        ),
+      OpChipKind.team ||
+      OpChipKind.nation ||
+      OpChipKind.group ||
+      OpChipKind.branch ||
+      OpChipKind.plain =>
+        (RdColors.border, RdColors.surface3, RdColors.text2),
       OpChipKind.prof => (
-          const Color(0x47FFC54F),
-          const Color(0x29FFC54F),
-          const Color(0xFFFFE3A3),
-        ),
-      OpChipKind.branch => (
-          const Color(0x4734D399),
-          const Color(0x2934D399),
-          const Color(0xFFBBF7D0),
-        ),
-      OpChipKind.plain => (
-          RdColors.white10,
-          RdColors.line2,
-          RdColors.body,
+          RdColors.accentSoft,
+          RdColors.accentSoft,
+          RdColors.accentText,
         ),
       OpChipKind.ba => (
-          const Color(0x855EB6FF),
-          const Color(0x241C3560),
-          const Color(0xFFE0EFFF),
+          RdColors.accentLine,
+          RdColors.surface3,
+          RdColors.accentText,
         ),
       OpChipKind.caution => (
-          const Color(0x38FF9A66),
-          const Color(0x1FFF8A5C),
-          const Color(0xFFFFE4D6),
+          RdColors.warningFill,
+          RdColors.warningFill,
+          RdColors.warningText,
         ),
     };
     final spaced = <Widget>[];
@@ -77,14 +61,11 @@ class OpChip extends StatelessWidget {
       spaced.add(child);
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
         color: fill,
-        borderRadius: BorderRadius.circular(RdRadii.pill),
-        border: Border.all(
-          color: border,
-          width: kind == OpChipKind.ba ? 2 : 1,
-        ),
+        borderRadius: BorderRadius.circular(RdRadii.chip),
+        border: Border.all(color: border),
       ),
       child: DefaultTextStyle.merge(
         style: TextStyle(fontSize: 12, height: 1.2, color: text),
@@ -119,13 +100,14 @@ class UnreleasedBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final badge = Container(
       padding: EdgeInsets.symmetric(
-        horizontal: small ? 6 : 10,
-        vertical: small ? 2 : 5,
+        horizontal: small ? 5 : 8,
+        vertical: small ? 1 : 3,
       ),
+      // Violet: over a portrait the badge needs an opaque fill and outline.
       decoration: BoxDecoration(
-        color: small ? const Color(0xE6402A12) : const Color(0x1FFF8A5C),
-        borderRadius: BorderRadius.circular(RdRadii.pill),
-        border: Border.all(color: const Color(0x80FF9A66)),
+        color: small ? RdColors.unreleasedSolid : RdColors.unreleasedFill,
+        borderRadius: BorderRadius.circular(RdRadii.chip),
+        border: small ? Border.all(color: RdColors.unreleasedLine) : null,
       ),
       child: Text(
         label,
@@ -135,8 +117,8 @@ class UnreleasedBadge extends StatelessWidget {
         style: TextStyle(
           fontSize: small ? 10 : 12,
           height: small ? 1.3 : 1.2,
-          fontWeight: FontWeight.w700,
-          color: const Color(0xFFFFE4D6),
+          fontWeight: small ? FontWeight.w700 : FontWeight.w600,
+          color: RdColors.unreleased,
         ),
       ),
     );
