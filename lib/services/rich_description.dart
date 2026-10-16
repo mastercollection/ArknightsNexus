@@ -35,18 +35,19 @@ List<RichTextSegment> parseRichDescription(
 
     final tagName = rest.substring(1, tagCloseOffset);
     final contentStart = start + tagCloseOffset + 1;
-    final contentEnd = text.indexOf('</>', contentStart);
-    if (contentEnd == -1) {
-      _appendText(segments, rest);
-      return segments;
-    }
+    // A tag the data never closes (`+23%<@ba.talpu>(+3%)`) runs to the end.
+    final closingTag = _findClosingTag(text, contentStart);
+    final contentEnd = closingTag == -1 ? text.length : closingTag;
 
     final content = text.substring(contentStart, contentEnd);
     if (_isTermLinkTag(tagName)) {
       segments.add(
         RichTermRun(
           key: tagName.substring(1),
-          text: _resolveMarkupContent(content, blackboard),
+          // `<$ba.root><@ba.vup>속박</></>`: the term shows its text only.
+          text: content.contains('<')
+              ? _flatten(parseRichDescription(content, blackboard))
+              : _resolveMarkupContent(content, blackboard),
         ),
       );
     } else if (_isBlueAccentTag(tagName)) {
@@ -59,9 +60,55 @@ List<RichTextSegment> parseRichDescription(
       );
     }
 
-    cursor = contentEnd + 3;
+    if (closingTag == -1) {
+      return segments;
+    }
+    cursor = closingTag + 3;
   }
 }
+
+/// Index of the `</>` that closes the tag whose content starts at [from],
+/// skipping tags nested inside it (`<@ba.rem>... <@ba.vup>+{atk:0%}</>...</>`);
+/// -1 when it is never closed.
+int _findClosingTag(String text, int from) {
+  var depth = 1;
+  var cursor = from;
+  while (true) {
+    final close = text.indexOf('</>', cursor);
+    if (close == -1) {
+      return -1;
+    }
+    var open = text.indexOf('<', cursor);
+    while (open != -1 && open < close && !_opensTag(text, open)) {
+      open = text.indexOf('<', open + 1);
+    }
+    if (open != -1 && open < close) {
+      depth++;
+      cursor = open + 2;
+      continue;
+    }
+    depth--;
+    if (depth == 0) {
+      return close;
+    }
+    cursor = close + 3;
+  }
+}
+
+String _flatten(List<RichTextSegment> segments) => segments
+    .map(
+      (segment) => switch (segment) {
+        RichTextRun(:final text) => text,
+        RichValueRun(:final text) => text,
+        RichTermRun(:final text) => text,
+        RichHighlightRun(:final children) => _flatten(children),
+      },
+    )
+    .join();
+
+bool _opensTag(String text, int index) =>
+    (text.startsWith('<@', index) || text.startsWith(r'<$', index)) &&
+    text.indexOf('>', index) != -1;
 
 bool _isBlueAccentTag(String tagName) => tagName.contains('ba.');
 

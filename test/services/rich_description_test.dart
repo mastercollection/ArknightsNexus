@@ -73,5 +73,37 @@ void main() {
       );
       expect((segments[0] as RichValueRun).text, '1.5');
     });
+
+    test('closes nested tags at their own </>', () {
+      // A KR talent (하루카) with a value tag inside a remark tag.
+      final segments = parseRichDescription(
+        '<@ba.rem>2회차부터 공격력 <@ba.vup>+{atk:0%}</>, 무한 지속</>',
+        const [OperatorBlackboardEntry(key: 'atk', value: 0.1)],
+      );
+      expect(segments, hasLength(1));
+      final outer = segments.single as RichHighlightRun;
+      expect((outer.children[0] as RichTextRun).text, '2회차부터 공격력 ');
+      final inner = outer.children[1] as RichHighlightRun;
+      expect((inner.children[0] as RichTextRun).text, '+');
+      expect((inner.children[1] as RichValueRun).text, '10%');
+      expect((outer.children[2] as RichTextRun).text, ', 무한 지속');
+    });
+
+    test('a term wrapping a styled tag keeps its text only', () {
+      final segments = parseRichDescription(
+        '<\$ba.root><@ba.vup>속박</></> 효과',
+      );
+      final term = segments[0] as RichTermRun;
+      expect(term.key, 'ba.root');
+      expect(term.text, '속박');
+      expect((segments[1] as RichTextRun).text, ' 효과');
+    });
+
+    test('a tag the data never closes runs to the end', () {
+      final segments = parseRichDescription('+23%<@ba.talpu>(+3%)');
+      expect((segments[0] as RichTextRun).text, '+23%');
+      final tail = segments[1] as RichHighlightRun;
+      expect((tail.children.single as RichTextRun).text, '(+3%)');
+    });
   });
 }
