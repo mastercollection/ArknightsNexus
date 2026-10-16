@@ -273,7 +273,10 @@ class _OperatorSkillTableState extends State<OperatorSkillTable> {
         key: const ValueKey('skill-table-internal'),
         width: firstWidth + dataWidth * levels.length,
         padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
+        // Opaque like the item cells: the pinned copy of this row must hide
+        // the scrolled one under it.
         decoration: const BoxDecoration(
+          color: _stickyFill,
           border: Border(bottom: BorderSide(color: _rowLine)),
         ),
         child: Text(
