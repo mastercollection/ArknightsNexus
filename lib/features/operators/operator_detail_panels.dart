@@ -16,8 +16,16 @@ import 'operators_common.dart';
 String _eliteLabel(NexusI18n i18n, int elite) =>
     '${i18n.t('operatorDetail.labels.elite')} $elite';
 
-Widget? _eliteLeading(int elite) {
-  return rdEliteAsset(elite) == null ? null : RdEliteIcon(elite, size: 20);
+/// Elite segment: the elite image alone (it already names the phase), read
+/// out as `정예화 N`; `E{n}` text when there is no image.
+RdSegment<int> _eliteSegment(NexusI18n i18n, int elite) {
+  if (rdEliteAsset(elite) == null) return RdSegment(elite, 'E$elite');
+  return RdSegment(
+    elite,
+    '',
+    leading: RdEliteIcon(elite, size: 20, excludeSemantics: true),
+    semanticLabel: _eliteLabel(i18n, elite),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -65,7 +73,7 @@ class OperatorStatsPanel extends StatelessWidget {
           selected: elite,
           segments: [
             for (var i = 0; i < operator.eliteCaps.length; i++)
-              RdSegment(i, _eliteLabel(i18n, i), leading: _eliteLeading(i)),
+              _eliteSegment(i18n, i),
           ],
           onChanged: onEliteChanged,
         ),
@@ -211,7 +219,7 @@ class OperatorAbilitiesPanel extends StatelessWidget {
             selected: eliteTab,
             segments: [
               for (var i = 0; i < operator.eliteCaps.length; i++)
-                RdSegment(i, 'E$i', leading: _eliteLeading(i)),
+                _eliteSegment(i18n, i),
             ],
             onChanged: onEliteTabChanged,
           ),

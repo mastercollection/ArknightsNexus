@@ -165,6 +165,18 @@ void main() {
     expect(find.text('79/80'), findsOneWidget);
   });
 
+  testWidgets('elite segments show the icon alone and read out the phase',
+      (tester) async {
+    final semantics = tester.ensureSemantics();
+    await pumpDetail(tester);
+
+    final eliteName = _i18n.t('operatorDetail.labels.elite');
+    expect(find.text('$eliteName 0'), findsNothing);
+    expect(find.text('$eliteName 1'), findsNothing);
+    expect(find.bySemanticsLabel('$eliteName 1'), findsWidgets);
+    semantics.dispose();
+  });
+
   testWidgets('switches sections with the tabs', (tester) async {
     await pumpDetail(tester);
 

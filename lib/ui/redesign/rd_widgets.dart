@@ -484,10 +484,19 @@ class _RdSearchFieldState extends State<RdSearchField> {
 
 /// One option of an [RdSegmented].
 class RdSegment<T> {
-  const RdSegment(this.value, this.label, {this.leading, this.key});
+  const RdSegment(
+    this.value,
+    this.label, {
+    this.leading,
+    this.semanticLabel,
+    this.key,
+  });
 
   final T value;
   final String label;
+
+  /// Read by screen readers; set it on an icon-only segment (empty [label]).
+  final String? semanticLabel;
 
   /// Icon before the label (elite icon).
   final Widget? leading;
@@ -548,6 +557,7 @@ class RdSegmented<T> extends StatelessWidget {
     final onChanged = this.onChanged;
     return Semantics(
       key: segment.key,
+      label: segment.semanticLabel,
       button: true,
       selected: on,
       inMutuallyExclusiveGroup: true,

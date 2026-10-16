@@ -425,8 +425,9 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
           for (final elite in const [0, 1, 2])
             RdSegment(
               elite,
-              'E$elite',
-              leading: RdEliteIcon(elite, excludeSemantics: true),
+              '',
+              leading: RdEliteIcon(elite, size: 20, excludeSemantics: true),
+              semanticLabel: '$eliteLabel $elite',
               key: Key('plan-$side-elite-$elite'),
             ),
         ],
