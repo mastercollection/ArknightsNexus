@@ -46,6 +46,10 @@ const Map<String, Map<String, String>> operatorsExtraMessages = {
     'rd.operators.strip.source': '{source} 공식 데이터',
     'rd.operators.filter.showUnreleased': '미실장 표시',
     'rd.operators.filter.unreleasedNote': '{source} 선공개 {count}명',
+    'operatorDetail.sections.tokens': '소환물',
+    'rd.operators.tokens.picker': '소환물 선택',
+    'rd.operators.tokens.skillSlot': 'S{slot}',
+    'rd.operators.tokens.forSkill': '{slot} · {skill} 사용 시',
   },
   'cn': {
     'rd.operators.count': '{count}名',
@@ -91,6 +95,10 @@ const Map<String, Map<String, String>> operatorsExtraMessages = {
     'rd.operators.strip.source': '{source} 官方数据',
     'rd.operators.filter.showUnreleased': '显示未实装',
     'rd.operators.filter.unreleasedNote': '{source} 先行实装 {count}名',
+    'operatorDetail.sections.tokens': '召唤物',
+    'rd.operators.tokens.picker': '选择召唤物',
+    'rd.operators.tokens.skillSlot': 'S{slot}',
+    'rd.operators.tokens.forSkill': '{slot} · 使用{skill}时',
   },
   'jp': {
     'rd.operators.count': '{count}名',
@@ -136,6 +144,10 @@ const Map<String, Map<String, String>> operatorsExtraMessages = {
     'rd.operators.strip.source': '{source} 公式データ',
     'rd.operators.filter.showUnreleased': '未実装を表示',
     'rd.operators.filter.unreleasedNote': '{source} 先行実装 {count}名',
+    'operatorDetail.sections.tokens': '召喚ユニット',
+    'rd.operators.tokens.picker': '召喚ユニットを選択',
+    'rd.operators.tokens.skillSlot': 'S{slot}',
+    'rd.operators.tokens.forSkill': '{slot} · {skill}使用時',
   },
   'tw': {
     'rd.operators.count': '{count}名',
@@ -181,6 +193,10 @@ const Map<String, Map<String, String>> operatorsExtraMessages = {
     'rd.operators.strip.source': '{source} 官方資料',
     'rd.operators.filter.showUnreleased': '顯示未實裝',
     'rd.operators.filter.unreleasedNote': '{source} 先行實裝 {count}名',
+    'operatorDetail.sections.tokens': '召喚物',
+    'rd.operators.tokens.picker': '選擇召喚物',
+    'rd.operators.tokens.skillSlot': 'S{slot}',
+    'rd.operators.tokens.forSkill': '{slot} · 使用{skill}時',
   },
   'en': {
     'rd.operators.count': '{count}',
@@ -229,5 +245,9 @@ const Map<String, Map<String, String>> operatorsExtraMessages = {
     'rd.operators.strip.source': '{source} official data',
     'rd.operators.filter.showUnreleased': 'Show unreleased',
     'rd.operators.filter.unreleasedNote': '{count} early on {source}',
+    'operatorDetail.sections.tokens': 'Summons',
+    'rd.operators.tokens.picker': 'Choose a summon',
+    'rd.operators.tokens.skillSlot': 'S{slot}',
+    'rd.operators.tokens.forSkill': '{slot} · with {skill}',
   },
 };

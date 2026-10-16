@@ -35,6 +35,7 @@ class OperatorNormalizer {
   }) {
     final releaseOrder = handbookInfo.releaseOrder();
     final context = _Context(
+      characters: characters.characters,
       skills: skills.skills,
       constants: constants,
       ranges: ranges.ranges,
@@ -127,42 +128,9 @@ class OperatorNormalizer {
         ),
     ];
 
-    final stats = <OperatorStatProgression>[];
-    for (var index = 0; index < character.phases.length; index++) {
-      final phase = character.phases[index];
-      if (phase.attributesKeyFrames.isEmpty) {
-        continue;
-      }
-      stats.add(
-        OperatorStatProgression(
-          level: index + 1,
-          min: _keyframe(phase.attributesKeyFrames.first),
-          max: _keyframe(phase.attributesKeyFrames.last),
-          range: _range(phase.rangeId, context),
-        ),
-      );
-    }
-
-    final traits = <OperatorTrait>[];
-    final traitCandidates = character.traitField?.candidates ?? const [];
-    for (var index = 0; index < traitCandidates.length; index++) {
-      final trait = _traitCandidate(index, traitCandidates[index]);
-      if (trait != null) {
-        traits.add(trait);
-      }
-    }
-
-    final talents = <OperatorTalent>[];
-    final rawTalents = character.talents ?? const <RawTalent>[];
-    for (var groupIndex = 0; groupIndex < rawTalents.length; groupIndex++) {
-      for (final candidate in rawTalents[groupIndex].candidates ??
-          const <RawTalentCandidate>[]) {
-        final talent = _talentCandidate(groupIndex, candidate);
-        if (talent != null) {
-          talents.add(talent);
-        }
-      }
-    }
+    final stats = _stats(character, context);
+    final traits = _traits(character);
+    final talents = _talents(character);
 
     final potentials = <OperatorPotential>[];
     for (var index = 0; index < character.potentialRanks.length; index++) {
@@ -174,10 +142,7 @@ class OperatorNormalizer {
       }
     }
 
-    final normalizedSkills = [
-      for (final reference in character.skills)
-        if (_skill(reference, context) case final skill?) skill,
-    ];
+    final normalizedSkills = _skills(character, context);
 
     final modules = [
       for (final module in context.modulesByChar[id] ?? const <RawEquipEntry>[])
@@ -232,7 +197,129 @@ class OperatorNormalizer {
       allSkillLevelUpCosts: allSkillLevelUpCosts,
       stats: stats,
       skills: normalizedSkills,
+      tokens: _tokens(character, context),
     );
+  }
+
+  /// The summons the game lists for [character] (`displayTokenDict`), each
+  /// with the skills that deploy it (`overrideTokenKey`). A listed id
+  /// missing from the character table is skipped. Summons only a skill
+  /// names, without being listed, are left out like the game leaves them
+  /// out: they are markers such as a facing arrow or a return spot.
+  List<OperatorToken> _tokens(RawCharacterEntry character, _Context context) {
+    final skillsByToken = <String, List<String>>{};
+    for (final reference in character.skills) {
+      final tokenId = reference.overrideTokenKey?.trim() ?? '';
+      final skillId = reference.skillId?.trim() ?? '';
+      if (tokenId.isNotEmpty && skillId.isNotEmpty) {
+        (skillsByToken[tokenId] ??= []).add(skillId);
+      }
+    }
+    final tokens = <OperatorToken>[];
+    for (final rawId in character.displayTokenIds) {
+      final id = rawId.trim();
+      final entry = context.characters[id];
+      if (id.isEmpty || entry == null) {
+        continue;
+      }
+      tokens.add(
+        OperatorToken(
+          detail: _token(id, entry, context),
+          skillIds: skillsByToken[id] ?? const [],
+        ),
+      );
+    }
+    return tokens;
+  }
+
+  /// A summon read like an operator (see [OperatorToken.detail]). Its level
+  /// caps are its own phases' (upstream gives them per summon). A summon may
+  /// list one skill once per elite phase (Ling's dragons); it is kept once,
+  /// with the first unlock condition.
+  OperatorDetail _token(
+    String id,
+    RawCharacterEntry character,
+    _Context context,
+  ) {
+    final skillIds = <String>{};
+    return OperatorDetail(
+      id: id,
+      name: character.name,
+      codename: character.appellation.trim().isEmpty
+          ? character.name
+          : character.appellation,
+      rarity: character.rarity,
+      profession: humanizeProfession(character.profession),
+      branch: context.subProfNames[character.subProfessionId] ??
+          humanizeSlug(character.subProfessionId),
+      thumbnailHue: generateHue(id),
+      quote: character.itemDesc ?? '',
+      traits: _traits(character),
+      talents: _talents(character),
+      archetypeDescription: character.description ?? '',
+      eliteCaps: [for (final phase in character.phases) phase.maxLevel],
+      stats: _stats(character, context),
+      skills: [
+        for (final skill in _skills(character, context))
+          if (skillIds.add(skill.id)) skill,
+      ],
+    );
+  }
+
+  List<OperatorStatProgression> _stats(
+    RawCharacterEntry character,
+    _Context context,
+  ) {
+    final stats = <OperatorStatProgression>[];
+    for (var index = 0; index < character.phases.length; index++) {
+      final phase = character.phases[index];
+      if (phase.attributesKeyFrames.isEmpty) {
+        continue;
+      }
+      stats.add(
+        OperatorStatProgression(
+          level: index + 1,
+          min: _keyframe(phase.attributesKeyFrames.first),
+          max: _keyframe(phase.attributesKeyFrames.last),
+          range: _range(phase.rangeId, context),
+        ),
+      );
+    }
+    return stats;
+  }
+
+  List<OperatorTrait> _traits(RawCharacterEntry character) {
+    final traits = <OperatorTrait>[];
+    final traitCandidates = character.traitField?.candidates ?? const [];
+    for (var index = 0; index < traitCandidates.length; index++) {
+      final trait = _traitCandidate(index, traitCandidates[index]);
+      if (trait != null) {
+        traits.add(trait);
+      }
+    }
+    return traits;
+  }
+
+  List<OperatorTalent> _talents(RawCharacterEntry character) {
+    final talents = <OperatorTalent>[];
+    final rawTalents = character.talents ?? const <RawTalent>[];
+    for (var groupIndex = 0; groupIndex < rawTalents.length; groupIndex++) {
+      for (final candidate in rawTalents[groupIndex].candidates ??
+          const <RawTalentCandidate>[]) {
+        final talent = _talentCandidate(groupIndex, candidate);
+        if (talent != null) {
+          talents.add(talent);
+        }
+      }
+    }
+    return talents;
+  }
+
+  List<OperatorSkill> _skills(RawCharacterEntry character, _Context context) {
+    return [
+      for (final reference in character.skills)
+        if (_skill(reference, context) case final skill?) skill,
+    ];
   }
 
   OperatorModule _module(RawEquipEntry module, _Context context) {
@@ -555,6 +642,7 @@ class OperatorNormalizer {
 
 class _Context {
   const _Context({
+    required this.characters,
     required this.skills,
     required this.constants,
     required this.ranges,
@@ -567,6 +655,7 @@ class _Context {
     required this.baTermNames,
   });
 
+  final Map<String, RawCharacterEntry> characters;
   final Map<String, RawSkillEntry> skills;
   final RawGameDataConst constants;
   final Map<String, RawRangeEntry> ranges;

@@ -30,7 +30,8 @@ class RegionSnapshot {
   /// 3: operators carry `releaseOrder` and are sorted newest release first.
   /// 4: published snapshots add operators (and the items and terms they
   /// need) the region has not released yet, marked `unreleasedSource`.
-  static const schemaVersion = 4;
+  /// 5: operators carry their summons (`tokens`).
+  static const schemaVersion = 5;
 
   final int schemaVersionValue;
   final RegionCode region;

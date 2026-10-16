@@ -365,6 +365,162 @@ void main() {
     });
   });
 
+  group('summons', () {
+    late OperatorDetail summoner;
+
+    setUpAll(() async {
+      final characters = await _fixture('character_table.json');
+      final amiyaJson = characters['char_002_amiya']! as Map<String, Object?>;
+      amiyaJson['displayTokenDict'] = {
+        'token_drone': true,
+        'token_missing': true,
+        'token_s2': true,
+      };
+      final skills = amiyaJson['skills']! as List<Object?>;
+      (skills[1]! as Map<String, Object?>)['overrideTokenKey'] = 'token_s2';
+      characters['token_drone'] = {
+        'name': 'Drone',
+        'description': 'Cannot attack; <\$ba.stun>stuns</> on landing',
+        'profession': 'TOKEN',
+        'subProfessionId': 'notchar1',
+        'rarity': 'TIER_1',
+        'trait': null,
+        'phases': [
+          _tokenPhase(maxLevel: 30, hp: 500, rangeId: 'range_1'),
+          _tokenPhase(maxLevel: 40, hp: 900),
+        ],
+        'skills': [
+          {
+            'skillId': 'skchr_amiya_2',
+            'overrideTokenKey': null,
+            'levelUpCostCond': {},
+            'unlockCond': {'phase': 'PHASE_1', 'level': 1},
+          },
+          // The same skill again for a later phase, as Ling's dragons list.
+          {
+            'skillId': 'skchr_amiya_2',
+            'levelUpCostCond': {},
+            'unlockCond': {'phase': 'PHASE_2', 'level': 1},
+          },
+        ],
+        'talents': [
+          {
+            'candidates': [
+              {
+                'unlockCondition': {'phase': 'PHASE_0', 'level': 1},
+                'requiredPotentialRank': 0,
+                'prefabKey': '0',
+                'name': 'Relay',
+                'description': 'Counts as the summoner',
+                'blackboard': {},
+              },
+            ],
+          },
+          {
+            'candidates': [
+              {
+                'unlockCondition': {'phase': 'PHASE_0', 'level': 1},
+                'requiredPotentialRank': 0,
+                'prefabKey': '-1',
+                'name': null,
+                'description': null,
+                'blackboard': [
+                  {'key': 'interval', 'value': 15.0},
+                ],
+                'isHideTalent': true,
+              },
+            ],
+          },
+        ],
+        'displayTokenDict': null,
+      };
+      characters['token_s2'] = {
+        'name': 'Spirit',
+        'profession': 'TOKEN',
+        'rarity': 'TIER_1',
+        'phases': [_tokenPhase(maxLevel: 50, hp: 100)],
+        'skills': {},
+      };
+      final normalized = await _normalizeFixtures(
+        characters: RawCharacterTable.fromJson(characters),
+      );
+      expect(
+        normalized.map((operator) => operator.id),
+        isNot(contains(startsWith('token_'))),
+      );
+      summoner = normalized.firstWhere((entry) => entry.id == amiya.id);
+    });
+
+    test('lists the displayed summons, skipping ids missing from the table',
+        () {
+      expect(summoner.tokens.map((token) => token.id), [
+        'token_drone',
+        'token_s2',
+      ]);
+      expect(amiya.tokens, isEmpty);
+      expect(byId('char_101_bravo').tokens, isEmpty);
+    });
+
+    test('a summon no skill names is deployed by every skill', () {
+      final drone = summoner.tokens.first;
+      expect(drone.skillIds, isEmpty);
+      expect(drone.forAllSkills, isTrue);
+    });
+
+    test('a summon a skill overrides belongs to that skill', () {
+      final spirit = summoner.tokens.last;
+      expect(spirit.skillIds, ['skchr_amiya_2']);
+      expect(spirit.forAllSkills, isFalse);
+      expect(spirit.detail.skills, isEmpty);
+      expect(spirit.detail.eliteCaps, [50]);
+    });
+
+    test('reads a summon like an operator, with its own level caps', () {
+      final drone = summoner.tokens.first.detail;
+      expect(drone.name, 'Drone');
+      expect(drone.rarity, 1);
+      expect(drone.profession, 'Token');
+      expect(
+        drone.archetypeDescription,
+        'Cannot attack; <\$ba.stun>stuns</> on landing',
+      );
+      expect(drone.quote, '');
+      expect(drone.traits, isEmpty);
+      expect(drone.eliteCaps, [30, 40]);
+      expect(drone.stats.map((stat) => stat.max.hp), [500, 900]);
+      expect(drone.stats.first.min.hp, 250);
+      expect(drone.stats.first.range?.id, 'range_1');
+      expect(drone.stats.last.range, isNull);
+      expect(drone.talents.map((talent) => talent.name), ['Relay']);
+      expect(drone.skills.single.id, 'skchr_amiya_2');
+      expect(drone.skills.single.unlockElite, 1);
+      expect(drone.skills.single.levels, hasLength(1));
+      expect(drone.tokens, isEmpty);
+      expect(drone.eliteExpCosts, isEmpty);
+      expect(drone.modules, isEmpty);
+    });
+
+    test('round trips through JSON unchanged', () {
+      final json = jsonDecode(jsonEncode(summoner.toJson()));
+      final decoded = OperatorDetail.fromJson(json as Map<String, Object?>);
+      expect(decoded.toJson(), summoner.toJson());
+      expect(decoded.tokens.last.skillIds, ['skchr_amiya_2']);
+      expect(decoded.tokens.first.detail.eliteCaps, [30, 40]);
+    });
+
+    test('reads a detail without summons as having none', () {
+      final json = amiya.toJson()..remove('tokens');
+      expect(OperatorDetail.fromJson(json).tokens, isEmpty);
+    });
+
+    test('an unreleased copy keeps its summons', () {
+      expect(
+        summoner.asUnreleased('cn').tokens.map((token) => token.id),
+        ['token_drone', 'token_s2'],
+      );
+    });
+  });
+
   group('Rust text helpers', () {
     test('humanizeSlug matches humanize_slug', () {
       expect(humanizeSlug('caster_core'), 'Caster Core');
@@ -455,12 +611,42 @@ Map<String, Object?> _stat({
   };
 }
 
+/// A summon phase whose stats go from half of [hp] to [hp].
+Map<String, Object?> _tokenPhase({
+  required int maxLevel,
+  required int hp,
+  String? rangeId,
+}) {
+  Map<String, Object?> frame(int level, int hp) => {
+        'level': level,
+        'data': {
+          'maxHp': hp,
+          'atk': 0,
+          'def': 100,
+          'magicResistance': 0,
+          'cost': 0,
+          'blockCnt': 2,
+          'baseAttackTime': 1,
+          'respawnTime': 15,
+          'hpRecoveryPerSec': 0,
+        },
+      };
+  return {
+    'characterPrefabKey': 'token',
+    'rangeId': rangeId,
+    'maxLevel': maxLevel,
+    'attributesKeyFrames': [frame(1, hp ~/ 2), frame(maxLevel, hp)],
+    'evolveCost': null,
+  };
+}
+
 Future<List<OperatorDetail>> _normalizeFixtures({
   RawHandbookInfoTable? handbookInfo,
+  RawCharacterTable? characters,
 }) async {
   return const OperatorNormalizer().normalize(
     region: RegionCode.kr,
-    characters:
+    characters: characters ??
         RawCharacterTable.fromJson(await _fixture('character_table.json')),
     skills: RawSkillTable.fromJson(await _fixture('skill_table.json')),
     constants: RawGameDataConst.fromJson(await _fixture('gamedata_const.json')),

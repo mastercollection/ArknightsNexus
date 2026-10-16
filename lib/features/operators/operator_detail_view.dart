@@ -19,11 +19,12 @@ import '../../widgets/resolved_image_provider.dart';
 import 'operator_detail_panels.dart';
 import 'operator_detail_view_model.dart';
 import 'operator_detail_widgets.dart';
+import 'operator_token_panel.dart';
 import 'operators_common.dart';
 
 /// Detail sections, shown as tabs (they were collapsible panels on one long
 /// page before the redesign).
-enum DetailSection { stats, abilities, potentials, modules, skills }
+enum DetailSection { stats, abilities, tokens, potentials, modules, skills }
 
 /// Where the detail is rendered.
 enum OperatorDetailMode {
@@ -84,6 +85,8 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
   int _abilitiesEliteTab = 0;
   String? _selectedSkillId;
   int _selectedSkillLevel = 1;
+  String? _selectedTokenId;
+  String? _selectedTokenSkillId;
   DetailSection _section = DetailSection.stats;
 
   final _scrollController = ScrollController();
@@ -110,6 +113,8 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
       _persistTimer?.cancel();
       _selectedSkillId = null;
       _selectedSkillLevel = 1;
+      _selectedTokenId = null;
+      _selectedTokenSkillId = null;
       if (_scrollController.hasClients) {
         _scrollController.jumpTo(0);
       }
@@ -174,7 +179,10 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
           // The portrait widget has its own fallback.
         }
         skillIcons = await _resolveAll(images, {
-          for (final skill in operator.skills)
+          for (final skill in [
+            ...operator.skills,
+            for (final token in operator.tokens) ...token.detail.skills,
+          ])
             skill.id: (
               CachedImageKind.skillIcon,
               (skill.iconId ?? skill.id).trim()
@@ -302,6 +310,30 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
     if (!_sections(operator).contains(_section)) {
       _section = DetailSection.stats;
     }
+    final token = _selectedToken(operator);
+    if (token?.id != _selectedTokenId) {
+      _selectedTokenId = token?.id;
+      _selectedTokenSkillId = null;
+    }
+  }
+
+  /// The selected summon, else the first; null without summons.
+  OperatorToken? _selectedToken(OperatorDetail operator) {
+    for (final token in operator.tokens) {
+      if (token.id == _selectedTokenId) {
+        return token;
+      }
+    }
+    return operator.tokens.isEmpty ? null : operator.tokens.first;
+  }
+
+  OperatorSkill? _selectedTokenSkill(OperatorDetail token) {
+    for (final skill in token.skills) {
+      if (skill.id == _selectedTokenSkillId) {
+        return skill;
+      }
+    }
+    return token.skills.isEmpty ? null : token.skills.first;
   }
 
   int _maxLevel(OperatorDetail operator) {
@@ -317,11 +349,13 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
     return operator.skills.isEmpty ? null : operator.skills.first;
   }
 
-  /// Potentials / modules only exist when the operator has them (`v-if`).
+  /// Summons, potentials and modules only exist when the operator has
+  /// them (`v-if`).
   List<DetailSection> _sections(OperatorDetail operator) {
     return [
       DetailSection.stats,
       DetailSection.abilities,
+      if (operator.tokens.isNotEmpty) DetailSection.tokens,
       if (operator.potentials.isNotEmpty) DetailSection.potentials,
       if (operator.modules.isNotEmpty) DetailSection.modules,
       DetailSection.skills,
@@ -606,6 +640,8 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
               setState(() => _abilitiesEliteTab = value),
           onTermTap: _openTerm,
         );
+      case DetailSection.tokens:
+        return _buildTokensPanel(operator, i18n);
       case DetailSection.potentials:
         return OperatorPotentialsPanel(
           potentials: buildPotentials(operator, i18n),
@@ -638,6 +674,45 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
           onTermTap: _openTerm,
         );
     }
+  }
+
+  /// The summon follows the operator's elite, level and skill display level,
+  /// each limited to what the summon has; changes write them back.
+  Widget _buildTokensPanel(OperatorDetail operator, NexusI18n i18n) {
+    final token = _selectedToken(operator)!;
+    final caps = token.detail.eliteCaps;
+    final elite = caps.isEmpty ? 0 : math.min(_elite, caps.length - 1);
+    final maxLevel = elite < caps.length ? math.max(1, caps[elite]) : 1;
+    final skill = _selectedTokenSkill(token.detail);
+    final skillLevels = math.max(1, skill?.levels.length ?? 1);
+    return OperatorTokensPanel(
+      operator: operator,
+      token: token,
+      i18n: i18n,
+      elite: elite,
+      level: _level.clamp(1, maxLevel),
+      selectedSkill: skill,
+      skillLevel: _selectedSkillLevel.clamp(1, skillLevels),
+      skillIcons: _skillIcons,
+      compact: _compact,
+      onTokenSelected: (id) => setState(() {
+        if (id != _selectedTokenId) {
+          _selectedTokenId = id;
+          _selectedTokenSkillId = null;
+        }
+      }),
+      onEliteChanged: (value) => setState(() {
+        _elite = math.min(value, math.max(0, operator.eliteCaps.length - 1));
+        _level = math.min(_level, _maxLevel(operator));
+        _normalizeSelection();
+      }),
+      onLevelChanged: (value) =>
+          setState(() => _level = math.min(value, _maxLevel(operator))),
+      onSkillSelected: (id) => setState(() => _selectedTokenSkillId = id),
+      onSkillLevelChanged: (value) =>
+          setState(() => _selectedSkillLevel = value),
+      onTermTap: _openTerm,
+    );
   }
 
   Widget _buildState(NexusI18n i18n) {

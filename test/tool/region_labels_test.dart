@@ -79,6 +79,43 @@ void main() {
     expect(localized.toJson(), operator.toJson());
   });
 
+  test('keeps the summons', () {
+    const summoner = OperatorDetail(
+      id: 'char_900_new',
+      name: '新干员',
+      codename: '新干员',
+      rarity: 6,
+      profession: 'Caster',
+      branch: '炼金师',
+      thumbnailHue: 0,
+      quote: '',
+      archetypeDescription: '',
+      tokens: [
+        OperatorToken(
+          skillIds: ['skchr_new_2'],
+          detail: OperatorDetail(
+            id: 'token_900_new',
+            name: '召唤物',
+            codename: '召唤物',
+            rarity: 1,
+            profession: 'Token',
+            branch: 'Notchar1',
+            thumbnailHue: 0,
+            quote: '',
+            archetypeDescription: '不攻击',
+            eliteCaps: [50, 80, 90],
+          ),
+        ),
+      ],
+    );
+    final localized = localizeLabels(summoner, source: cn, target: kr);
+    expect(localized.branch, '연금술사');
+    expect(
+      localized.tokens.map((token) => token.toJson()),
+      summoner.tokens.map((token) => token.toJson()),
+    );
+  });
+
   test('reads the names from the upstream tables', () async {
     Future<String> read(String file) =>
         File('test/support/fixtures/raw/$file').readAsString();

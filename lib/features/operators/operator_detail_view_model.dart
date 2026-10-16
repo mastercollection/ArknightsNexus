@@ -183,11 +183,15 @@ String _conditionLabel(NexusI18n i18n, int elite, int level) {
       '${i18n.t('operatorDetail.labels.conditionLevel', {'level': level})}';
 }
 
+/// Traits of [operator] at [selectedElite]. Without any, the archetype
+/// description stands in as the common trait unless [archetypeFallback] is
+/// false (a summon shows its description in its own header).
 List<TraitItem> buildTraits(
   OperatorDetail operator,
   int selectedElite,
-  NexusI18n i18n,
-) {
+  NexusI18n i18n, {
+  bool archetypeFallback = true,
+}) {
   final groups = <String, OperatorTrait>{};
   for (final trait in operator.traits.where((t) => t.elite <= selectedElite)) {
     final existing = groups[trait.groupKey];
@@ -200,7 +204,9 @@ List<TraitItem> buildTraits(
     (a, b) => a.groupKey.compareTo(b.groupKey),
   );
 
-  if (selected.isEmpty && operator.archetypeDescription.trim().isNotEmpty) {
+  if (archetypeFallback &&
+      selected.isEmpty &&
+      operator.archetypeDescription.trim().isNotEmpty) {
     return [
       TraitItem(
         key: 'archetype-fallback',
