@@ -52,7 +52,9 @@ const gachaTableFixture = 'gacha_table.json';
 /// [itemId] (a material named [itemName] the fixtures do not have, added
 /// when given) and whose trait links the term `ba.<id>`, which in turn
 /// links `ba.<id>.more`. With [newFaction] its nation is `power_<id>`,
-/// named `<name> Nation`, a faction the fixtures do not have.
+/// named `<name> Nation`, a faction the fixtures do not have. With
+/// [withToken] it has a summon `token_<id>` named `<name> Summon` whose
+/// description links the term `ba.<id>.token`.
 class ExtraOperator {
   const ExtraOperator({
     required this.id,
@@ -60,6 +62,7 @@ class ExtraOperator {
     this.itemId = '30012',
     this.itemName,
     this.newFaction = false,
+    this.withToken = false,
   });
 
   final String id;
@@ -67,6 +70,7 @@ class ExtraOperator {
   final String itemId;
   final String? itemName;
   final bool newFaction;
+  final bool withToken;
 }
 
 String _addOperators(String file, String content, List<ExtraOperator> extra) {
@@ -89,6 +93,14 @@ String _addOperators(String file, String content, List<ExtraOperator> extra) {
           {'id': operator.itemId, 'count': 2, 'type': 'MATERIAL'},
         ];
         json[operator.id] = character;
+        if (operator.withToken) {
+          character['displayTokenDict'] = {'token_${operator.id}': true};
+          json['token_${operator.id}'] = copy(json['char_002_amiya'])
+            ..['name'] = '${operator.name} Summon'
+            ..['profession'] = 'TOKEN'
+            ..['description'] = 'Links <\$ba.${operator.id}.token>it</>'
+            ..['skills'] = <Object?>[];
+        }
       }
     case ArknightsDataSource.handbookTeamTableFile:
       for (final operator in extra) {
@@ -132,6 +144,13 @@ String _addOperators(String file, String content, List<ExtraOperator> extra) {
           'termName': 'More',
           'description': 'Even more',
         };
+        if (operator.withToken) {
+          terms['$key.token'] = {
+            'termId': '$key.token',
+            'termName': 'Token term',
+            'description': 'Summon term',
+          };
+        }
       }
   }
   return jsonEncode(json);

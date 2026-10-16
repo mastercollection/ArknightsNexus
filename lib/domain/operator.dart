@@ -106,6 +106,7 @@ class OperatorDetail {
     this.allSkillLevelUpCosts = const [],
     this.stats = const [],
     this.skills = const [],
+    this.tokens = const [],
   });
 
   final String id;
@@ -144,6 +145,10 @@ class OperatorDetail {
   final List<OperatorStatProgression> stats;
   final List<OperatorSkill> skills;
 
+  /// The summons the game lists for this operator, in upstream order; empty
+  /// for most operators and always for a summon itself.
+  final List<OperatorToken> tokens;
+
   /// This operator marked as copied from [source]'s data; see
   /// [unreleasedSource].
   OperatorDetail asUnreleased(String source) {
@@ -176,6 +181,7 @@ class OperatorDetail {
       allSkillLevelUpCosts: allSkillLevelUpCosts,
       stats: stats,
       skills: skills,
+      tokens: tokens,
     );
   }
 
@@ -229,6 +235,8 @@ class OperatorDetail {
       ),
       skills:
           _list(json['skills'], (value) => OperatorSkill.fromJson(_map(value))),
+      tokens:
+          _list(json['tokens'], (value) => OperatorToken.fromJson(_map(value))),
     );
   }
 
@@ -265,7 +273,41 @@ class OperatorDetail {
           allSkillLevelUpCosts.map((entry) => entry.toJson()).toList(),
       'stats': stats.map((entry) => entry.toJson()).toList(),
       'skills': skills.map((entry) => entry.toJson()).toList(),
+      'tokens': tokens.map((entry) => entry.toJson()).toList(),
     };
+  }
+}
+
+/// A summon (an upstream `TOKEN` character) an operator deploys.
+class OperatorToken {
+  const OperatorToken({required this.detail, this.skillIds = const []});
+
+  /// The summon read like an operator, so the detail panels show it as they
+  /// show an operator: its description is [OperatorDetail.archetypeDescription]
+  /// (the trait text), its elite level caps, stats, range, traits, talents
+  /// and skills are its own. Operator-only data (costs, modules, potentials,
+  /// tags, factions, summons) is empty.
+  final OperatorDetail detail;
+
+  /// Ids of the summoner's skills that deploy this summon instead of the
+  /// default one (upstream `overrideTokenKey`). Empty when no skill names
+  /// it: the summon is deployed whichever skill is equipped.
+  final List<String> skillIds;
+
+  String get id => detail.id;
+
+  /// Whether the summon is deployed whichever skill is equipped.
+  bool get forAllSkills => skillIds.isEmpty;
+
+  factory OperatorToken.fromJson(Map<String, Object?> json) {
+    return OperatorToken(
+      detail: OperatorDetail.fromJson(_map(json['detail'])),
+      skillIds: _strings(json['skillIds']),
+    );
+  }
+
+  Map<String, Object?> toJson() {
+    return {'skillIds': skillIds, 'detail': detail.toJson()};
   }
 }
 

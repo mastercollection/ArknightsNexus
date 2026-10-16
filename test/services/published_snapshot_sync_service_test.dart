@@ -322,23 +322,30 @@ void main() {
     expect(logger.warnings.single, contains('manifest unavailable'));
   });
 
-  test('a schema this app does not read falls back to the raw sync', () async {
-    await publish();
-    final manifest =
-        jsonDecode(await pages.getText(_manifestUri)) as Map<String, Object?>;
-    final regions = manifest['regions']! as Map<String, Object?>;
-    (regions['kr']! as Map<String, Object?>)['schemaVersion'] =
-        RegionSnapshot.schemaVersion + 1;
-    pages
-      ..registerText(_manifestUri, jsonEncode(manifest))
-      ..requestedUris.clear();
+  // An older schema is what an app update meets until the site is rebuilt
+  // (snapshots without summons before schema 5).
+  for (final schema in [
+    RegionSnapshot.schemaVersion - 1,
+    RegionSnapshot.schemaVersion + 1,
+  ]) {
+    test('a schema this app does not read ($schema) falls back to the raw sync',
+        () async {
+      await publish();
+      final manifest =
+          jsonDecode(await pages.getText(_manifestUri)) as Map<String, Object?>;
+      final regions = manifest['regions']! as Map<String, Object?>;
+      (regions['kr']! as Map<String, Object?>)['schemaVersion'] = schema;
+      pages
+        ..registerText(_manifestUri, jsonEncode(manifest))
+        ..requestedUris.clear();
 
-    await service.ensureRegionFresh(RegionCode.kr);
+      await service.ensureRegionFresh(RegionCode.kr);
 
-    expect(fallback.calls, ['ensure kr']);
-    expect(pages.requestedUris, [_manifestUri]);
-    expect(logger.warnings.single, contains('schema'));
-  });
+      expect(fallback.calls, ['ensure kr']);
+      expect(pages.requestedUris, [_manifestUri]);
+      expect(logger.warnings.single, contains('schema'));
+    });
+  }
 
   test('a region that is not published falls back to the raw sync', () async {
     await publish();

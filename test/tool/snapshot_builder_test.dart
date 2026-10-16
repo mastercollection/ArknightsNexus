@@ -199,6 +199,7 @@ void main() {
             name: 'B-CN',
             itemId: '39002',
             itemName: 'Gem-CN',
+            withToken: true,
           ),
         ],
       );
@@ -280,6 +281,13 @@ void main() {
       expect(kr.terms['ba.char_900_a'], 'Like <\$ba.char_900_a.more>more</>');
       expect(kr.terms['ba.char_900_a.more'], 'Even more');
       expect(kr.terms['ba.char_901_b.more'], 'Even more');
+
+      // A borrowed operator keeps its summon and the term the summon links.
+      final b = kr.operators.firstWhere((o) => o.id == 'char_901_b');
+      expect(b.tokens.single.detail.name, 'B-CN Summon');
+      expect(b.tokens.single.forAllSkills, isTrue);
+      expect(kr.terms['ba.char_901_b.token'], 'Summon term');
+      expect(kr.operators.where((o) => o.id.startsWith('token_')), isEmpty);
 
       // Plan costs of a borrowed operator resolve the borrowed item.
       const costs = DartPlanCostService();

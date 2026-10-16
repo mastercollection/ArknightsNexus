@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:arknight_nexus/core/errors/app_failure.dart';
 import 'package:arknight_nexus/data_sources/data_version.dart';
 import 'package:arknight_nexus/data_sources/region_code.dart';
 import 'package:arknight_nexus/domain/building_formula.dart';
@@ -443,6 +444,59 @@ void main() {
       );
       json.remove('unreleasedSourceVersions');
       expect(RegionSnapshot.fromJson(json).unreleasedSourceVersions, isEmpty);
+    });
+
+    test('round trips operator summons in a snapshot of schema 5', () {
+      const token = OperatorToken(
+        skillIds: ['skchr_ling_2'],
+        detail: OperatorDetail(
+          id: 'token_10020_ling_soul2',
+          name: 'Soul',
+          codename: 'Soul',
+          rarity: 1,
+          profession: 'Token',
+          branch: 'Notchar1',
+          thumbnailHue: 12,
+          quote: '',
+          archetypeDescription: 'Blocks 2 enemies',
+          eliteCaps: [50, 80, 90],
+        ),
+      );
+      final snapshot = RegionSnapshot(
+        schemaVersionValue: RegionSnapshot.schemaVersion,
+        region: RegionCode.kr,
+        sourceRevision: 'etag',
+        sourceVersion: const DataVersion(versionControl: '68.2.0'),
+        fetchedAt: DateTime.utc(2026, 5, 17),
+        operators: const [
+          OperatorDetail(
+            id: 'char_2023_ling',
+            name: 'Ling',
+            codename: 'Ling',
+            rarity: 6,
+            profession: 'Caster',
+            branch: 'Summoner',
+            thumbnailHue: 1,
+            quote: '',
+            archetypeDescription: '',
+            tokens: [token],
+          ),
+        ],
+      );
+      expect(RegionSnapshot.schemaVersion, 5);
+      final json =
+          jsonDecode(jsonEncode(snapshot.toJson())) as Map<String, Object?>;
+      final decoded = RegionSnapshot.fromJson(json).operators.single.tokens;
+      expect(decoded.single.skillIds, ['skchr_ling_2']);
+      expect(decoded.single.forAllSkills, isFalse);
+      expect(decoded.single.detail.toJson(), token.detail.toJson());
+
+      // A cached schema 4 snapshot has no summons: it is not read, so the
+      // region syncs again.
+      expect(
+        () => RegionSnapshot.fromJson({...json, 'schemaVersion': 4}),
+        throwsA(isA<CacheFailure>()),
+      );
     });
   });
 }

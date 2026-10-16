@@ -41,6 +41,7 @@ class RawCharacterEntry {
     this.talents,
     this.potentialRanks = const [],
     this.allSkillLvlup = const [],
+    this.displayTokenIds = const [],
   });
 
   final String name;
@@ -71,6 +72,10 @@ class RawCharacterEntry {
   final List<RawPotentialRank> potentialRanks;
   final List<RawAllSkillLvlup> allSkillLvlup;
 
+  /// Keys of the upstream `displayTokenDict`: the summons (`TOKEN` entries
+  /// of the same table) the game lists for this operator, in upstream order.
+  final List<String> displayTokenIds;
+
   factory RawCharacterEntry.fromJson(Map<String, Object?> json) {
     final trait = json['trait'];
     return RawCharacterEntry(
@@ -100,6 +105,7 @@ class RawCharacterEntry {
           rawListOf(json['potentialRanks'], RawPotentialRank.fromJson),
       allSkillLvlup:
           rawListOf(json['allSkillLvlup'], RawAllSkillLvlup.fromJson),
+      displayTokenIds: rawMap(json['displayTokenDict']).keys.toList(),
     );
   }
 }
@@ -193,15 +199,21 @@ class RawSkillReference {
     required this.skillId,
     this.levelUpCostCond = const [],
     this.unlockCond = const RawUnlockCond(phase: 0, level: 0),
+    this.overrideTokenKey,
   });
 
   final String? skillId;
   final List<RawLevelUpCostCond> levelUpCostCond;
   final RawUnlockCond unlockCond;
 
+  /// The summon (token id) this skill deploys instead of the operator's
+  /// default one; null when the skill does not change it.
+  final String? overrideTokenKey;
+
   factory RawSkillReference.fromJson(Map<String, Object?> json) {
     return RawSkillReference(
       skillId: rawOptString(json, 'skillId'),
+      overrideTokenKey: rawOptString(json, 'overrideTokenKey'),
       levelUpCostCond:
           rawListOf(json['levelUpCostCond'], RawLevelUpCostCond.fromJson),
       unlockCond: RawUnlockCond.fromJson(rawMap(json['unlockCond'])),
