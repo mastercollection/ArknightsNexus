@@ -55,6 +55,7 @@ RegionSnapshot mergeUnreleasedOperators(
   final borrowedBySource = <List<OperatorDetail>>[];
   for (final source in sources) {
     final sourceLabels = labels[source.region];
+    Map<String, String>? sharedTags;
     final borrowed = <OperatorDetail>[];
     for (final operator in source.operators) {
       if (operator.isUnreleased || !known.add(operator.id)) {
@@ -68,6 +69,8 @@ RegionSnapshot mergeUnreleasedOperators(
                 unreleased,
                 source: sourceLabels,
                 target: targetLabels,
+                sharedTags: sharedTags ??=
+                    sharedTagNames(source.operators, native.operators),
                 stats: labelStats,
               ),
       );

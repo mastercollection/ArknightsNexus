@@ -103,10 +103,14 @@ class LabelLocalizationStats {
 /// again from its texts with the target's term names. A label the target
 /// has no id for, such as a faction new in the source, keeps the source's
 /// name. Descriptive text (names, quotes, skills...) is left as it is.
+///
+/// [sharedTags] (see [sharedTagNames]) names the recruitment tags missing
+/// from the source's gacha table, such as tags recruitment does not offer.
 OperatorDetail localizeLabels(
   OperatorDetail operator, {
   required RegionLabels source,
   required RegionLabels target,
+  Map<String, String> sharedTags = const {},
   LabelLocalizationStats? stats,
 }) {
   final tally = stats ?? LabelLocalizationStats();
@@ -114,8 +118,9 @@ OperatorDetail localizeLabels(
     String field,
     String label,
     Map<String, String> sourceNames,
-    Map<String, String> targetNames,
-  ) {
+    Map<String, String> targetNames, [
+    Map<String, String> fallback = const {},
+  ]) {
     for (final MapEntry(:key, :value) in sourceNames.entries) {
       if (value != label) {
         continue;
@@ -125,6 +130,10 @@ OperatorDetail localizeLabels(
         tally.mapped++;
         return name;
       }
+    }
+    if (fallback[label] case final name?) {
+      tally.mapped++;
+      return name;
     }
     tally._keep(field, label);
     return label;
@@ -160,10 +169,47 @@ OperatorDetail localizeLabels(
     ..['groups'] = powers('groups', operator.groups)
     ..['tags'] = [
       for (final tag in operator.tags)
-        translate('tags', tag, source.recruitTags, target.recruitTags),
+        translate(
+          'tags',
+          tag,
+          source.recruitTags,
+          target.recruitTags,
+          sharedTags,
+        ),
     ]
     ..['baTags'] = baTags;
   return OperatorDetail.fromJson(
     jsonDecode(jsonEncode(json)) as Map<String, Object?>,
   );
+}
+
+/// The target's name for each recruitment tag name of the source, read
+/// from the operators both regions have released ([source] and [target]
+/// operators with the same id): an operator lists its tags in the same order
+/// on every server. A name paired with different names is left out.
+Map<String, String> sharedTagNames(
+  Iterable<OperatorDetail> source,
+  Iterable<OperatorDetail> target,
+) {
+  final targetTags = {
+    for (final operator in target)
+      if (!operator.isUnreleased) operator.id: operator.tags,
+  };
+  final names = <String, String>{};
+  final conflicting = <String>{};
+  for (final operator in source) {
+    final tags = targetTags[operator.id];
+    if (operator.isUnreleased ||
+        tags == null ||
+        tags.length != operator.tags.length) {
+      continue;
+    }
+    for (var index = 0; index < tags.length; index++) {
+      final name = operator.tags[index];
+      if (names.putIfAbsent(name, () => tags[index]) != tags[index]) {
+        conflicting.add(name);
+      }
+    }
+  }
+  return names..removeWhere((name, _) => conflicting.contains(name));
 }

@@ -420,10 +420,14 @@ String _describe(RegionBuildReport report) {
       : ' unreleased: ${counts.isEmpty ? 'none' : counts.join(', ')},';
   final stats = report.labelStats;
   final keptCount = stats?.kept.values.fold(0, (sum, count) => sum + count);
+  final kept = [
+    for (final MapEntry(:key, :value) in stats?.kept.entries ?? {}.entries)
+      value == 1 ? key : '$key x$value',
+  ];
   final labels = stats == null
       ? ''
       : ' labels: ${stats.mapped} localized, $keptCount kept'
-          '${stats.kept.isEmpty ? '' : ' (${stats.kept.keys.join('; ')})'},';
+          '${kept.isEmpty ? '' : ' (${kept.join('; ')})'},';
   return '$region: ${report.outcome.name}'
       '${entry == null ? '' : ' ${entry.versionControl}'},'
       '$size$unreleased$labels ${seconds}s$error';

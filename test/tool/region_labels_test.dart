@@ -91,4 +91,52 @@ void main() {
     expect(labels.recruitTags, {'1': 'Guard', '19': 'DPS', '16': 'Support'});
     expect(labels.baTerms, {'ba.stun': 'Stun', 'ba.sluggish': 'Slow'});
   });
+
+  group('tags missing from the gacha table', () {
+    OperatorDetail tagged(String id, List<String> tags) => OperatorDetail(
+          id: id,
+          name: id,
+          codename: id,
+          rarity: 6,
+          profession: 'Caster',
+          branch: '',
+          thumbnailHue: 0,
+          quote: '',
+          archetypeDescription: '',
+          tags: tags,
+        );
+
+    test('are paired by the operators both regions have', () {
+      final shared = sharedTagNames(
+        [
+          tagged('a', ['高空', '输出']),
+          tagged('b', ['控场', '高空']),
+          tagged('c', ['生存']),
+          tagged('d', ['生存']),
+          tagged('e', ['只有中文']),
+        ],
+        [
+          tagged('a', ['공중', '딜러']),
+          tagged('b', ['제어형', '공중']),
+          tagged('c', ['생존형']),
+          tagged('d', ['딴것']),
+          tagged('x', ['다른']),
+        ],
+      );
+      expect(shared, {'高空': '공중', '输出': '딜러', '控场': '제어형'});
+    });
+
+    test('use those pairs when the tag has no id', () {
+      final stats = LabelLocalizationStats();
+      final localized = localizeLabels(
+        tagged('new', ['高空', '减速', '未知']),
+        source: cn,
+        target: kr,
+        sharedTags: const {'高空': '공중'},
+        stats: stats,
+      );
+      expect(localized.tags, ['공중', '감속', '未知']);
+      expect(stats.kept.keys, contains('tags: 未知'));
+    });
+  });
 }
