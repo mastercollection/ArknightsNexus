@@ -768,35 +768,36 @@ class _WideHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Semantics(
-                  header: true,
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: RdText.pageTitle,
+          LayoutBuilder(
+            // The search box is 360px next to the import button, narrower
+            // when the title would otherwise get squeezed out.
+            builder: (context, constraints) => Row(
+              children: [
+                Expanded(
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: RdText.pageTitle,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Flexible(
-                flex: 2,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 360),
+                const SizedBox(width: 16),
+                SizedBox(
+                  width: (constraints.maxWidth - 360).clamp(160.0, 360.0),
                   child: search,
                 ),
-              ),
-              const SizedBox(width: 16),
-              RdButton(
-                label: importLabel,
-                icon: Icons.file_download_outlined,
-                height: 40,
-                onPressed: onImport,
-              ),
-            ],
+                const SizedBox(width: 12),
+                RdButton(
+                  label: importLabel,
+                  icon: Icons.file_download_outlined,
+                  height: 40,
+                  onPressed: onImport,
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           Semantics(
@@ -1147,8 +1148,7 @@ class _ItemTileState extends State<_ItemTile> {
                     icon,
                     const SizedBox(width: 12),
                     Expanded(child: name),
-                    // Room for the count button laid over the row.
-                    const SizedBox(width: 64),
+                    const SizedBox(width: 4),
                   ],
                 ),
               ),
@@ -1174,13 +1174,12 @@ class _ItemTileState extends State<_ItemTile> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [Expanded(child: open), count],
                 )
-              : Stack(
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Positioned.fill(child: open),
-                    Positioned(
-                      top: 0,
-                      bottom: 0,
-                      right: 6,
+                    Expanded(child: open),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
                       child: Center(child: count),
                     ),
                   ],

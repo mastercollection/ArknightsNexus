@@ -740,6 +740,10 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     } else if (_penguinDrops.isNotEmpty) {
       final rateLabel = i18n.t('itemsDetail.labels.dropRate');
       final timesLabel = i18n.t('itemsDetail.labels.sampleCount');
+      final bestRate = _penguinDrops.fold<double>(
+        0,
+        (best, entry) => entry.dropRate > best ? entry.dropRate : best,
+      );
       body = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -753,6 +757,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                 compact: compact,
                 stageLabel: penguinStageLabel(entry.stageId, _stageCodeMap),
                 dropRate: entry.dropRate,
+                barFraction: bestRate > 0 ? entry.dropRate / bestRate : 0,
                 rateLabel: rateLabel,
                 times: entry.times,
                 timesLabel: timesLabel,
@@ -1231,6 +1236,7 @@ class _PenguinDropRow extends StatelessWidget {
     required this.compact,
     required this.stageLabel,
     required this.dropRate,
+    required this.barFraction,
     required this.rateLabel,
     required this.times,
     required this.timesLabel,
@@ -1239,6 +1245,10 @@ class _PenguinDropRow extends StatelessWidget {
   final bool compact;
   final String stageLabel;
   final double dropRate;
+
+  /// Bar length relative to the best drop rate of the list (real rates are
+  /// a few percent, so an absolute bar would be a dot).
+  final double barFraction;
   final String rateLabel;
   final int times;
   final String timesLabel;
@@ -1246,7 +1256,7 @@ class _PenguinDropRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rate = '${(dropRate * 100).toStringAsFixed(2)}%';
-    final fill = dropRate.clamp(0.0, 1.0);
+    final fill = barFraction.clamp(0.0, 1.0);
     return Semantics(
       label: '$stageLabel, $rateLabel $rate, $timesLabel $times',
       excludeSemantics: true,
