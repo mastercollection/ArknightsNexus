@@ -12,6 +12,7 @@ import 'package:arknight_nexus/services/operator_service.dart';
 import 'package:arknight_nexus/services/region_readiness.dart';
 import 'package:arknight_nexus/services/region_sync_service.dart';
 import 'package:arknight_nexus/services/user_data_service.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -251,6 +252,61 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(OperatorsScreen), findsOneWidget);
       expect(find.text('Leader'), findsNothing);
+    });
+
+    testWidgets('PC detail pane resizes by dragging its border',
+        (tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await _pumpApp(
+        tester,
+        operatorService,
+        regionSyncService,
+        userDataRepository,
+      );
+      await tester.tap(find.byKey(const Key('sidebar-operators')));
+      await tester.pumpAndSettle();
+
+      final handle = find.byKey(const Key('operator-detail-resize'));
+      double paneLeft() => tester.getCenter(handle).dx;
+      final initial = paneLeft();
+
+      // Dragging the border left widens the pane.
+      await tester.drag(
+        handle,
+        const Offset(-200, 0),
+        kind: PointerDeviceKind.mouse,
+        touchSlopX: 0,
+      );
+      await tester.pumpAndSettle();
+      expect(paneLeft(), closeTo(initial - 200, 3));
+
+      // The list keeps a minimum width however far the border goes.
+      await tester.drag(
+        handle,
+        const Offset(-2000, 0),
+        kind: PointerDeviceKind.mouse,
+        touchSlopX: 0,
+      );
+      await tester.pumpAndSettle();
+      expect(paneLeft(), greaterThan(76 + 240 + 300));
+      expect(tester.takeException(), isNull);
+
+      // The width survives leaving and reopening the section.
+      final widened = paneLeft();
+      await tester.tap(find.byKey(const Key('rail-home')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('sidebar-operators')));
+      await tester.pumpAndSettle();
+      expect(paneLeft(), closeTo(widened, 1));
+
+      // Double-click restores the initial width.
+      await tester.tap(handle);
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(handle);
+      await tester.pumpAndSettle();
+      expect(paneLeft(), closeTo(initial, 1));
     });
 
     testWidgets('PC sidebar wraps long option lists and builds them on scroll',

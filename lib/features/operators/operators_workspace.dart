@@ -1,4 +1,6 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -142,18 +144,26 @@ class _OperatorsWorkspaceState extends ConsumerState<OperatorsWorkspace> {
         builder: (context, constraints) {
           const sidebar = 240.0;
           final rest = constraints.maxWidth - sidebar;
-          final paneWidth = (rest * 0.5).clamp(440.0, 640.0);
+          final bounds = _PaneBounds.of(rest);
+          final paneWidth =
+              (ref.watch(operatorDetailPaneWidthProvider) ?? bounds.initial)
+                  .clamp(bounds.min, bounds.max);
           return Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(width: sidebar, child: OperatorsFilterSidebar()),
               Expanded(child: main),
+              _PaneResizeHandle(
+                label: i18n.t('rd.operators.detail.resize'),
+                width: paneWidth,
+                bounds: bounds,
+                onChanged: (width) => ref
+                    .read(operatorDetailPaneWidthProvider.notifier)
+                    .state = width,
+              ),
               Container(
                 width: paneWidth,
-                decoration: const BoxDecoration(
-                  color: RdColors.rail,
-                  border: Border(left: BorderSide(color: RdColors.line)),
-                ),
+                color: RdColors.rail,
                 child: pane,
               ),
             ],
@@ -162,6 +172,126 @@ class _OperatorsWorkspaceState extends ConsumerState<OperatorsWorkspace> {
       ),
     );
   }
+}
+
+/// Width the user dragged the PC detail pane to; `null` until they do, so
+/// the pane starts at [_PaneBounds.initial]. Kept for the session, so it
+/// survives leaving and reopening the operators section.
+final operatorDetailPaneWidthProvider = StateProvider<double?>((ref) => null);
+
+/// Limits of the detail pane for the width left next to the filter sidebar:
+/// the list keeps at least [_minList], the pane at least [_minPane].
+class _PaneBounds {
+  const _PaneBounds(this.min, this.max, this.initial);
+
+  factory _PaneBounds.of(double available) {
+    final max = (available - _minList).clamp(_minPane, double.infinity);
+    return _PaneBounds(
+      _minPane,
+      max,
+      (available * 0.5).clamp(_minPane, 720.0).clamp(_minPane, max),
+    );
+  }
+
+  static const _minPane = 400.0;
+  static const _minList = 320.0;
+
+  final double min;
+  final double max;
+  final double initial;
+}
+
+/// Draggable border between the list and the detail pane. Double-click
+/// restores the initial width; with keyboard focus the arrow keys move it.
+class _PaneResizeHandle extends StatefulWidget {
+  const _PaneResizeHandle({
+    required this.label,
+    required this.width,
+    required this.bounds,
+    required this.onChanged,
+  });
+
+  final String label;
+  final double width;
+  final _PaneBounds bounds;
+  final ValueChanged<double?> onChanged;
+
+  @override
+  State<_PaneResizeHandle> createState() => _PaneResizeHandleState();
+}
+
+class _PaneResizeHandleState extends State<_PaneResizeHandle> {
+  static const _step = 24.0;
+
+  bool _hovered = false;
+  bool _dragging = false;
+  bool _focused = false;
+
+  void _resizeBy(double delta) {
+    widget.onChanged(
+      (widget.width + delta).clamp(widget.bounds.min, widget.bounds.max),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final active = _hovered || _dragging || _focused;
+    return Semantics(
+      label: widget.label,
+      value: '${widget.width.round()}',
+      increasedValue: '${(widget.width + _step).round()}',
+      decreasedValue: '${(widget.width - _step).round()}',
+      onIncrease: () => _resizeBy(_step),
+      onDecrease: () => _resizeBy(-_step),
+      child: FocusableActionDetector(
+        onShowFocusHighlight: (value) => setState(() => _focused = value),
+        onShowHoverHighlight: (value) => setState(() => _hovered = value),
+        mouseCursor: SystemMouseCursors.resizeColumn,
+        shortcuts: const {
+          SingleActivator(LogicalKeyboardKey.arrowLeft): _GrowIntent(),
+          SingleActivator(LogicalKeyboardKey.arrowRight): _ShrinkIntent(),
+        },
+        actions: {
+          _GrowIntent: CallbackAction<_GrowIntent>(
+            onInvoke: (_) => _resizeBy(_step),
+          ),
+          _ShrinkIntent: CallbackAction<_ShrinkIntent>(
+            onInvoke: (_) => _resizeBy(-_step),
+          ),
+        },
+        child: GestureDetector(
+          key: const Key('operator-detail-resize'),
+          behavior: HitTestBehavior.opaque,
+          // Track from the press point so the border stays under the cursor.
+          dragStartBehavior: DragStartBehavior.down,
+          // The pane is on the right, so dragging left widens it.
+          onHorizontalDragStart: (_) => setState(() => _dragging = true),
+          onHorizontalDragUpdate: (details) => _resizeBy(-details.delta.dx),
+          onHorizontalDragEnd: (_) => setState(() => _dragging = false),
+          onHorizontalDragCancel: () => setState(() => _dragging = false),
+          onDoubleTap: () => widget.onChanged(null),
+          child: SizedBox(
+            width: 9,
+            child: Center(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 120),
+                width: active ? 3 : 1,
+                color: active ? RdColors.accent : RdColors.line,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GrowIntent extends Intent {
+  const _GrowIntent();
+}
+
+class _ShrinkIntent extends Intent {
+  const _ShrinkIntent();
 }
 
 class _ActiveChip extends StatelessWidget {
