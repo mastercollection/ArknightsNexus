@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/sync_status.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../ui/redesign/rd_widgets.dart';
+import '../shared/region_data_label.dart';
 import '../shared/region_operator_counts.dart';
+import '../shared/region_select.dart';
 import '../shared/region_sync.dart';
 
 /// Status of [regionSyncStatusProvider] / [regionSyncControllerProvider] for the
@@ -11,7 +14,7 @@ import '../shared/region_sync.dart';
 enum HomeSyncState { loading, syncing, ready, needed }
 
 class HomeSyncView {
-  const HomeSyncView(this.state, [this.counts]);
+  const HomeSyncView(this.state, {this.counts, this.status});
 
   final HomeSyncState state;
 
@@ -19,42 +22,48 @@ class HomeSyncView {
   /// being counted.
   final RegionOperatorCounts? counts;
 
+  /// Cached sync status of the region (data version, fetch time); kept while
+  /// a sync runs so the version stays on screen.
+  final RegionSyncStatus? status;
+
   static HomeSyncView watch(WidgetRef ref) {
+    final statusAsync = ref.watch(regionSyncStatusProvider);
+    final cached = statusAsync.valueOrNull;
     if (ref.watch(regionSyncControllerProvider) ||
         ref.watch(regionEnsureProvider).isLoading) {
-      return const HomeSyncView(HomeSyncState.syncing);
+      return HomeSyncView(HomeSyncState.syncing, status: cached);
     }
-    return ref.watch(regionSyncStatusProvider).when(
-          data: (status) => status?.isReady == true
-              ? HomeSyncView(
-                  HomeSyncState.ready,
-                  ref.watch(regionOperatorCountsProvider).valueOrNull ??
-                      // The summaries are still being read: the snapshot's
-                      // total stands in until they are.
-                      (status!.operatorCount > 0
-                          ? RegionOperatorCounts(
-                              native: status.operatorCount,
-                              unreleased: 0,
-                            )
-                          : null),
-                )
-              : const HomeSyncView(HomeSyncState.needed),
-          error: (_, __) => const HomeSyncView(HomeSyncState.needed),
-          loading: () => const HomeSyncView(HomeSyncState.loading),
-        );
+    return statusAsync.when(
+      data: (status) => status?.isReady == true
+          ? HomeSyncView(
+              HomeSyncState.ready,
+              status: status,
+              counts: ref.watch(regionOperatorCountsProvider).valueOrNull ??
+                  // The summaries are still being read: the snapshot's
+                  // total stands in until they are.
+                  (status!.operatorCount > 0
+                      ? RegionOperatorCounts(
+                          native: status.operatorCount,
+                          unreleased: 0,
+                        )
+                      : null),
+            )
+          : HomeSyncView(HomeSyncState.needed, status: status),
+      error: (_, __) => const HomeSyncView(HomeSyncState.needed),
+      loading: () => const HomeSyncView(HomeSyncState.loading),
+    );
   }
 
-  String label(NexusI18n i18n) => switch (state) {
+  /// Short state word ("준비됨", "동기화 필요", …).
+  String stateLabel(NexusI18n i18n) => switch (state) {
         HomeSyncState.loading => i18n.t('rd.home.sync.loading'),
         HomeSyncState.syncing => i18n.t('common.syncing'),
-        HomeSyncState.ready => switch (counts) {
-            final counts? => i18n.t('rd.home.sync.readyCount', {
-                'count': formatOperatorCounts(i18n, counts),
-              }),
-            null => i18n.t('home.settings.syncReady'),
-          },
+        HomeSyncState.ready => i18n.t('home.settings.syncReady'),
         HomeSyncState.needed => i18n.t('rd.home.sync.needed'),
       };
+
+  /// Local time of the last sync, if the region has been synced.
+  String? syncTime() => formatSyncTime(status?.fetchedAt);
 
   Color get dotColor => switch (state) {
         HomeSyncState.syncing => RdColors.accent,
@@ -64,61 +73,234 @@ class HomeSyncView {
       };
 }
 
-/// "● 준비됨 · 415명 · 미실장 17명" status line (`role="status"`).
+class _Dot extends StatelessWidget {
+  const _Dot(this.color);
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+}
+
+/// "● KR 52.0.0 · 415명 · 미실장 17명" status line (`role="status"`) of the
+/// phone home and the PC sidebar; [showTime] adds the last sync time at the
+/// end of the row (phones).
 class HomeSyncStatusLine extends ConsumerWidget {
   const HomeSyncStatusLine({
-    this.withRegion = false,
-    this.fontSize = 13,
+    this.fontSize = 12,
+    this.showTime = false,
     super.key,
   });
 
-  /// Prefixes the region code ("KR 데이터 · …", the mobile header variant).
-  final bool withRegion;
   final double fontSize;
+  final bool showTime;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final i18n = ref.watch(i18nProvider);
     final view = HomeSyncView.watch(ref);
-    final status = view.label(i18n);
-    final text = withRegion
-        ? i18n.t('rd.home.sync.regionStatus', {
-            'region': regionLabels[ref.watch(regionProvider)],
-            'status': status,
-          })
-        : status;
+    final data = regionDataLabel(ref.watch(regionProvider), view.status);
+    final style = TextStyle(fontSize: fontSize, color: RdColors.text2);
+    final counts = view.counts;
+    final Widget text = view.state == HomeSyncState.ready && counts != null
+        ? OperatorCountsText(
+            key: const Key('home-sync-status'),
+            i18n: i18n,
+            counts: counts,
+            prefix: '$data · ',
+            maxLines: 2,
+            style: style,
+          )
+        : Text(
+            '$data · ${view.stateLabel(i18n)}',
+            key: const Key('home-sync-status'),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: style,
+          );
+    final time = showTime ? view.syncTime() : null;
     return Semantics(
       liveRegion: true,
       child: Row(
         children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: view.dotColor,
-              shape: BoxShape.circle,
-            ),
-          ),
+          _Dot(view.dotColor),
           const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              text,
-              key: const Key('home-sync-status'),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: fontSize,
-                color: RdColors.text2,
-              ),
+          Expanded(child: text),
+          if (time != null) ...[
+            const SizedBox(width: 8),
+            Text(
+              time,
+              key: const Key('home-sync-time'),
+              style: TextStyle(fontSize: fontSize, color: RdColors.text3),
             ),
-          ),
+          ],
         ],
       ),
     );
   }
 }
 
-/// Small labelled sync button of the PC sidebar ("⟳ 새로고침").
+/// "데이터" card of the PC home: state, region data version, operator counts,
+/// last sync time and the refresh (sync) button. [showRegionSelect] adds the
+/// region select where there is no sidebar (medium width).
+class HomeDataCard extends ConsumerWidget {
+  const HomeDataCard({this.showRegionSelect = false, super.key});
+
+  final bool showRegionSelect;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final i18n = ref.watch(i18nProvider);
+    final view = HomeSyncView.watch(ref);
+    final region = ref.watch(regionProvider);
+    final counts = view.counts;
+    const labelStyle = TextStyle(fontSize: 13, color: RdColors.text3);
+    TableRow row(String label, Widget value) => TableRow(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(right: 16, bottom: 8),
+              child: Text(label, style: labelStyle),
+            ),
+            Padding(padding: const EdgeInsets.only(bottom: 8), child: value),
+          ],
+        );
+    final info = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Semantics(
+                header: true,
+                child: Text(
+                  i18n.t('rd.home.data.title'),
+                  style: RdText.sectionTitle,
+                ),
+              ),
+            ),
+            Semantics(
+              liveRegion: true,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _Dot(view.dotColor),
+                  const SizedBox(width: 6),
+                  Text(
+                    view.stateLabel(i18n),
+                    key: const Key('home-sync-state'),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: view.state == HomeSyncState.ready
+                          ? RdColors.success
+                          : RdColors.text2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          regionDataLabel(region, view.status),
+          key: const Key('home-data-version'),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: RdText.mono(fontSize: 22),
+        ),
+        const SizedBox(height: 12),
+        Table(
+          columnWidths: const {
+            0: IntrinsicColumnWidth(),
+            1: FlexColumnWidth(),
+          },
+          children: [
+            row(
+              i18n.t('rd.home.plan.statOperators'),
+              counts == null
+                  ? const Text(
+                      '—',
+                      style: TextStyle(fontSize: 13, color: RdColors.text2),
+                    )
+                  : OperatorCountsText(
+                      key: const Key('home-data-counts'),
+                      i18n: i18n,
+                      counts: counts,
+                      maxLines: 2,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: RdColors.text,
+                      ),
+                    ),
+            ),
+            row(
+              i18n.t('rd.home.data.lastSync'),
+              Text(
+                view.syncTime() ?? '—',
+                key: const Key('home-data-time'),
+                style: const TextStyle(fontSize: 13, color: RdColors.text2),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+    if (!showRegionSelect) {
+      return RdCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [info, const SizedBox(height: 6), const HomeSyncButton()],
+        ),
+      );
+    }
+    // Medium width: the card spans the column, so the region select and the
+    // refresh button get their own column beside the facts when they fit.
+    final controls = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ExcludeSemantics(
+          child: Text(
+            i18n.t('rd.home.region.label'),
+            style: const TextStyle(fontSize: 12, color: RdColors.text3),
+          ),
+        ),
+        const SizedBox(height: 6),
+        RdRegionSelect(semanticLabel: i18n.t('rd.home.region.label')),
+        const SizedBox(height: 10),
+        const HomeSyncButton(),
+      ],
+    );
+    return RdCard(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 560) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [info, const SizedBox(height: 6), controls],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(child: info),
+              const SizedBox(width: 24),
+              SizedBox(width: 280, child: controls),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// "⟳ 새로고침" button of the data card: syncs the selected region.
 class HomeSyncButton extends ConsumerWidget {
   const HomeSyncButton({super.key});
 
@@ -126,52 +308,19 @@ class HomeSyncButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final i18n = ref.watch(i18nProvider);
     final syncing = ref.watch(regionSyncControllerProvider);
-    final foreground = syncing ? RdColors.text3 : RdColors.text;
-    Widget icon = Icon(Icons.refresh, size: 15, color: foreground);
-    if (syncing) {
-      icon = RdSpin(child: icon);
-    }
     return Tooltip(
       message: i18n.t('rd.home.sync.tooltip'),
       waitDuration: const Duration(milliseconds: 400),
-      child: Semantics(
-        button: true,
-        enabled: !syncing,
-        excludeSemantics: true,
-        label: i18n.t('rd.home.sync.tooltip'),
-        child: Material(
-          color: syncing ? Colors.transparent : RdColors.surface3,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(RdRadii.control),
-            side: const BorderSide(color: RdColors.border),
-          ),
-          child: InkWell(
-            key: const Key('home-sync-button'),
-            borderRadius: BorderRadius.circular(RdRadii.control),
-            onTap: syncing ? null : () => runRegionSync(context, ref),
-            child: Container(
-              height: 34,
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  icon,
-                  const SizedBox(width: 6),
-                  Text(
-                    syncing
-                        ? i18n.t('rd.home.sync.actionBusy')
-                        : i18n.t('rd.home.sync.action'),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: foreground,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+      child: RdButton(
+        key: const Key('home-sync-button'),
+        label: syncing
+            ? i18n.t('rd.home.sync.actionBusy')
+            : i18n.t('rd.home.sync.action'),
+        icon: Icons.refresh,
+        busy: syncing,
+        expand: true,
+        height: 40,
+        onPressed: () => runRegionSync(context, ref),
       ),
     );
   }

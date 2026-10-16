@@ -45,7 +45,7 @@ void main() {
         userDataRepository,
       );
 
-      await tester.tap(find.byKey(const Key('home-menu-operators')));
+      await tester.tap(find.byKey(const Key('rail-operators')));
       await tester.pumpAndSettle();
 
       expect(find.byType(OperatorsScreen), findsOneWidget);
@@ -95,7 +95,7 @@ void main() {
         userDataRepository,
       );
 
-      await tester.tap(find.byKey(const Key('home-menu-operators')));
+      await tester.tap(find.byKey(const Key('rail-operators')));
       await tester.pumpAndSettle();
 
       // The filter button opens the sheet with one row per dimension.
@@ -148,7 +148,7 @@ void main() {
         regionSyncService,
         userDataRepository,
       );
-      await tester.tap(find.byKey(const Key('home-menu-operators')));
+      await tester.tap(find.byKey(const Key('rail-operators')));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('operators-filter-affiliation')));
@@ -186,7 +186,7 @@ void main() {
         regionSyncService,
         userDataRepository,
       );
-      await tester.tap(find.byKey(const Key('home-menu-operators')));
+      await tester.tap(find.byKey(const Key('rail-operators')));
       await tester.pumpAndSettle();
 
       await tester.enterText(
@@ -447,7 +447,7 @@ void main() {
         regionSyncService,
         userDataRepository,
       );
-      await tester.tap(find.byKey(const Key('home-menu-operators')));
+      await tester.tap(find.byKey(const Key('rail-operators')));
       await tester.pumpAndSettle();
 
       // Condensing folds the search field away (clipped to zero height).
@@ -637,7 +637,7 @@ void main() {
         userDataRepository,
       );
 
-      await tester.tap(find.byKey(const Key('home-menu-operators')));
+      await tester.tap(find.byKey(const Key('rail-operators')));
       await tester.pumpAndSettle();
 
       // `ensure_region_fresh` errors propagate to the page even with a cache.
@@ -657,7 +657,7 @@ void main() {
         userDataRepository,
       );
 
-      await tester.tap(find.byKey(const Key('home-menu-operators')));
+      await tester.tap(find.byKey(const Key('rail-operators')));
       await tester.pumpAndSettle();
 
       expect(find.text('오퍼레이터 데이터를 불러오지 못했습니다.'), findsOneWidget);
@@ -672,7 +672,7 @@ void main() {
         userDataRepository,
       );
 
-      await tester.tap(find.byKey(const Key('home-menu-operators')));
+      await tester.tap(find.byKey(const Key('rail-operators')));
       await tester.pumpAndSettle();
       expect(operatorService.requestedRegions, [RegionCode.kr]);
 
@@ -705,7 +705,7 @@ void main() {
         userDataRepository,
       );
 
-      await tester.tap(find.byKey(const Key('home-menu-operators')));
+      await tester.tap(find.byKey(const Key('rail-operators')));
       await tester.pumpAndSettle();
 
       expect(regionSyncService.ensureFreshCalls, 1);

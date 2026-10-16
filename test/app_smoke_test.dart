@@ -23,19 +23,20 @@ void main() {
     await tester.pumpAndSettle();
 
     // The default 800x600 view is the medium layout: icon rail + the home
-    // page with its own region / sync controls (the brand lives in the PC
-    // sidebar and the phone header).
+    // page, whose data card carries the region select (the brand lives in
+    // the PC sidebar and the phone header).
     expect(find.text('KR · 한국어'), findsOneWidget);
-    expect(find.byKey(const Key('home-menu-operators')), findsOneWidget);
-    expect(find.byKey(const Key('home-menu-items')), findsOneWidget);
-    expect(find.byKey(const Key('home-menu-plan')), findsOneWidget);
-    expect(find.byKey(const Key('home-menu-enemies')), findsOneWidget);
+    for (final section in ['home', 'operators', 'plan', 'items', 'settings']) {
+      expect(find.byKey(Key('rail-$section')), findsOneWidget);
+    }
+    expect(find.byKey(const Key('home-search-field')), findsOneWidget);
+    expect(find.byKey(const Key('home-sync-button')), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text('비공식 팬 프로젝트'),
+      find.byKey(const Key('home-rights-notice')),
       200,
       scrollable: find.byType(Scrollable).first,
     );
-    expect(find.text('비공식 팬 프로젝트'), findsOneWidget);
+    expect(find.textContaining('비공식 팬 앱'), findsOneWidget);
   });
 
   testWidgets('navigates from dashboard to operators', (tester) async {
@@ -50,12 +51,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('home-menu-operators')));
+    await tester.tap(find.byKey(const Key('home-search-button')));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     await tester.pump();
 
-    expect(find.byKey(const Key('home-menu-enemies')), findsNothing);
+    expect(find.byKey(const Key('home-search-field')), findsNothing);
   });
 }
 

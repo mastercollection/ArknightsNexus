@@ -1,21 +1,27 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../i18n/nexus_i18n.dart';
 import '../../ui/redesign/rd_widgets.dart';
+import 'home_operator_highlights.dart';
 import 'home_plan_summary.dart';
 import 'home_region_sync.dart';
 import '../shared/region_select.dart';
 
 /// Home dashboard (port of `src/pages/index.vue`, redesigned after
-/// `Main.dc.html` / `MobileHome.dc.html`).
+/// `PcHome.dc.html` / `MHome.dc.html`). There are no shortcut tiles: the
+/// shell's navigation already lists every section.
 ///
-/// - expanded: the shell draws the sidebar (region / sync / settings live in
-///   its bottom block, [HomeSidebarPanel]); this page is the main column.
-/// - medium: icon rail only, so the region select and sync sit above the
-///   header.
-/// - compact: brand + sync + region header, then one scrolling column.
+/// - expanded: the shell draws the sidebar (region / status / settings live
+///   in its bottom block, [HomeSidebarPanel]); this page is the main column:
+///   search, data card + plan summary, new releases, unreleased preview.
+/// - medium: icon rail only, so the data card also carries the region
+///   select, and the cards stack when the column is narrow.
+/// - compact: brand + sync + region header, then one scrolling column with
+///   the status line, search, plan summary and the two operator scrollers.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -82,7 +88,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       backgroundColor: Colors.transparent,
       body: layout == RdLayout.compact
           ? _buildCompact(context, i18n)
-          : _buildWide(context, i18n, medium: layout == RdLayout.medium),
+          : _buildWide(context, medium: layout == RdLayout.medium),
     );
   }
 
@@ -90,32 +96,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 12, 8),
-            child: Row(
-              children: [
-                Expanded(child: _Brand(onTap: () => context.go('/'))),
-                const SizedBox(width: 8),
-                const HomeSyncIconButton(),
-                const SizedBox(width: 8),
-                RdRegionSelect(
-                  semanticLabel: i18n.t('rd.home.region.short'),
-                  codesOnly: true,
-                  height: 44,
-                ),
-              ],
+        Container(
+          decoration: const BoxDecoration(
+            color: RdColors.surface1,
+            border: Border(bottom: BorderSide(color: RdColors.hairline)),
+          ),
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+              child: Row(
+                children: [
+                  Expanded(child: _Brand(onTap: () => context.go('/'))),
+                  const SizedBox(width: 8),
+                  const HomeSyncIconButton(),
+                  const SizedBox(width: 8),
+                  RdRegionSelect(
+                    semanticLabel: i18n.t('rd.home.region.short'),
+                    codesOnly: true,
+                    height: 44,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const HomeSyncStatusLine(withRegion: true, fontSize: 12),
+                const HomeSyncStatusLine(showTime: true),
                 const SizedBox(height: 16),
                 _SearchBlock(
                   controller: _searchController,
@@ -124,10 +136,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 const SizedBox(height: 16),
                 const HomePlanSummaryCard(compact: true),
-                const SizedBox(height: 16),
-                const _MenuGrid(compact: true),
-                const SizedBox(height: 16),
-                const _RightsNotice(compact: true),
+                const _Gap(HomeNewReleasesSection(compact: true)),
+                const _Gap(HomeUnreleasedPreviewSection(compact: true)),
+                const SizedBox(height: 20),
+                const _RightsNotice(),
               ],
             ),
           ),
@@ -136,58 +148,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildWide(
-    BuildContext context,
-    NexusI18n i18n, {
-    required bool medium,
-  }) {
+  Widget _buildWide(BuildContext context, {required bool medium}) {
+    final padding = rdPagePadding(context);
     return SafeArea(
       left: false,
-      child: SingleChildScrollView(
-        padding: rdPagePadding(context),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (medium) ...[
-              Row(
-                children: [
-                  const Expanded(child: HomeSyncStatusLine(withRegion: true)),
-                  const SizedBox(width: 8),
-                  const HomeSyncButton(),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    width: 168,
-                    child: RdRegionSelect(
-                      semanticLabel: i18n.t('rd.home.region.label'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-            ],
-            _SearchBlock(
-              controller: _searchController,
-              compact: false,
-              onSubmit: _openOperatorSearch,
+      child: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          padding: padding,
+          child: ConstrainedBox(
+            // The rights notice sits at the bottom of a short page.
+            constraints: BoxConstraints(
+              minHeight: math.max(0, constraints.maxHeight - padding.vertical),
             ),
-            const SizedBox(height: 28),
-            // Without the sidebar (medium) the icon rail has no labels, so
-            // the shortcuts lead the page, in one row, right under the search.
-            if (medium) ...[
-              const _MenuGrid(compact: false, minTileWidth: 150),
-              const SizedBox(height: 28),
-              const _WidePlanSection(),
-            ] else ...[
-              const _WidePlanSection(),
-              const SizedBox(height: 28),
-              const _MenuGrid(compact: false),
-            ],
-            const SizedBox(height: 28),
-            const _RightsNotice(compact: false),
-          ],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _SearchBlock(
+                      controller: _searchController,
+                      compact: false,
+                      onSubmit: _openOperatorSearch,
+                    ),
+                    const SizedBox(height: 20),
+                    _DataAndPlanRow(medium: medium),
+                    const _Gap(
+                      HomeNewReleasesSection(compact: false),
+                      gap: 20,
+                    ),
+                    const _Gap(
+                      HomeUnreleasedPreviewSection(compact: false),
+                      gap: 20,
+                    ),
+                  ],
+                ),
+                const _Gap(_RightsNotice(), gap: 20),
+              ],
+            ),
+          ),
         ),
       ),
     );
+  }
+}
+
+/// [child] with [gap] above it.
+class _Gap extends StatelessWidget {
+  const _Gap(this.child, {this.gap = 16});
+
+  final Widget child;
+  final double gap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(padding: EdgeInsets.only(top: gap), child: child);
   }
 }
 
@@ -203,11 +219,11 @@ class _Brand extends StatelessWidget {
       onTap: onTap,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 44),
-        child: Row(
+        child: const Row(
           children: [
-            const RdAppMark(),
-            const SizedBox(width: 10),
-            const Flexible(
+            RdAppMark(size: 28),
+            SizedBox(width: 8),
+            Flexible(
               child: Text(
                 'Arknights Nexus',
                 maxLines: 1,
@@ -215,6 +231,7 @@ class _Brand extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
                   color: RdColors.text,
                 ),
               ),
@@ -226,8 +243,8 @@ class _Brand extends StatelessWidget {
   }
 }
 
-/// Quick search (`role="search"`): the field submits on Enter, the button
-/// does the same, and the hint says where it leads.
+/// Quick search (`role="search"`): Enter in the field opens the operator
+/// list (with `?q=` when there is a keyword); PC also has a search button.
 class _SearchBlock extends ConsumerWidget {
   const _SearchBlock({
     required this.controller,
@@ -246,117 +263,56 @@ class _SearchBlock extends ConsumerWidget {
       key: const Key('home-search-field'),
       controller: controller,
       hintText: i18n.t('home.search.placeholder'),
-      height: 48,
+      height: compact ? 48 : 44,
       onSubmitted: (_) => onSubmit(),
-      trailing: compact ? null : const _EnterKey(),
     );
     return Semantics(
       container: true,
-      label: i18n.t('home.search.eyebrow'),
-      child: ValueListenableBuilder<TextEditingValue>(
-        valueListenable: controller,
-        builder: (context, value, _) {
-          final query = value.text.trim();
-          final hint = Text(
-            query.isEmpty
-                ? i18n.t('rd.home.searchHint')
-                : i18n.t('rd.home.searchHintQuery', {'query': query}),
-            style: RdText.small,
-          );
-          if (compact) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+      label: i18n.t('home.search.action'),
+      child: compact
+          ? field
+          : Row(
               children: [
-                field,
-                const SizedBox(height: 8),
+                Expanded(child: field),
+                const SizedBox(width: 10),
                 RdButton(
                   key: const Key('home-search-button'),
-                  label: query.isEmpty
-                      ? i18n.t('home.search.action')
-                      : i18n.t('rd.home.searchWithQuery', {'query': query}),
+                  label: i18n.t('rd.home.searchButton'),
+                  variant: RdButtonVariant.primary,
+                  height: 44,
                   onPressed: onSubmit,
-                  variant: RdButtonVariant.tonal,
-                  expand: true,
                 ),
-                const SizedBox(height: 8),
-                hint,
               ],
-            );
-          }
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(child: field),
-                  const SizedBox(width: 8),
-                  RdButton(
-                    key: const Key('home-search-button'),
-                    label: i18n.t('home.search.action'),
-                    variant: RdButtonVariant.primary,
-                    height: 48,
-                    onPressed: onSubmit,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              hint,
-            ],
-          );
-        },
-      ),
+            ),
     );
   }
 }
 
-class _EnterKey extends StatelessWidget {
-  const _EnterKey();
+/// Data card (360px) next to the plan summary; stacked when the column is
+/// too narrow for both.
+class _DataAndPlanRow extends StatelessWidget {
+  const _DataAndPlanRow({required this.medium});
+
+  final bool medium;
 
   @override
   Widget build(BuildContext context) {
-    return ExcludeSemantics(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: RdColors.white14),
-        ),
-        child: Text(
-          'Enter',
-          style: RdText.mono(fontSize: 11, color: RdColors.muted),
-        ),
-      ),
-    );
-  }
-}
-
-/// Summary card (flex 2) next to the planned operators (flex 1); the second
-/// card only exists when the plan has operators.
-class _WidePlanSection extends ConsumerWidget {
-  const _WidePlanSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final summary = ref.watch(homePlanSummaryProvider).valueOrNull;
-    const card = HomePlanSummaryCard(compact: false);
-    if (summary == null || summary.isEmpty) {
-      return card;
-    }
-    final planned = HomePlannedOperatorsCard(summary: summary);
+    final data = HomeDataCard(showRegionSelect: medium);
+    const plan = HomePlanSummaryCard(compact: false);
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth < 520 + 16 + 260) {
+        if (constraints.maxWidth < 360 + 20 + 480) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [card, const SizedBox(height: 16), planned],
+            children: [data, const SizedBox(height: 20), plan],
           );
         }
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Expanded(flex: 2, child: card),
-            const SizedBox(width: 16),
-            Expanded(child: planned),
+            SizedBox(width: 360, child: data),
+            const SizedBox(width: 20),
+            const Expanded(child: plan),
           ],
         );
       },
@@ -364,223 +320,17 @@ class _WidePlanSection extends ConsumerWidget {
   }
 }
 
-class _MenuItem {
-  const _MenuItem({
-    required this.title,
-    required this.caption,
-    required this.status,
-    required this.icon,
-    required this.id,
-    this.route,
-  });
-
-  final String id;
-  final String title;
-  final String caption;
-  final String status;
-  final String icon;
-  final String? route;
-
-  bool get enabled => route != null;
-}
-
-/// Menu tiles of `index.vue` (Operators / Plan / Items active, Enemies
-/// "pending" and inert).
-class _MenuGrid extends ConsumerWidget {
-  const _MenuGrid({required this.compact, this.minTileWidth = 220});
-
-  final bool compact;
-
-  /// `minmax(<this>, 1fr)` of the PC grid.
-  final double minTileWidth;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final i18n = ref.watch(i18nProvider);
-    final items = [
-      _MenuItem(
-        id: 'operators',
-        title: i18n.t('shell.nav.operators'),
-        caption: i18n.t('home.menu.operators.caption'),
-        status: i18n.t('home.menu.status.active'),
-        icon: 'assets/icons/home/operator.webp',
-        route: '/operators',
-      ),
-      _MenuItem(
-        id: 'plan',
-        title: i18n.t('shell.nav.plan'),
-        caption: i18n.t('home.menu.plan.caption'),
-        status: i18n.t('home.menu.status.active'),
-        icon: 'assets/icons/home/prts.png',
-        route: '/plan',
-      ),
-      _MenuItem(
-        id: 'items',
-        title: i18n.t('shell.nav.items'),
-        caption: i18n.t('home.menu.items.caption'),
-        status: i18n.t('home.menu.status.active'),
-        icon: 'assets/icons/home/items.webp',
-        route: '/items',
-      ),
-      _MenuItem(
-        id: 'enemies',
-        title: i18n.t('shell.nav.enemies'),
-        caption: i18n.t('home.menu.enemies.caption'),
-        status: i18n.t('home.menu.status.pending'),
-        icon: 'assets/icons/home/enemy.webp',
-      ),
-    ];
-    // repeat(auto-fit, minmax(220px, 1fr)) on PC, two columns on phones.
-    final grid = RdAutoGrid(
-      columns: compact ? 2 : null,
-      minTileWidth: minTileWidth,
-      maxColumns: 4,
-      gap: compact ? 12.0 : 14.0,
-      equalHeight: true,
-      children: [
-        for (final item in items) _MenuTile(item: item, compact: compact),
-      ],
-    );
-    if (compact) {
-      return grid;
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Semantics(
-          header: true,
-          child: Text(i18n.t('rd.home.shortcuts'), style: RdText.sectionTitle),
-        ),
-        const SizedBox(height: 14),
-        grid,
-      ],
-    );
-  }
-}
-
-class _MenuTile extends StatelessWidget {
-  const _MenuTile({required this.item, required this.compact});
-
-  final _MenuItem item;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final content = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: RdColors.portrait,
-                borderRadius: BorderRadius.circular(RdRadii.control),
-              ),
-              child: Image.asset(item.icon, fit: BoxFit.contain),
-            ),
-            const Spacer(),
-            RdPill(label: item.status, fontSize: compact ? 11 : 12),
-          ],
-        ),
-        SizedBox(height: compact ? 8 : 10),
-        Text(
-          item.title,
-          style: TextStyle(
-            fontSize: compact ? 15 : 17,
-            fontWeight: FontWeight.w700,
-            color: RdColors.text,
-          ),
-        ),
-        SizedBox(height: compact ? 6 : 8),
-        Text(
-          item.caption,
-          style: TextStyle(
-            fontSize: compact ? 13 : 14,
-            height: 1.5,
-            color: RdColors.muted,
-          ),
-        ),
-      ],
-    );
-    final tile = Material(
-      color: RdColors.card,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(RdRadii.tile),
-        side: const BorderSide(color: RdColors.line2),
-      ),
-      child: InkWell(
-        key: Key('home-menu-${item.id}'),
-        borderRadius: BorderRadius.circular(RdRadii.tile),
-        onTap: item.enabled ? () => context.push(item.route!) : null,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: compact ? 0 : 150),
-          child: Padding(
-            padding: EdgeInsets.all(compact ? 16 : 18),
-            child: content,
-          ),
-        ),
-      ),
-    );
-    return Semantics(
-      button: true,
-      enabled: item.enabled,
-      child: item.enabled ? tile : Opacity(opacity: 0.55, child: tile),
-    );
-  }
-}
-
-/// "권리 안내" footer.
+/// Rights notice: one small paragraph at the bottom of the page.
 class _RightsNotice extends ConsumerWidget {
-  const _RightsNotice({required this.compact});
-
-  final bool compact;
+  const _RightsNotice();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final i18n = ref.watch(i18nProvider);
-    return Container(
-      padding: compact
-          ? const EdgeInsets.all(16)
-          : const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-      decoration: BoxDecoration(
-        color: RdColors.rail,
-        borderRadius: BorderRadius.circular(RdRadii.card),
-        border: compact ? Border.all(color: RdColors.line) : null,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            i18n.t('home.notice.eyebrow'),
-            style: const TextStyle(
-              fontSize: 11,
-              letterSpacing: 1.5,
-              color: RdColors.muted,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            i18n.t('home.notice.title'),
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: compact ? RdColors.text : RdColors.secondary,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            i18n.t('home.notice.body'),
-            style: const TextStyle(
-              fontSize: 13,
-              height: 1.7,
-              color: RdColors.muted,
-            ),
-          ),
-        ],
-      ),
+    return Text(
+      i18n.t('home.notice.body'),
+      key: const Key('home-rights-notice'),
+      style: const TextStyle(fontSize: 12, height: 1.6, color: RdColors.text3),
     );
   }
 }

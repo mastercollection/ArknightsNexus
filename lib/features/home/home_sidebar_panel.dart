@@ -6,8 +6,9 @@ import '../../ui/redesign/rd_widgets.dart';
 import 'home_region_sync.dart';
 import '../shared/region_select.dart';
 
-/// Bottom block of the PC home sidebar (`Main.dc.html`): data region / UI
-/// language select, sync status with a sync button, and the settings link.
+/// Bottom block of the PC home sidebar (`PcHome.dc.html`): data region / UI
+/// language select, the sync status line and the settings link. The refresh
+/// button lives in the page's data card.
 ///
 /// The shell lays the sidebar out with `IntrinsicHeight`, so nothing in here
 /// may need a `LayoutBuilder`.
@@ -46,13 +47,7 @@ class HomeSidebarPanel extends ConsumerWidget {
           const SizedBox(height: 6),
           RdRegionSelect(semanticLabel: i18n.t('rd.home.region.label')),
           const SizedBox(height: 12),
-          const Row(
-            children: [
-              Expanded(child: HomeSyncStatusLine()),
-              SizedBox(width: 8),
-              HomeSyncButton(),
-            ],
-          ),
+          const HomeSyncStatusLine(),
           const SizedBox(height: 12),
           Semantics(
             button: true,
