@@ -18,6 +18,7 @@ import 'package:arknight_nexus/services/item_service.dart';
 import 'package:arknight_nexus/services/penguin_stats_service.dart';
 import 'package:arknight_nexus/services/region_sync_service.dart';
 import 'package:arknight_nexus/services/user_data_service.dart';
+import 'package:arknight_nexus/ui/redesign/rd_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -33,6 +34,10 @@ void main() {
       expect(formatOwnedCount(-3, '30012'), '0');
       expect(formatOwnedCount(12345, lmdItemId), '12.3K');
       expect(formatOwnedCount(2500000, lmdItemId), '2.5M');
+      // An empty or small LMD wallet is written out, not "0.0K".
+      expect(formatOwnedCount(0, lmdItemId), '0');
+      expect(formatOwnedCount(999, lmdItemId), '999');
+      expect(formatOwnedCount(1000, lmdItemId), '1.0K');
     });
 
     test('normalizes owned count input', () {
@@ -50,6 +55,40 @@ void main() {
       expect(penguinStageLabel('unknown', map), 'unknown');
       expect(formatJsNumber(2.0), '2');
       expect(formatJsNumber(0.5), '0.5');
+    });
+
+    test('derives item kinds and tiers from the game data', () {
+      ItemEntry entry(
+        String id, {
+        String type = 'MATERIAL',
+        String classify = 'MATERIAL',
+        String rarity = 'TIER_3',
+      }) =>
+          _entry(
+            id,
+            id,
+            rarity: rarity,
+            itemType: type,
+            classifyType: classify,
+          );
+      expect(
+        itemKindOf(entry('4001', type: 'GOLD', classify: 'NORMAL')),
+        ItemKind.currency,
+      );
+      expect(itemKindOf(entry('2004', type: 'CARD_EXP')), ItemKind.exp);
+      expect(itemKindOf(entry('3303')), ItemKind.skill);
+      expect(itemKindOf(entry('mod_unlock_token')), ItemKind.module);
+      expect(itemKindOf(entry('3213')), ItemKind.chip);
+      expect(itemKindOf(entry('32001')), ItemKind.chip);
+      expect(itemKindOf(entry('tier6_pioneer')), ItemKind.token);
+      expect(itemKindOf(entry('30014')), ItemKind.material);
+      expect(
+        itemKindOf(entry('furni_1', type: 'FURN', classify: 'NONE')),
+        ItemKind.other,
+      );
+      expect(itemTierOf(entry('30014', rarity: 'TIER_4')), 4);
+      expect(itemTierOf(entry('30012', rarity: '3')), 3);
+      expect(itemTierOf(entry('x', rarity: '')), 0);
     });
 
     test('infinite slice reveals items in batches', () {
@@ -84,11 +123,11 @@ void main() {
       await _pumpApp(tester, itemService, userDataRepository);
       await _openItems(tester);
 
-      expect(find.text('아이템 목록'), findsOneWidget);
+      expect(_inItems(find.text('아이템')), findsOneWidget);
       expect(find.text('Oriron'), findsOneWidget);
       expect(find.text('Orirock'), findsOneWidget);
-      expect(find.text('x 11'), findsOneWidget);
-      expect(find.text('x 0'), findsOneWidget);
+      expect(find.text('11'), findsOneWidget);
+      expect(find.text('0'), findsOneWidget);
       expect(itemService.lastClassifyType, 'MATERIAL');
 
       // Search also covers description/usage like the web page.
@@ -129,7 +168,7 @@ void main() {
       await _pumpApp(tester, itemService, userDataRepository);
       await _openItems(tester);
 
-      await tester.tap(find.text('x 11'));
+      await tester.tap(find.text('11'));
       await tester.pumpAndSettle();
       expect(find.text('현재 보유 수량'), findsOneWidget);
 
@@ -145,7 +184,7 @@ void main() {
       await tester.tap(find.byTooltip('닫기'));
       await tester.pumpAndSettle();
       expect(find.text('현재 보유 수량'), findsNothing);
-      expect(find.text('x 23'), findsOneWidget);
+      expect(find.text('23'), findsOneWidget);
     });
 
     testWidgets('imports item counts from JSON', (tester) async {
@@ -163,7 +202,7 @@ void main() {
       expect((await userDataRepository.read()).itemCounts['30013'], 5);
       expect(find.text('아이템 수량 JSON 임포트'), findsNothing);
       expect(find.text('1개 아이템 수량을 반영했습니다.'), findsOneWidget);
-      expect(find.text('x 5'), findsOneWidget);
+      expect(find.text('5'), findsOneWidget);
 
       // Let the toast dismiss itself.
       await tester.pump(const Duration(seconds: 4));
@@ -180,10 +219,189 @@ void main() {
       expect(find.text('Oriron'), findsWidgets);
       expect(find.text('제조 레시피'), findsOneWidget);
       expect(find.text('Orirock'), findsOneWidget);
-      expect(find.text('MATERIAL'), findsOneWidget);
-      expect(find.text('x2'), findsOneWidget);
+      expect(find.text('T2 · 재료'), findsOneWidget);
+      expect(find.text('×2'), findsOneWidget);
+      expect(find.text('제조소'), findsOneWidget);
+      // Header chips and the item's own text.
+      expect(find.text('T3'), findsOneWidget);
+      expect(find.text('Upgrade material'), findsOneWidget);
+      expect(find.text('Stage'), findsOneWidget);
       expect(find.text('펭귄 통계'), findsOneWidget);
       expect(find.text('표시할 Penguin Stats 드랍 데이터가 없습니다.'), findsOneWidget);
+    });
+
+    testWidgets('groups items into kind tabs and tier sections',
+        (tester) async {
+      itemService = _FakeItemService(
+        moreItems: [
+          _entry(
+            '4001',
+            'LMD',
+            rarity: 'TIER_4',
+            itemType: 'GOLD',
+            classifyType: 'NORMAL',
+          ),
+          _entry(
+            '2001',
+            'Drill Battle Record',
+            rarity: 'TIER_2',
+            itemType: 'CARD_EXP',
+          ),
+          _entry('3211', 'Vanguard Chip', rarity: 'TIER_3'),
+          _entry('30014', 'Orirock Concentration', rarity: 'TIER_4'),
+        ],
+      );
+      await _pumpApp(tester, itemService, userDataRepository);
+      await _openItems(tester);
+
+      // Only kinds present in the data get a tab.
+      for (final label in ['전체', '재화', '작전기록', '칩', '재료']) {
+        expect(_inItems(find.text(label)), findsWidgets, reason: label);
+      }
+      for (final label in ['스킬', '모듈', '증표']) {
+        expect(_inItems(find.text(label)), findsNothing, reason: label);
+      }
+      // "All" is grouped by kind: the tab and the section header.
+      expect(_inItems(find.text('재화')), findsNWidgets(2));
+      expect(find.text('LMD'), findsOneWidget);
+      expect(find.text('Vanguard Chip'), findsOneWidget);
+
+      // Materials: sections by tier, highest first.
+      await tester.tap(_inItems(find.text('재료')).first);
+      await tester.pumpAndSettle();
+      expect(find.text('LMD'), findsNothing);
+      expect(find.text('Vanguard Chip'), findsNothing);
+      expect(find.text('T4'), findsOneWidget);
+      expect(find.text('T3'), findsOneWidget);
+      expect(find.text('T2'), findsOneWidget);
+      expect(
+        _readsBefore(
+          tester,
+          find.text('Orirock Concentration'),
+          find.text('Oriron'),
+        ),
+        isTrue,
+      );
+      expect(
+        _readsBefore(tester, find.text('Oriron'), find.text('Orirock')),
+        isTrue,
+      );
+
+      // A kind without sub-sections lists its items alone.
+      await tester.tap(_inItems(find.text('칩')).first);
+      await tester.pumpAndSettle();
+      expect(find.text('Vanguard Chip'), findsOneWidget);
+      expect(find.text('Oriron'), findsNothing);
+      expect(find.text('T3'), findsNothing);
+
+      // Search filters inside the selected tab.
+      await tester.tap(_inItems(find.text('전체')).first);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'battle');
+      await tester.pumpAndSettle();
+      expect(find.text('Drill Battle Record'), findsOneWidget);
+      expect(find.text('Oriron'), findsNothing);
+    });
+
+    testWidgets('mutes zero owned counts and writes small LMD counts out',
+        (tester) async {
+      itemService = _FakeItemService(
+        moreItems: [
+          _entry(
+            '4001',
+            'LMD',
+            rarity: 'TIER_4',
+            itemType: 'GOLD',
+            classifyType: 'NORMAL',
+          ),
+        ],
+      );
+      await _pumpApp(tester, itemService, userDataRepository);
+      await _openItems(tester);
+
+      // Orirock and LMD are not owned.
+      expect(find.text('0'), findsNWidgets(2));
+      expect(find.text('0.0K'), findsNothing);
+      for (final element in find.text('0').evaluate()) {
+        expect((element.widget as Text).style?.color, RdColors.text3);
+      }
+      expect(
+        tester.widget<Text>(find.text('11')).style?.color,
+        RdColors.text,
+      );
+    });
+
+    testWidgets('shows the item and recipe while Penguin Stats is pending',
+        (tester) async {
+      final penguin = _BlockingPenguinStatsService();
+      await _pumpApp(
+        tester,
+        itemService,
+        userDataRepository,
+        penguinStatsService: penguin,
+        stageCodes: const {'main_02-07': '2-7'},
+      );
+      await _openItems(tester);
+      await tester.tap(find.text('Oriron'));
+      // The loading row spins, so advance frame by frame instead of settling.
+      for (var i = 0; i < 20; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      expect(find.text('Upgrade material'), findsOneWidget);
+      expect(find.text('제조 레시피'), findsOneWidget);
+      expect(find.text('Orirock'), findsOneWidget);
+      expect(find.byTooltip('수량 늘리기 (길게 누르면 가속)'), findsOneWidget);
+      expect(find.text('Penguin Stats에서 불러오는 중'), findsOneWidget);
+      expect(find.text('40.00%'), findsNothing);
+
+      penguin.complete([
+        const PenguinMatrixEntry(
+          stageId: 'main_02-07',
+          itemId: '30012',
+          quantity: 40,
+          times: 100,
+          dropRate: 0.4,
+        ),
+      ]);
+      await tester.pumpAndSettle();
+      expect(find.text('Penguin Stats에서 불러오는 중'), findsNothing);
+      expect(find.text('2-7'), findsOneWidget);
+      expect(find.text('40.00%'), findsOneWidget);
+    });
+
+    testWidgets('edits the owned count inline on the detail page',
+        (tester) async {
+      await _pumpApp(tester, itemService, userDataRepository);
+      await _openItems(tester);
+      await tester.tap(find.text('Oriron'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('보유'), findsOneWidget);
+      await tester.tap(find.text('+'));
+      await tester.pumpAndSettle();
+      expect((await userDataRepository.read()).itemCounts['30012'], 12);
+
+      await tester.tap(find.text('−'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('−'));
+      await tester.pumpAndSettle();
+      expect((await userDataRepository.read()).itemCounts['30012'], 10);
+
+      await tester.enterText(find.byType(TextField), '0');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect((await userDataRepository.read()).itemCounts['30012'], isNull);
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).style?.color,
+        RdColors.text3,
+      );
+
+      // Back on the list, the tile shows the count saved on the detail page.
+      await tester.tap(find.byTooltip('아이템 목록으로'));
+      await tester.pumpAndSettle();
+      expect(find.text('11'), findsNothing);
+      expect(find.text('0'), findsNWidgets(2));
     });
 
     testWidgets('shows not found state for unknown items', (tester) async {
@@ -227,9 +445,9 @@ void main() {
       await tester.tap(find.text('Oriron'));
       await tester.pumpAndSettle();
 
-      expect(find.text('드랍률 40.00%'), findsOneWidget);
-      expect(find.text('표본 수 100'), findsOneWidget);
-      expect(find.text('Penguin Stats · CN'), findsNWidgets(2));
+      expect(find.text('40.00%'), findsOneWidget);
+      expect(find.text('100'), findsOneWidget);
+      expect(find.text('Penguin Stats · CN'), findsOneWidget);
       expect(_readsBefore(tester, find.text('2-7'), find.text('3-1')), isTrue);
 
       // Sort by sample count.
@@ -245,7 +463,7 @@ void main() {
       await tester.tap(find.text('KR').last);
       await tester.pumpAndSettle();
       expect(penguin.requestedServers, [PenguinServer.cn, PenguinServer.kr]);
-      expect(find.text('Penguin Stats · KR'), findsNWidgets(2));
+      expect(find.text('Penguin Stats · KR'), findsOneWidget);
     });
 
     testWidgets('reloads items in the selected region language',
@@ -259,7 +477,7 @@ void main() {
       container.read(regionProvider.notifier).state = RegionCode.cn;
       await tester.pumpAndSettle();
 
-      expect(find.text('道具列表'), findsOneWidget);
+      expect(_inItems(find.text('道具')), findsOneWidget);
       expect(itemService.requestedRegions.last, RegionCode.cn);
     });
 
@@ -271,7 +489,7 @@ void main() {
       await _pumpApp(tester, itemService, blocking);
       await _openItems(tester);
 
-      await tester.tap(find.text('x 11'));
+      await tester.tap(find.text('11'));
       await tester.pumpAndSettle();
       blocking.block();
       await tester.tap(find.text('+'));
@@ -288,7 +506,7 @@ void main() {
       blocking.release();
       await tester.pumpAndSettle();
       expect(find.text('현재 보유 수량'), findsNothing);
-      expect(find.text('x 12'), findsOneWidget);
+      expect(find.text('12'), findsOneWidget);
       expect((await blocking.read()).itemCounts['30012'], 12);
     });
   });
@@ -342,12 +560,15 @@ void main() {
           expect(itemErrors(), isEmpty);
           expect(find.byType(ItemsScreen), findsOneWidget);
           expect(find.byType(TextField), findsOneWidget);
-          expect(find.text('JSON 임포트'), findsOneWidget);
-          expect(find.text('x 11'), findsOneWidget);
+          final compact = size.width < 720;
+          final importButton =
+              compact ? find.byTooltip('JSON 임포트') : find.text('JSON 임포트');
+          expect(importButton, findsOneWidget);
+          expect(find.text('11'), findsOneWidget);
           // The items list is a section root: no back button.
           expect(find.byTooltip('뒤로가기'), findsNothing);
 
-          await tester.tap(find.text('x 11'));
+          await tester.tap(find.text('11'));
           await tester.pumpAndSettle();
           expect(itemErrors(), isEmpty);
           expect(find.text('+'), findsOneWidget);
@@ -356,7 +577,7 @@ void main() {
           await tester.tap(find.byTooltip('닫기'));
           await tester.pumpAndSettle();
 
-          await tester.tap(find.text('JSON 임포트'));
+          await tester.tap(importButton);
           await tester.pumpAndSettle();
           expect(itemErrors(), isEmpty);
           expect(find.text('임포트 적용'), findsOneWidget);
@@ -368,7 +589,10 @@ void main() {
           expect(itemErrors(), isEmpty);
           expect(find.byTooltip('아이템 목록으로'), findsOneWidget);
           expect(find.text('제조 레시피'), findsOneWidget);
-          expect(find.text('Penguin Stats · CN'), findsNWidgets(5));
+          expect(find.text('Penguin Stats · CN'), findsOneWidget);
+          expect(find.text('50.00%'), findsOneWidget);
+          // The inline owned-count stepper sits in the header.
+          expect(find.byTooltip('수량 늘리기 (길게 누르면 가속)'), findsOneWidget);
           expect(find.byTooltip('정렬'), findsOneWidget);
           expect(find.byTooltip('서버'), findsOneWidget);
 
@@ -385,6 +609,53 @@ void main() {
     }
   });
 }
+
+ItemEntry _entry(
+  String id,
+  String name, {
+  required String rarity,
+  String itemType = 'MATERIAL',
+  String classifyType = 'MATERIAL',
+}) {
+  return ItemEntry(
+    itemId: id,
+    name: name,
+    description: '',
+    rarity: rarity,
+    iconId: '',
+    sortId: 0,
+    usage: '',
+    obtainApproach: '',
+    classifyType: classifyType,
+    itemType: itemType,
+  );
+}
+
+/// Holds every Penguin Stats request until [complete].
+class _BlockingPenguinStatsService implements PenguinStatsService {
+  final _pending = <Completer<List<PenguinMatrixEntry>>>[];
+
+  void complete(List<PenguinMatrixEntry> entries) {
+    for (final completer in _pending) {
+      completer.complete(entries);
+    }
+    _pending.clear();
+  }
+
+  @override
+  Future<List<PenguinMatrixEntry>> getItemMatrix(
+    String itemId, {
+    PenguinServer server = PenguinServer.cn,
+  }) {
+    final completer = Completer<List<PenguinMatrixEntry>>();
+    _pending.add(completer);
+    return completer.future;
+  }
+}
+
+/// [finder] limited to the items list screen (the shell has its own labels).
+Finder _inItems(Finder finder) =>
+    find.descendant(of: find.byType(ItemsScreen), matching: finder);
 
 /// Whether [first] comes before [second] in reading order (row by row, left
 /// to right): the drop cards form a grid on wide layouts.
@@ -485,8 +756,10 @@ class _FakeRegionSyncService implements RegionSyncService {
 /// Mirrors [CachedItemService]: snapshot items plus owned counts read from
 /// the shared user-data repository.
 class _FakeItemService implements ItemService {
-  _FakeItemService({int extraCount = 0})
-      : _items = [
+  _FakeItemService({
+    int extraCount = 0,
+    List<ItemEntry> moreItems = const [],
+  }) : _items = [
           const ItemEntry(
             itemId: '30012',
             name: 'Oriron',
@@ -537,6 +810,7 @@ class _FakeItemService implements ItemService {
               classifyType: 'MATERIAL',
               itemType: 'MATERIAL',
             ),
+          ...moreItems,
         ];
 
   final List<ItemEntry> _items;
@@ -574,7 +848,8 @@ class _FakeItemService implements ItemService {
         .where(
           (item) =>
               classifyType == null ||
-              item.classifyType.toLowerCase() == classifyType,
+              item.classifyType.toLowerCase() == classifyType ||
+              item.itemType.toUpperCase() == 'GOLD',
         )
         .map((item) => item.copyWith(ownedCount: counts[item.itemId] ?? 0))
         .toList();
