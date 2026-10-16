@@ -59,10 +59,11 @@ void main() {
       await _pumpApp(tester, regionSyncService, userDataRepository);
       await openSettings(tester);
 
-      expect(find.text('홈 설정'), findsOneWidget);
+      expect(find.text('설정'), findsOneWidget);
       expect(find.text('지역 및 언어'), findsOneWidget);
-      expect(find.text('현재 동기화 상태'), findsOneWidget);
-      expect(find.text('준비됨'), findsOneWidget);
+      expect(find.text('데이터 동기화'), findsOneWidget);
+      expect(find.text('KR test-version'), findsOneWidget);
+      expect(find.text('· 2명'), findsOneWidget);
 
       await tapVisible(tester, find.byKey(const Key('sync-region-button')));
 
@@ -78,10 +79,9 @@ void main() {
       await _pumpApp(tester, regionSyncService, userDataRepository);
       await openSettings(tester);
 
-      expect(find.text('동기화 필요'), findsOneWidget);
+      expect(find.text('· 동기화 필요'), findsOneWidget);
 
-      await tester.tap(find.byKey(const Key('settings-topbar-sync')));
-      await tester.pumpAndSettle();
+      await tapVisible(tester, find.byKey(const Key('sync-region-button')));
 
       // Error toast plus the inline error paragraph.
       expect(find.textContaining('sync exploded'), findsNWidgets(2));
@@ -155,23 +155,30 @@ void main() {
       );
       await openSettings(tester);
 
-      final button = find.byKey(const Key('diagnostics-logs-button'));
-      await Scrollable.ensureVisible(tester.element(button), alignment: 0.5);
-      await tester.pumpAndSettle();
-
-      expect(find.text('진단 정보'), findsOneWidget);
-      expect(
-        find.text(
-          '윈도우에서는 로그 파일이 주요 진단 자료입니다. 문제가 생기면 로그를 함께 전달해 주세요.',
-        ),
-        findsOneWidget,
-      );
+      // App version and platform sit in the about card.
       expect(
         find.textContaining('1.2.3+4', findRichText: true),
         findsOneWidget,
       );
       expect(
         find.textContaining('windows', findRichText: true),
+        findsOneWidget,
+      );
+
+      expect(find.text('진단'), findsOneWidget);
+      expect(find.byKey(const Key('diagnostics-logs-button')), findsNothing);
+      await tapVisible(
+        tester,
+        find.byKey(const Key('settings-diagnostics-toggle')),
+      );
+      final button = find.byKey(const Key('diagnostics-logs-button'));
+      await Scrollable.ensureVisible(tester.element(button), alignment: 0.5);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          '윈도우에서는 로그 파일이 주요 진단 자료입니다. 문제가 생기면 로그를 함께 전달해 주세요.',
+        ),
         findsOneWidget,
       );
       expect(find.text('로그 폴더 열기'), findsOneWidget);
@@ -199,6 +206,10 @@ void main() {
         diagnosticsService: android,
       );
       await openSettings(tester);
+      await tapVisible(
+        tester,
+        find.byKey(const Key('settings-diagnostics-toggle')),
+      );
 
       expect(find.text('최신 로그 내보내기'), findsOneWidget);
       await tapVisible(
@@ -229,8 +240,13 @@ void main() {
         diagnosticsService: web,
       );
       await openSettings(tester);
+      await tapVisible(
+        tester,
+        find.byKey(const Key('settings-diagnostics-toggle')),
+      );
 
       expect(find.byKey(const Key('diagnostics-logs-button')), findsNothing);
+      expect(find.byKey(const Key('diagnostics-copy-path')), findsNothing);
       expect(find.text('로그 폴더'), findsNothing);
       expect(
         find.text('웹 버전은 로그 파일 없이 브라우저 개발자 도구의 콘솔에 기록합니다.'),
