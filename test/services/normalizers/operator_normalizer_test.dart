@@ -396,6 +396,12 @@ void main() {
             'levelUpCostCond': {},
             'unlockCond': {'phase': 'PHASE_1', 'level': 1},
           },
+          // The same skill again for a later phase, as Ling's dragons list.
+          {
+            'skillId': 'skchr_amiya_2',
+            'levelUpCostCond': {},
+            'unlockCond': {'phase': 'PHASE_2', 'level': 1},
+          },
         ],
         'talents': [
           {

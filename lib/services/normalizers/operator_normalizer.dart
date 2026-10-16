@@ -233,12 +233,15 @@ class OperatorNormalizer {
   }
 
   /// A summon read like an operator (see [OperatorToken.detail]). Its level
-  /// caps are its own phases' (upstream gives them per summon).
+  /// caps are its own phases' (upstream gives them per summon). A summon may
+  /// list one skill once per elite phase (Ling's dragons); it is kept once,
+  /// with the first unlock condition.
   OperatorDetail _token(
     String id,
     RawCharacterEntry character,
     _Context context,
   ) {
+    final skillIds = <String>{};
     return OperatorDetail(
       id: id,
       name: character.name,
@@ -256,7 +259,10 @@ class OperatorNormalizer {
       archetypeDescription: character.description ?? '',
       eliteCaps: [for (final phase in character.phases) phase.maxLevel],
       stats: _stats(character, context),
-      skills: _skills(character, context),
+      skills: [
+        for (final skill in _skills(character, context))
+          if (skillIds.add(skill.id)) skill,
+      ],
     );
   }
 
