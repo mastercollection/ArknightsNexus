@@ -180,9 +180,12 @@ class HomeFakeRegionSyncService implements RegionSyncService {
 }
 
 class HomeFakeOperatorService implements OperatorService {
-  HomeFakeOperatorService({this.details = const []});
+  HomeFakeOperatorService({this.details = const [], this.summaries = const []});
 
   final List<OperatorDetail> details;
+
+  /// Listed after the [details]' summaries (e.g. unreleased operators).
+  final List<OperatorSummary> summaries;
 
   @override
   Future<OperatorDetail?> getOperatorDetail(
@@ -204,6 +207,7 @@ class HomeFakeOperatorService implements OperatorService {
           branch: detail.branch,
           thumbnailHue: detail.thumbnailHue,
         ),
+      ...summaries,
     ];
   }
 }

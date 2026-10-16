@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:arknight_nexus/data_sources/region_code.dart';
+import 'package:arknight_nexus/domain/operator.dart';
 import 'package:arknight_nexus/domain/user_data.dart';
 import 'package:arknight_nexus/features/home/home_sidebar_panel.dart';
 import 'package:arknight_nexus/features/settings/settings_screen.dart';
@@ -59,6 +60,33 @@ void main() {
       expect(find.text('Enter'), findsOneWidget);
       expect(find.text('바로가기'), findsOneWidget);
       expect(find.text('비공식 팬 프로젝트'), findsOneWidget);
+    });
+
+    testWidgets('sync status counts native and unreleased operators',
+        (tester) async {
+      OperatorSummary summary(String id, {String? source}) => OperatorSummary(
+            id: id,
+            name: id,
+            rarity: 5,
+            profession: 'GUARD',
+            branch: 'lord',
+            thumbnailHue: 0,
+            unreleasedSource: source,
+          );
+      await pumpHomeArea(
+        tester,
+        size: desktopSize,
+        operators: HomeFakeOperatorService(
+          summaries: [
+            summary('char_a'),
+            summary('char_b'),
+            summary('char_c', source: 'cn'),
+          ],
+        ),
+      );
+      expectNoErrors(tester);
+
+      expect(find.text('준비됨 · 2명 · 미실장 1명'), findsOneWidget);
     });
 
     testWidgets('medium: region and sync in the page, tiles in view',

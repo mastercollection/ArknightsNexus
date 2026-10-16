@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../i18n/nexus_i18n.dart';
 import '../../ui/redesign/rd_widgets.dart';
+import '../shared/region_operator_counts.dart';
 import '../shared/region_sync.dart';
 
 /// Status of [regionSyncStatusProvider] / [regionSyncControllerProvider] for the
@@ -10,43 +11,60 @@ import '../shared/region_sync.dart';
 enum HomeSyncState { loading, syncing, ready, needed }
 
 class HomeSyncView {
-  const HomeSyncView(this.state, this.operatorCount);
+  const HomeSyncView(this.state, [this.counts]);
 
   final HomeSyncState state;
-  final int operatorCount;
+
+  /// Operators of the ready region; null when it has none or they are still
+  /// being counted.
+  final RegionOperatorCounts? counts;
 
   static HomeSyncView watch(WidgetRef ref) {
     if (ref.watch(regionSyncControllerProvider) ||
         ref.watch(regionEnsureProvider).isLoading) {
-      return const HomeSyncView(HomeSyncState.syncing, 0);
+      return const HomeSyncView(HomeSyncState.syncing);
     }
     return ref.watch(regionSyncStatusProvider).when(
           data: (status) => status?.isReady == true
-              ? HomeSyncView(HomeSyncState.ready, status!.operatorCount)
-              : const HomeSyncView(HomeSyncState.needed, 0),
-          error: (_, __) => const HomeSyncView(HomeSyncState.needed, 0),
-          loading: () => const HomeSyncView(HomeSyncState.loading, 0),
+              ? HomeSyncView(
+                  HomeSyncState.ready,
+                  ref.watch(regionOperatorCountsProvider).valueOrNull ??
+                      // The summaries are still being read: the snapshot's
+                      // total stands in until they are.
+                      (status!.operatorCount > 0
+                          ? RegionOperatorCounts(
+                              native: status.operatorCount,
+                              unreleased: 0,
+                            )
+                          : null),
+                )
+              : const HomeSyncView(HomeSyncState.needed),
+          error: (_, __) => const HomeSyncView(HomeSyncState.needed),
+          loading: () => const HomeSyncView(HomeSyncState.loading),
         );
   }
 
   String label(NexusI18n i18n) => switch (state) {
         HomeSyncState.loading => i18n.t('rd.home.sync.loading'),
         HomeSyncState.syncing => i18n.t('common.syncing'),
-        HomeSyncState.ready => operatorCount > 0
-            ? i18n.t('rd.home.sync.readyCount', {'count': operatorCount})
-            : i18n.t('home.settings.syncReady'),
+        HomeSyncState.ready => switch (counts) {
+            final counts? => i18n.t('rd.home.sync.readyCount', {
+                'count': formatOperatorCounts(i18n, counts),
+              }),
+            null => i18n.t('home.settings.syncReady'),
+          },
         HomeSyncState.needed => i18n.t('rd.home.sync.needed'),
       };
 
   Color get dotColor => switch (state) {
         HomeSyncState.syncing => RdColors.accent,
         HomeSyncState.ready => RdColors.success,
-        HomeSyncState.needed => RdColors.gold,
-        HomeSyncState.loading => RdColors.muted,
+        HomeSyncState.needed => RdColors.warning,
+        HomeSyncState.loading => RdColors.text3,
       };
 }
 
-/// "● 준비됨 · 415명" status line (`role="status"`).
+/// "● 준비됨 · 415명 · 미실장 17명" status line (`role="status"`).
 class HomeSyncStatusLine extends ConsumerWidget {
   const HomeSyncStatusLine({
     this.withRegion = false,
@@ -90,7 +108,7 @@ class HomeSyncStatusLine extends ConsumerWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: fontSize,
-                color: RdColors.secondary2,
+                color: RdColors.text2,
               ),
             ),
           ),
@@ -108,7 +126,7 @@ class HomeSyncButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final i18n = ref.watch(i18nProvider);
     final syncing = ref.watch(regionSyncControllerProvider);
-    final foreground = syncing ? RdColors.placeholder : RdColors.linkText;
+    final foreground = syncing ? RdColors.text3 : RdColors.text;
     Widget icon = Icon(Icons.refresh, size: 15, color: foreground);
     if (syncing) {
       icon = RdSpin(child: icon);
@@ -122,16 +140,14 @@ class HomeSyncButton extends ConsumerWidget {
         excludeSemantics: true,
         label: i18n.t('rd.home.sync.tooltip'),
         child: Material(
-          color: syncing ? Colors.transparent : RdColors.linkFill,
+          color: syncing ? Colors.transparent : RdColors.surface3,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(RdRadii.small),
-            side: BorderSide(
-              color: syncing ? RdColors.white8 : RdColors.tonalBorder,
-            ),
+            borderRadius: BorderRadius.circular(RdRadii.control),
+            side: const BorderSide(color: RdColors.border),
           ),
           child: InkWell(
             key: const Key('home-sync-button'),
-            borderRadius: BorderRadius.circular(RdRadii.small),
+            borderRadius: BorderRadius.circular(RdRadii.control),
             onTap: syncing ? null : () => runRegionSync(context, ref),
             child: Container(
               height: 34,
@@ -147,7 +163,7 @@ class HomeSyncButton extends ConsumerWidget {
                         : i18n.t('rd.home.sync.action'),
                     style: TextStyle(
                       fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w500,
                       color: foreground,
                     ),
                   ),
