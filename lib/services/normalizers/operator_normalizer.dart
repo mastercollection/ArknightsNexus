@@ -44,6 +44,7 @@ class OperatorNormalizer {
       itemsById: items.items,
       subProfNames: uniequip.subProfNames(),
       powerNames: handbook.powerNames(),
+      baTermNames: baTermNames(constants),
     );
 
     final result = <OperatorDetail>[];
@@ -189,13 +190,15 @@ class OperatorNormalizer {
 
     final tags =
         character.tagList.where((value) => value.trim().isNotEmpty).toList();
-    final baTags = _collectBaTags(
-      constants,
-      [character.description, character.itemDesc],
-      traits,
-      talents,
-      normalizedSkills,
-      modules,
+    final baTags = resolveBaTags(
+      context.baTermNames,
+      baTagTexts(
+        characterTexts: [character.description, character.itemDesc],
+        traits: traits,
+        talents: talents,
+        skills: normalizedSkills,
+        modules: modules,
+      ),
     );
 
     return OperatorDetail(
@@ -230,73 +233,6 @@ class OperatorNormalizer {
       stats: stats,
       skills: normalizedSkills,
     );
-  }
-
-  List<String> _collectBaTags(
-    RawGameDataConst constants,
-    List<String?> characterTexts,
-    List<OperatorTrait> traits,
-    List<OperatorTalent> talents,
-    List<OperatorSkill> skills,
-    List<OperatorModule> modules,
-  ) {
-    final baTerms = <String, String>{};
-    for (final term in constants.termDescriptionDict.values) {
-      final termId = term.termId.trim();
-      final termName = term.termName.trim();
-      if (termId.startsWith('ba.') && termName.isNotEmpty) {
-        baTerms[termId] = termName;
-      }
-    }
-    if (baTerms.isEmpty) {
-      return const [];
-    }
-
-    final resolved = <String>[];
-    final seen = <String>{};
-    void extend(String text) {
-      for (final termId in extractBaTermIds(text)) {
-        final termName = baTerms[termId];
-        if (termName != null && seen.add(termName)) {
-          resolved.add(termName);
-        }
-      }
-    }
-
-    for (final text in characterTexts) {
-      if (text != null) {
-        extend(text);
-      }
-    }
-    for (final trait in traits) {
-      extend(trait.description);
-    }
-    for (final talent in talents) {
-      extend(talent.description);
-    }
-    for (final skill in skills) {
-      extend(skill.description);
-      for (final level in skill.levels) {
-        extend(level.description);
-      }
-    }
-    for (final module in modules) {
-      extend(module.uniEquipDesc);
-      if (module.specialEquipDesc case final description?) {
-        extend(description);
-      }
-      for (final phase in module.battlePhases) {
-        for (final part in phase.parts) {
-          for (final candidate in part.traitCandidates) {
-            extend(candidate.description);
-          }
-          for (final candidate in part.talentCandidates) {
-            extend(candidate.description);
-          }
-        }
-      }
-    }
-    return resolved;
   }
 
   OperatorModule _module(RawEquipEntry module, _Context context) {
@@ -628,6 +564,7 @@ class _Context {
     required this.itemsById,
     required this.subProfNames,
     required this.powerNames,
+    required this.baTermNames,
   });
 
   final Map<String, RawSkillEntry> skills;
@@ -639,6 +576,91 @@ class _Context {
   final Map<String, RawItemEntry> itemsById;
   final Map<String, String> subProfNames;
   final Map<String, String> powerNames;
+  final Map<String, String> baTermNames;
+}
+
+/// Name per `ba.*` term key, from [constants]; blank names are dropped.
+Map<String, String> baTermNames(RawGameDataConst constants) {
+  final result = <String, String>{};
+  for (final term in constants.termDescriptionDict.values) {
+    final termId = term.termId.trim();
+    final termName = term.termName.trim();
+    if (termId.startsWith('ba.') && termName.isNotEmpty) {
+      result[termId] = termName;
+    }
+  }
+  return result;
+}
+
+/// The texts an operator's BA tags are read from, in tag order: its
+/// description and item description, then traits, talents, skills and
+/// modules.
+///
+/// An [OperatorDetail] keeps the description as `archetypeDescription` and
+/// the item description as `quote` (each falling back to the other), so
+/// `[archetypeDescription, quote]` as [characterTexts] gives the same tags.
+Iterable<String> baTagTexts({
+  required List<String?> characterTexts,
+  required List<OperatorTrait> traits,
+  required List<OperatorTalent> talents,
+  required List<OperatorSkill> skills,
+  required List<OperatorModule> modules,
+}) sync* {
+  for (final text in characterTexts) {
+    if (text != null) {
+      yield text;
+    }
+  }
+  for (final trait in traits) {
+    yield trait.description;
+  }
+  for (final talent in talents) {
+    yield talent.description;
+  }
+  for (final skill in skills) {
+    yield skill.description;
+    for (final level in skill.levels) {
+      yield level.description;
+    }
+  }
+  for (final module in modules) {
+    yield module.uniEquipDesc;
+    if (module.specialEquipDesc case final description?) {
+      yield description;
+    }
+    for (final phase in module.battlePhases) {
+      for (final part in phase.parts) {
+        for (final candidate in part.traitCandidates) {
+          yield candidate.description;
+        }
+        for (final candidate in part.talentCandidates) {
+          yield candidate.description;
+        }
+      }
+    }
+  }
+}
+
+/// The names in [termNames] of the BA terms [texts] link, in order of first
+/// appearance, each name once.
+List<String> resolveBaTags(
+  Map<String, String> termNames,
+  Iterable<String> texts,
+) {
+  if (termNames.isEmpty) {
+    return const [];
+  }
+  final resolved = <String>[];
+  final seen = <String>{};
+  for (final text in texts) {
+    for (final termId in extractBaTermIds(text)) {
+      final termName = termNames[termId];
+      if (termName != null && seen.add(termName)) {
+        resolved.add(termName);
+      }
+    }
+  }
+  return resolved;
 }
 
 /// Port of Rust `map_sp_recovery`.
