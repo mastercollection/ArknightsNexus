@@ -356,14 +356,6 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
     importing.dispose();
   }
 
-  void _back() {
-    if (context.canPop()) {
-      context.pop();
-    } else {
-      context.go('/');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final i18n = ref.watch(i18nProvider);
@@ -384,8 +376,6 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
     final header = RdPageHeader(
       title: i18n.t('itemsPage.topBar.title'),
       subtitle: i18n.t('itemsPage.topBar.description'),
-      onBack: _back,
-      backTooltip: i18n.t('common.back'),
       actions: [importButton],
       bottom: compact ? search : null,
     );

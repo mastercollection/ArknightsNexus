@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:go_router/go_router.dart';
 import 'package:path/path.dart' as p;
 
 import '../../app/providers.dart';
@@ -250,10 +249,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       subtitle: i18n.t('home.settings.pageDescription'),
       subtitleMaxLines: compact ? 1 : 2,
       compactTitleStyle: RdText.mobileTitle.copyWith(fontSize: 18),
-      backKey: const Key('settings-back'),
-      backTooltip: i18n.t('common.back'),
-      // settings.vue: `router.push('/')`.
-      onBack: () => context.go('/'),
       leading: const RdAppMark(size: 28),
       actions: [
         RdIconButton(

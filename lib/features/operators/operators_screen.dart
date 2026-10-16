@@ -174,13 +174,9 @@ class _OperatorsListPageState extends ConsumerState<OperatorsListPage> {
           children: [
             Row(
               children: [
-                RdIconButton(
-                  icon: Icons.chevron_left,
-                  tooltip: i18n.t('common.back'),
-                  filled: false,
-                  onPressed: () => context.go('/'),
-                ),
-                const SizedBox(width: 6),
+                // A section root: no back button (Esc, the mouse back button
+                // and Android back climb through the shell).
+                const SizedBox(width: 4),
                 Expanded(
                   child: Semantics(
                     header: true,
@@ -221,15 +217,6 @@ class _OperatorsListPageState extends ConsumerState<OperatorsListPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Dropped (not only hidden) while condensed, like
-                        // the Vue top bar's description.
-                        if (!_isCondensed) ...[
-                          Text(
-                            i18n.t('operatorsList.topBar.description'),
-                            style: RdText.small,
-                          ),
-                          const SizedBox(height: 10),
-                        ],
                         ExcludeFocus(
                           excluding: _isCondensed,
                           child: RdSearchField(

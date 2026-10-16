@@ -344,7 +344,8 @@ void main() {
           expect(find.byType(TextField), findsOneWidget);
           expect(find.text('JSON 임포트'), findsOneWidget);
           expect(find.text('x 11'), findsOneWidget);
-          expect(find.byTooltip('뒤로가기'), findsOneWidget);
+          // The items list is a section root: no back button.
+          expect(find.byTooltip('뒤로가기'), findsNothing);
 
           await tester.tap(find.text('x 11'));
           await tester.pumpAndSettle();

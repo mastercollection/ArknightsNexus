@@ -18,7 +18,8 @@ void main() {
         expectNoErrors(tester);
 
         expect(find.text('홈 설정'), findsOneWidget);
-        expect(find.byKey(const Key('settings-back')), findsOneWidget);
+        // A section root: no back button on any width.
+        expect(find.byKey(const Key('settings-back')), findsNothing);
         final refresh = find.byKey(const Key('settings-topbar-sync'));
         expect(refresh, findsOneWidget);
         expect(tester.getSize(refresh).height, greaterThanOrEqualTo(44));
@@ -48,9 +49,9 @@ void main() {
       });
     }
 
-    testWidgets('back returns home', (tester) async {
+    testWidgets('system back returns home', (tester) async {
       await pumpHomeArea(tester, size: phoneSize, initialLocation: '/settings');
-      await tester.tap(find.byKey(const Key('settings-back')));
+      await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(find.text('Arknights Nexus'), findsOneWidget);
     });

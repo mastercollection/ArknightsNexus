@@ -360,15 +360,6 @@ class _OperatorsFilterSidebarState
                 style: RdText.pageTitle,
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              i18n.t('operatorsList.topBar.description'),
-              style: const TextStyle(
-                fontSize: 13,
-                height: 1.6,
-                color: RdColors.muted,
-              ),
-            ),
             const SizedBox(height: 22),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,

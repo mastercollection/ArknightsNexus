@@ -12,6 +12,7 @@ import 'package:arknight_nexus/services/operator_service.dart';
 import 'package:arknight_nexus/services/region_readiness.dart';
 import 'package:arknight_nexus/services/region_sync_service.dart';
 import 'package:arknight_nexus/services/user_data_service.dart';
+import 'package:arknight_nexus/ui/redesign/rd_widgets.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -449,8 +450,9 @@ void main() {
       await tester.tap(find.byKey(const Key('home-menu-operators')));
       await tester.pumpAndSettle();
 
-      const description = '검색과 필터를 고정 상단에서 바로 제어합니다.';
-      expect(find.text(description), findsOneWidget);
+      // Condensing folds the search field away (clipped to zero height).
+      final search = find.byType(RdSearchField).hitTestable();
+      expect(search, findsOneWidget);
       // The chip row always says when nothing is filtered.
       expect(find.text('필터 없음'), findsOneWidget);
       expect(find.text('Op 0'), findsOneWidget);
@@ -466,7 +468,7 @@ void main() {
       await tester.drag(scrollable, const Offset(0, -300));
       await tester.pumpAndSettle();
 
-      expect(find.text(description), findsNothing);
+      expect(search, findsNothing);
       expect(find.text('필터 없음'), findsOneWidget);
 
       // Batches of 24 are revealed as the sentinel nears the viewport.
@@ -479,7 +481,7 @@ void main() {
 
       await tester.drag(scrollable, const Offset(0, 200));
       await tester.pumpAndSettle();
-      expect(find.text(description), findsOneWidget);
+      expect(search, findsOneWidget);
     });
 
     group('unreleased operators', () {

@@ -280,14 +280,6 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     _onSummaryInputsChanged();
   }
 
-  void _goBack() {
-    if (context.canPop()) {
-      context.pop();
-    } else {
-      context.go('/');
-    }
-  }
-
   List<OperatorSummary> get _selectedOperators => [
         for (final id in _selectedOperatorIds)
           if (_operators.where((op) => op.id == id).firstOrNull case final op?)
@@ -405,9 +397,6 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
 
     final header = RdPageHeader(
       title: i18n.t('shell.nav.plan'),
-      subtitle: i18n.t('planPage.topBar.description'),
-      onBack: _goBack,
-      backTooltip: i18n.t('common.back'),
       actions: actions,
       bottom: compact ? tabs : null,
     );
