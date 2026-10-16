@@ -121,87 +121,98 @@ String _formatNumber(double value) {
   return value.toStringAsFixed(3).replaceAll(RegExp(r'\.?0+$'), '');
 }
 
-OperatorBlackboardEntry? _lookupEntry(
+/// A `{key}` placeholder of a game description: `{-key}` negates the value
+/// and `{key:0%}`, `{key:0.0%}`, `{key:0.0}`, `{key:0}` give its format.
+class BlackboardPlaceholder {
+  const BlackboardPlaceholder(this.key, {this.negate = false, this.format});
+
+  /// Parses the text between the braces.
+  factory BlackboardPlaceholder.parse(String token) {
+    var body = token.trim();
+    final negate = body.startsWith('-');
+    if (negate) {
+      body = body.substring(1);
+    }
+    final separator = body.indexOf(':');
+    return BlackboardPlaceholder(
+      (separator >= 0 ? body.substring(0, separator) : body).trim(),
+      negate: negate,
+      format: separator >= 0 ? body.substring(separator + 1).trim() : null,
+    );
+  }
+
+  final String key;
+  final bool negate;
+  final String? format;
+
+  bool get isPercent => format?.endsWith('%') ?? false;
+}
+
+/// [key] in [blackboard], ignoring case (`atk_scale_AOE` / `atk_scale_aoe`).
+OperatorBlackboardEntry? findBlackboardEntry(
   List<OperatorBlackboardEntry> blackboard,
   String key,
 ) {
+  final wanted = key.trim().toLowerCase();
   for (final item in blackboard) {
-    if (item.key.trim() == key) {
+    if (item.key.trim().toLowerCase() == wanted) {
       return item;
     }
   }
   return null;
 }
 
-String? _lookupText(List<OperatorBlackboardEntry> blackboard, String key) {
-  final entry = _lookupEntry(blackboard, key);
-  if (entry == null) {
-    return null;
-  }
+/// [entry]'s value as [placeholder] shows it in the description: `0.4` with
+/// `:0%` is `40%`, `{-def:0%}` with `-0.3` is `30%`. Null when there is no
+/// number to format.
+String? formatBlackboardValue(
+  OperatorBlackboardEntry entry, [
+  BlackboardPlaceholder placeholder = const BlackboardPlaceholder(''),
+]) {
   final valueStr = entry.valueStr?.trim();
-  if (valueStr != null && valueStr.isNotEmpty) {
+  if (placeholder.format == null &&
+      !placeholder.negate &&
+      valueStr != null &&
+      valueStr.isNotEmpty) {
     return valueStr;
   }
-  return entry.value == null ? null : _formatNumber(entry.value!);
+  final raw = entry.value;
+  if (raw == null) {
+    return valueStr == null || valueStr.isEmpty ? null : valueStr;
+  }
+  final value = placeholder.negate ? -raw : raw;
+  return switch (placeholder.format) {
+    '0%' => '${_formatNumber(value * 100)}%',
+    '0.0%' => '${(value * 100).toStringAsFixed(1)}%',
+    '0.0' => value.toStringAsFixed(1),
+    '0' => value.round().toString(),
+    _ => _formatNumber(value),
+  };
 }
 
-String? _lookupPercent(List<OperatorBlackboardEntry> blackboard, String key) {
-  final entry = _lookupEntry(blackboard, key);
-  if (entry == null || entry.value == null) {
-    return null;
-  }
-  return '${_formatNumber(entry.value! * 100)}%';
+/// The value a `{token}` stands for, or null when [blackboard] lacks it.
+String? resolveBlackboardToken(
+  String token,
+  List<OperatorBlackboardEntry> blackboard,
+) {
+  final placeholder = BlackboardPlaceholder.parse(token);
+  final entry = findBlackboardEntry(blackboard, placeholder.key);
+  return entry == null ? null : formatBlackboardValue(entry, placeholder);
 }
 
 String _resolveMarkupContent(
   String content,
   List<OperatorBlackboardEntry> blackboard,
 ) {
-  final trimmed = content.trim();
-  final separatorIndex = trimmed.indexOf(':');
-  final key = separatorIndex >= 0 ? trimmed.substring(0, separatorIndex) : null;
-  final format =
-      separatorIndex >= 0 ? trimmed.substring(separatorIndex + 1) : null;
-
-  if (format == '0%' && key != null) {
-    final percent = _lookupPercent(blackboard, key.trim());
-    if (percent != null) {
-      return percent;
-    }
-  }
-
-  final directMatch = _lookupText(blackboard, trimmed);
-  if (directMatch != null) {
-    return directMatch;
-  }
-
-  return _resolvePlainText(content, blackboard);
+  return resolveBlackboardToken(content, blackboard) ??
+      _resolvePlainText(content, blackboard);
 }
 
 String _resolvePlaceholderToken(
   String token,
   List<OperatorBlackboardEntry> blackboard,
 ) {
-  final trimmed = token.trim();
-  final separatorIndex = trimmed.indexOf(':');
-  final key =
-      separatorIndex >= 0 ? trimmed.substring(0, separatorIndex) : trimmed;
-  final format =
-      separatorIndex >= 0 ? trimmed.substring(separatorIndex + 1) : null;
-
-  if (format == '0%') {
-    final percent = _lookupPercent(blackboard, key.trim());
-    if (percent != null) {
-      return percent;
-    }
-  }
-
-  final text = _lookupText(blackboard, key.trim());
-  if (text != null) {
-    return text;
-  }
-
-  return '{$token}';
+  return resolveBlackboardToken(token, blackboard) ?? '{$token}';
 }
 
 final _placeholderPattern = RegExp(r'\{([^{}]+)\}');

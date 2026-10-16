@@ -301,9 +301,12 @@ void main() {
 
     expect(find.text('Skill One'), findsWidgets);
     expect(find.byKey(const ValueKey('skill-table')), findsWidgets);
-    expect(find.text('SP Cost'), findsWidgets);
-    expect(find.text('Atk Scale'), findsWidgets);
-    expect(find.text('1.5'), findsWidgets);
+    expect(find.text('필요 SP'), findsWidgets);
+    // The value the description shows, named by its wording and formatted
+    // as it shows it.
+    expect(find.text('Hit for ▢', findRichText: true), findsWidgets);
+    expect(find.text('150%'), findsWidgets);
+    expect(find.text('Atk Scale'), findsNothing);
     expect(find.text('Hit for 150%', findRichText: true), findsOneWidget);
 
     // Move the display level to the max: M3 icon in the summary chip, the

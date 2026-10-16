@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../domain/operator.dart';
 import '../../domain/rich_text_segment.dart';
 import '../../i18n/nexus_i18n.dart';
@@ -321,77 +323,277 @@ List<PotentialItem> buildPotentials(OperatorDetail operator, NexusI18n i18n) {
 // Skills
 // ---------------------------------------------------------------------------
 
+/// Where a skill table row comes from.
+enum SkillRowKind {
+  /// SP cost, initial SP and duration.
+  base,
+
+  /// A value the skill description shows; [SkillComparisonRow.label] is
+  /// the description's wording around it with [skillValueSlot] in its place.
+  described,
+
+  /// A blackboard value the description does not mention, labelled with its
+  /// raw key.
+  internal,
+}
+
+/// Marks where the value sits in a [SkillRowKind.described] label.
+const skillValueSlot = '▢';
+
 class SkillComparisonRow {
   SkillComparisonRow({
     required this.key,
     required this.label,
     required this.values,
+    this.kind = SkillRowKind.base,
   });
 
   final String key;
   final String label;
   final List<String> values;
+  final SkillRowKind kind;
 }
 
-String _formatMetricNumber(double value) {
-  if (value == value.truncateToDouble()) {
-    return value.toInt().toString();
+/// The values a skill level's description can refer to: its blackboard plus
+/// the level's own duration (`{duration}`).
+List<OperatorBlackboardEntry> skillLevelBlackboard(OperatorSkillLevel level) {
+  if (findBlackboardEntry(level.blackboard, 'duration') != null) {
+    return level.blackboard;
   }
-  return value.toStringAsFixed(3).replaceAll(RegExp(r'\.?0+$'), '');
+  return [
+    ...level.blackboard,
+    OperatorBlackboardEntry(key: 'duration', value: level.duration.toDouble()),
+  ];
 }
 
-String _humanizeMetricKey(String value) {
-  return value
-      .split(RegExp('[_-]'))
-      .where((part) => part.isNotEmpty)
-      .map((part) => part[0].toUpperCase() + part.substring(1))
-      .join(' ');
-}
+final _placeholderInText = RegExp(r'\{([^{}]+)\}');
+final _markupTag = RegExp(r'<[^<>]*>');
+// A backslash too: some CN texts carry a literal `\n`.
+final _clauseBreak = RegExp(r'[,，.。;；:：!！?？、\n\\()（）\[\]【】「」]');
 
-String _metricValue(OperatorBlackboardEntry entry) {
-  final valueStr = entry.valueStr?.trim();
-  if (valueStr != null && valueStr.isNotEmpty) {
-    return valueStr;
-  }
-  return entry.value == null ? '-' : _formatMetricNumber(entry.value!);
-}
+/// English words that carry no meaning on their own in a short label; they
+/// do not count towards the two words kept (`Stun them for ▢ seconds`).
+const _fillerWords = {
+  'a',
+  'an',
+  'and',
+  'by',
+  'for',
+  'it',
+  'its',
+  'of',
+  'or',
+  'the',
+  'them',
+  'then',
+  'to',
+  'up',
+  'with',
+};
+final _letter = RegExp(r'\p{L}', unicode: true);
 
-/// Port of `useSkillComparisonRows`.
-List<SkillComparisonRow> buildSkillComparisonRows(OperatorSkill? skill) {
-  if (skill == null) {
+/// Rows of the skill level table: base values, then the values the
+/// description shows (in reading order, formatted as the description shows
+/// them), then the internal values it does not mention.
+List<SkillComparisonRow> buildSkillComparisonRows(
+  OperatorSkill? skill,
+  NexusI18n i18n,
+) {
+  if (skill == null || skill.levels.isEmpty) {
     return const [];
   }
-  final count = skill.levels.length;
-  final rows = <String, SkillComparisonRow>{};
+  final levels = skill.levels;
 
-  void put(String key, String label, int level, String value) {
-    final row = rows.putIfAbsent(
-      key,
-      () => SkillComparisonRow(
-        key: key,
-        label: label,
-        values: List.filled(count, '-'),
-      ),
-    );
-    final index = level - 1;
-    if (index >= 0 && index < row.values.length) {
-      row.values[index] = value;
-    }
-  }
+  final rows = <SkillComparisonRow>[
+    SkillComparisonRow(
+      key: 'spCost',
+      label: i18n.t('rd.operators.skill.spCost'),
+      values: [for (final level in levels) '${level.spCost}'],
+    ),
+    SkillComparisonRow(
+      key: 'initialSp',
+      label: i18n.t('rd.operators.skill.initialSp'),
+      values: [for (final level in levels) '${level.initialSp}'],
+    ),
+    SkillComparisonRow(
+      key: 'duration',
+      label: i18n.t('rd.operators.skill.duration'),
+      values: [
+        for (final level in levels)
+          level.duration > 0 ? i18n.secondsValue(level.duration) : '–',
+      ],
+    ),
+  ];
 
-  for (final levelInfo in skill.levels) {
-    put('spCost', 'SP Cost', levelInfo.level, '${levelInfo.spCost}');
-    put('initialSp', 'Initial SP', levelInfo.level, '${levelInfo.initialSp}');
-    put('duration', 'Duration', levelInfo.level, '${levelInfo.duration}');
-    for (final entry in levelInfo.blackboard) {
-      final key = entry.key.trim();
-      if (key.isEmpty) {
+  // Placeholders in reading order, the highest level's wording first.
+  final described = <String, (BlackboardPlaceholder, String)>{};
+  for (final level in levels.reversed) {
+    final text = level.description.replaceAll(_markupTag, '');
+    for (final match in _placeholderInText.allMatches(text)) {
+      final placeholder = BlackboardPlaceholder.parse(match.group(1)!);
+      final id = placeholder.key.toLowerCase();
+      if (placeholder.key.isEmpty || described.containsKey(id)) {
         continue;
       }
-      put(key, _humanizeMetricKey(key), levelInfo.level, _metricValue(entry));
+      // `{duration}` is the base duration row unless the blackboard has one.
+      if (id == 'duration' &&
+          findBlackboardEntry(level.blackboard, 'duration') == null) {
+        continue;
+      }
+      described[id] = (placeholder, slotLabel(text, match.start, match.end));
     }
   }
-  return rows.values.toList();
+
+  final usedLabels = <String>{};
+  for (final MapEntry(key: id, value: (placeholder, label))
+      in described.entries) {
+    final values = [
+      for (final level in levels)
+        switch (findBlackboardEntry(skillLevelBlackboard(level), id)) {
+          final entry? => formatBlackboardValue(entry, placeholder) ?? '-',
+          null => '-',
+        },
+    ];
+    if (values.every((value) => value == '-')) {
+      continue;
+    }
+    rows.add(
+      SkillComparisonRow(
+        key: id,
+        label: usedLabels.add(label) ? label : '$label · ${placeholder.key}',
+        values: values,
+        kind: SkillRowKind.described,
+      ),
+    );
+  }
+
+  final internal = <String, String>{};
+  for (final level in levels) {
+    for (final entry in level.blackboard) {
+      final key = entry.key.trim();
+      final id = key.toLowerCase();
+      if (key.isNotEmpty && !described.containsKey(id)) {
+        internal.putIfAbsent(id, () => key);
+      }
+    }
+  }
+  for (final MapEntry(key: id, value: key) in internal.entries) {
+    rows.add(
+      SkillComparisonRow(
+        key: id,
+        label: key,
+        values: [
+          for (final level in levels)
+            switch (findBlackboardEntry(level.blackboard, id)) {
+              final entry? => formatBlackboardValue(entry) ?? '-',
+              null => '-',
+            },
+        ],
+        kind: SkillRowKind.internal,
+      ),
+    );
+  }
+  return rows;
+}
+
+/// Short label for the placeholder at [start]..[end] of [text] (markup
+/// removed): the words just before it in its clause, [skillValueSlot], and
+/// the text glued after it. `2회차부터 공격력 +{atk:0%}, 무한 지속` gives
+/// `2회차부터 공격력 +▢`; `주변의 적 {max_target}명에게` gives `주변의 적 ▢명에게`.
+/// Spaced languages keep two words, unspaced ones (CN, JP) eight characters.
+@visibleForTesting
+String slotLabel(String text, int start, int end) {
+  bool stops(String char) => _clauseBreak.hasMatch(char);
+
+  var from = start;
+  while (from > 0 && !stops(text[from - 1]) && text[from - 1] != '}') {
+    from--;
+  }
+  var before = text.substring(from, start);
+  // Right after another placeholder: drop the word glued to it.
+  if (from > 0 && text[from - 1] == '}') {
+    final space = before.indexOf(' ');
+    before = space == -1 ? '' : before.substring(space + 1);
+  }
+  before = _lastWords(before.trimLeft());
+
+  // Unspaced text (CN, JP) keeps only the unit after the value (`秒`, `名`).
+  final clauseEnd = text.indexOf(_clauseBreak, end);
+  final unspaced = !text
+      .substring(from, clauseEnd < 0 ? text.length : clauseEnd)
+      .contains(' ');
+  var to = end;
+  while (to < text.length &&
+      to - end < (unspaced ? 1 : 6) &&
+      !stops(text[to]) &&
+      text[to] != ' ' &&
+      text[to] != '{') {
+    to++;
+  }
+  var after = text.substring(end, to);
+  if (before.trim().isEmpty) {
+    // The clause starts with the value (`{prob} 확률로 ...`): words after it.
+    var stop = end;
+    while (stop < text.length && !stops(text[stop]) && text[stop] != '{') {
+      stop++;
+    }
+    after = _firstWords(text.substring(end, stop));
+  } else if (after.isEmpty && !unspaced && text.startsWith(' ', end)) {
+    // `for {t} seconds`, `deals {x} Physical`: the unit is the next word.
+    final next = RegExp(r' [^ ,.;:!?()\[\]{}\n\\]{1,12}').matchAsPrefix(
+      text,
+      end,
+    );
+    final word = next?.group(0) ?? '';
+    after = _fillerWords.contains(word.trim().toLowerCase()) ? '' : word;
+  }
+  return '$before$skillValueSlot$after'.trim();
+}
+
+String _lastWords(String text) {
+  if (!text.trim().contains(' ')) {
+    final chars = text.trim().runes.toList();
+    final tail = String.fromCharCodes(
+      chars.length <= 8 ? chars : chars.sublist(chars.length - 8),
+    );
+    return text.endsWith(' ') ? '$tail ' : tail;
+  }
+  final words = text.split(' ').where((word) => word.isNotEmpty).toList();
+  final kept = <String>[];
+  var lettered = 0;
+  var letters = 0;
+  for (final word in words.reversed) {
+    kept.insert(0, word);
+    if (_letter.hasMatch(word) && !_fillerWords.contains(word.toLowerCase())) {
+      lettered++;
+      letters += word.length;
+    }
+    // Two words, unless they are short (`가능 수` takes `저지` too).
+    if ((lettered >= 2 && letters >= 5) || lettered >= 3 || kept.length >= 5) {
+      break;
+    }
+  }
+  // A one-letter connective in front (`후 공격력`, `및 방어력`) adds nothing.
+  if (kept.length > 1 &&
+      kept.first.length == 1 &&
+      _letter.hasMatch(kept.first) &&
+      lettered > 1) {
+    kept.removeAt(0);
+  }
+  final joined = kept.join(' ');
+  return text.endsWith(' ') ? '$joined ' : joined;
+}
+
+String _firstWords(String text) {
+  final trimmed = text.trimLeft();
+  final lead = text.substring(0, text.length - trimmed.length);
+  if (!trimmed.contains(' ')) {
+    final chars = trimmed.runes.toList();
+    return lead +
+        String.fromCharCodes(chars.length <= 8 ? chars : chars.sublist(0, 8));
+  }
+  return lead +
+      trimmed.split(' ').where((word) => word.isNotEmpty).take(2).join(' ');
 }
 
 // ---------------------------------------------------------------------------

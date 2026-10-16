@@ -560,9 +560,12 @@ class OperatorSkillsPanel extends StatelessWidget {
     levelInfo ??= skill.levels.isEmpty ? null : skill.levels.first;
     final description = levelInfo == null
         ? const <RichTextSegment>[]
-        : parseRichDescription(levelInfo.description, levelInfo.blackboard);
+        : parseRichDescription(
+            levelInfo.description,
+            skillLevelBlackboard(levelInfo),
+          );
     final range = buildRangeMatrix(levelInfo?.range);
-    final rows = buildSkillComparisonRows(skill);
+    final rows = buildSkillComparisonRows(skill, i18n);
     final maxLevel = skill.levels.isEmpty ? 1 : skill.levels.length;
     final shownLevel = levelInfo?.level ?? selectedLevel;
 
@@ -685,6 +688,7 @@ class OperatorSkillsPanel extends StatelessWidget {
               rows: rows,
               selectedLevel: selectedLevel,
               itemLabel: i18n.t('operatorDetail.labels.item'),
+              internalLabel: i18n.t('rd.operators.skill.internal'),
               compact: compact,
               masteryLabel: _masteryLabel,
             ),

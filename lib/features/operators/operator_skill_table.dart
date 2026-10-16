@@ -17,6 +17,7 @@ class OperatorSkillTable extends StatefulWidget {
     required this.rows,
     required this.selectedLevel,
     required this.itemLabel,
+    this.internalLabel = '',
     this.compact = false,
     this.masteryLabel,
     super.key,
@@ -26,6 +27,9 @@ class OperatorSkillTable extends StatefulWidget {
   final List<SkillComparisonRow> rows;
   final int selectedLevel;
   final String itemLabel;
+
+  /// Heading of the [SkillRowKind.internal] rows.
+  final String internalLabel;
 
   /// Phone widths: 116px item column, 52px minimum level columns.
   final bool compact;
@@ -219,7 +223,21 @@ class _OperatorSkillTableState extends State<OperatorSkillTable> {
     final levels = widget.skill.levels;
     final selected = widget.selectedLevel;
 
-    Widget firstCell(String text, {required bool header}) {
+    Widget firstCell(
+      String text, {
+      required bool header,
+      SkillRowKind kind = SkillRowKind.base,
+    }) {
+      final style = TextStyle(
+        fontSize: _fontSize,
+        fontWeight:
+            kind == SkillRowKind.internal ? FontWeight.w500 : FontWeight.w600,
+        color: header || kind == SkillRowKind.internal
+            ? RdColors.text2
+            : RdColors.text,
+      );
+      // The value's place in a described label, in the accent colour.
+      final slot = text.indexOf(skillValueSlot);
       return Container(
         width: firstWidth,
         padding: _firstPadding,
@@ -228,14 +246,42 @@ class _OperatorSkillTableState extends State<OperatorSkillTable> {
           color: _stickyFill,
           border: Border(bottom: BorderSide(color: _rowLine)),
         ),
-        child: Text(
-          text,
+        child: Text.rich(
+          slot < 0
+              ? TextSpan(text: text)
+              : TextSpan(
+                  children: [
+                    TextSpan(text: text.substring(0, slot)),
+                    const TextSpan(
+                      text: skillValueSlot,
+                      style: TextStyle(color: RdColors.accentHover),
+                    ),
+                    TextSpan(
+                      text: text.substring(slot + skillValueSlot.length),
+                    ),
+                  ],
+                ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: _fontSize,
+          style: style,
+        ),
+      );
+    }
+
+    Widget sectionRow(String text) {
+      return Container(
+        key: const ValueKey('skill-table-internal'),
+        width: firstWidth + dataWidth * levels.length,
+        padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: _rowLine)),
+        ),
+        child: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: header ? RdColors.text2 : RdColors.text,
+            color: RdColors.text3,
           ),
         ),
       );
@@ -294,12 +340,16 @@ class _OperatorSkillTableState extends State<OperatorSkillTable> {
       mainAxisSize: MainAxisSize.min,
       children: [
         header,
-        for (final row in widget.rows)
+        for (final (index, row) in widget.rows.indexed) ...[
+          if (row.kind == SkillRowKind.internal &&
+              (index == 0 ||
+                  widget.rows[index - 1].kind != SkillRowKind.internal))
+            sectionRow(widget.internalLabel),
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                firstCell(row.label, header: false),
+                firstCell(row.label, header: false, kind: row.kind),
                 for (var i = 0; i < row.values.length; i++)
                   dataCell(
                     isSelected:
@@ -319,6 +369,7 @@ class _OperatorSkillTableState extends State<OperatorSkillTable> {
               ],
             ),
           ),
+        ],
       ],
     );
   }

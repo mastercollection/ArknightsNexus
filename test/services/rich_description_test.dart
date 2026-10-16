@@ -74,6 +74,33 @@ void main() {
       expect((segments[0] as RichValueRun).text, '1.5');
     });
 
+    test('{-key} negates the value and keys match in any case', () {
+      final segments = parseRichDescription(
+        '이동 속도 {-move_speed:0%}, {ATK_SCALE_aoe:0%}',
+        const [
+          OperatorBlackboardEntry(key: 'move_speed', value: -0.3),
+          OperatorBlackboardEntry(key: 'atk_scale_AOE', value: 1.2),
+        ],
+      );
+      expect((segments[1] as RichValueRun).text, '30%');
+      expect((segments[3] as RichValueRun).text, '120%');
+    });
+
+    test('formats 0.0, 0 and 0.0% placeholders', () {
+      final segments = parseRichDescription(
+        '{a:0.0} {b:0} {c:0.0%}',
+        const [
+          OperatorBlackboardEntry(key: 'a', value: 2),
+          OperatorBlackboardEntry(key: 'b', value: 2.6),
+          OperatorBlackboardEntry(key: 'c', value: 0.125),
+        ],
+      );
+      expect(
+        segments.whereType<RichValueRun>().map((run) => run.text),
+        ['2.0', '3', '12.5%'],
+      );
+    });
+
     test('closes nested tags at their own </>', () {
       // A KR talent (하루카) with a value tag inside a remark tag.
       final segments = parseRichDescription(
