@@ -309,6 +309,25 @@ void main() {
       await tester.tap(handle);
       await tester.pumpAndSettle();
       expect(paneLeft(), closeTo(initial, 1));
+
+      // The border stays under the cursor when several moves arrive before a
+      // frame, and after the drag has run into a limit and come back.
+      final gesture = await tester.startGesture(
+        tester.getCenter(handle),
+        kind: PointerDeviceKind.mouse,
+      );
+      for (var i = 0; i < 5; i++) {
+        await gesture.moveBy(const Offset(-20, 0));
+      }
+      await tester.pump();
+      expect(paneLeft(), closeTo(initial - 100, 1));
+      await gesture.moveBy(const Offset(-2000, 0));
+      await tester.pump();
+      await gesture.moveBy(const Offset(2000, 0));
+      await tester.pump();
+      expect(paneLeft(), closeTo(initial - 100, 1));
+      await gesture.up();
+      await tester.pumpAndSettle();
     });
 
     testWidgets('PC sidebar wraps long option lists and builds them on scroll',

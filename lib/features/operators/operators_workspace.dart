@@ -329,6 +329,11 @@ class _PaneResizeHandleState extends State<_PaneResizeHandle> {
   bool _dragging = false;
   bool _focused = false;
 
+  // Width and pointer x when the drag began: the width follows the pointer's
+  // total travel, so it keeps pace with the cursor however events batch.
+  double _dragStartWidth = 0;
+  double _dragStartX = 0;
+
   void _resizeBy(double delta) {
     widget.onChanged(
       (widget.width + delta).clamp(widget.bounds.min, widget.bounds.max),
@@ -367,8 +372,15 @@ class _PaneResizeHandleState extends State<_PaneResizeHandle> {
           // Track from the press point so the border stays under the cursor.
           dragStartBehavior: DragStartBehavior.down,
           // The pane is on the right, so dragging left widens it.
-          onHorizontalDragStart: (_) => setState(() => _dragging = true),
-          onHorizontalDragUpdate: (details) => _resizeBy(-details.delta.dx),
+          onHorizontalDragStart: (details) => setState(() {
+            _dragging = true;
+            _dragStartWidth = widget.width;
+            _dragStartX = details.globalPosition.dx;
+          }),
+          onHorizontalDragUpdate: (details) => widget.onChanged(
+            (_dragStartWidth - (details.globalPosition.dx - _dragStartX))
+                .clamp(widget.bounds.min, widget.bounds.max),
+          ),
           onHorizontalDragEnd: (_) => setState(() => _dragging = false),
           onHorizontalDragCancel: () => setState(() => _dragging = false),
           onDoubleTap: () => widget.onChanged(null),

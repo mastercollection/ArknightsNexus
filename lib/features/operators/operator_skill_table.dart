@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../../domain/operator.dart';
@@ -38,6 +39,10 @@ class OperatorSkillTable extends StatefulWidget {
 
 const _fontSize = 13.0;
 const _cellPadding = EdgeInsets.symmetric(horizontal: 10, vertical: 8);
+const _firstPadding = EdgeInsets.symmetric(horizontal: 12, vertical: 8);
+
+/// Room under the table for the scrollbar when it overflows.
+const _scrollbarGap = 12.0;
 
 /// The section card behind the table ([RdInset.section]).
 const _stickyFill = RdColors.surface2;
@@ -112,10 +117,20 @@ class _OperatorSkillTableState extends State<OperatorSkillTable> {
       builder: (context, constraints) {
         final available = constraints.maxWidth;
         final horizontal = _cellPadding.horizontal;
-        final firstWidth = math.min(
-          widget.compact ? 116.0 : 150.0,
-          available * 0.45,
-        );
+        // Item column: as wide as its longest label, between the old fixed
+        // width and half the table; longer labels wrap to two lines.
+        var labelWidth = _measure(widget.itemLabel, FontWeight.w600, scaler);
+        for (final row in widget.rows) {
+          labelWidth = math.max(
+            labelWidth,
+            _measure(row.label, FontWeight.w600, scaler),
+          );
+        }
+        final double firstWidth =
+            (labelWidth + _firstPadding.horizontal + 1).ceilToDouble().clamp(
+                  math.min(widget.compact ? 116.0 : 150.0, available * 0.45),
+                  math.max(available * 0.5, widget.compact ? 116.0 : 150.0),
+                );
         var dataWidth = widget.compact ? 52.0 : 58.0;
         for (final level in levels) {
           dataWidth = math.max(
@@ -141,14 +156,30 @@ class _OperatorSkillTableState extends State<OperatorSkillTable> {
         final tableWidth = firstWidth + dataWidth * levels.length;
 
         final table = _buildTable(firstWidth, dataWidth);
+        final overflows = tableWidth > available + 0.5;
         return Semantics(
           container: true,
           child: Stack(
             children: [
-              SingleChildScrollView(
-                controller: _controller,
-                scrollDirection: Axis.horizontal,
-                child: SizedBox(width: tableWidth, child: table),
+              // Mice drag the table sideways too (desktop and web scroll
+              // views ignore mouse drags by default), and the scrollbar
+              // stays visible while columns are hidden.
+              ScrollConfiguration(
+                behavior: ScrollConfiguration.of(context).copyWith(
+                  dragDevices: PointerDeviceKind.values.toSet(),
+                ),
+                child: Scrollbar(
+                  controller: _controller,
+                  thumbVisibility: overflows,
+                  child: SingleChildScrollView(
+                    controller: _controller,
+                    scrollDirection: Axis.horizontal,
+                    padding: EdgeInsets.only(
+                      bottom: overflows ? _scrollbarGap : 0,
+                    ),
+                    child: SizedBox(width: tableWidth, child: table),
+                  ),
+                ),
               ),
               // Sticky first column: an identical copy clipped to its width.
               Positioned(
@@ -191,7 +222,7 @@ class _OperatorSkillTableState extends State<OperatorSkillTable> {
     Widget firstCell(String text, {required bool header}) {
       return Container(
         width: firstWidth,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: _firstPadding,
         alignment: Alignment.centerLeft,
         decoration: const BoxDecoration(
           color: _stickyFill,
@@ -199,7 +230,7 @@ class _OperatorSkillTableState extends State<OperatorSkillTable> {
         ),
         child: Text(
           text,
-          maxLines: 1,
+          maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: _fontSize,
