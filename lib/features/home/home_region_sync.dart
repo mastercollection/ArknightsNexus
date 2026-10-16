@@ -170,93 +170,131 @@ class HomeDataCard extends ConsumerWidget {
             Padding(padding: const EdgeInsets.only(bottom: 8), child: value),
           ],
         );
-    return RdCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Semantics(
-                  header: true,
-                  child: Text(
-                    i18n.t('rd.home.data.title'),
-                    style: RdText.sectionTitle,
-                  ),
+    final info = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Semantics(
+                header: true,
+                child: Text(
+                  i18n.t('rd.home.data.title'),
+                  style: RdText.sectionTitle,
                 ),
               ),
-              Semantics(
-                liveRegion: true,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _Dot(view.dotColor),
-                    const SizedBox(width: 6),
-                    Text(
-                      view.stateLabel(i18n),
-                      key: const Key('home-sync-state'),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: view.state == HomeSyncState.ready
-                            ? RdColors.success
-                            : RdColors.text2,
+            ),
+            Semantics(
+              liveRegion: true,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _Dot(view.dotColor),
+                  const SizedBox(width: 6),
+                  Text(
+                    view.stateLabel(i18n),
+                    key: const Key('home-sync-state'),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: view.state == HomeSyncState.ready
+                          ? RdColors.success
+                          : RdColors.text2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          regionDataLabel(region, view.status),
+          key: const Key('home-data-version'),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: RdText.mono(fontSize: 22),
+        ),
+        const SizedBox(height: 12),
+        Table(
+          columnWidths: const {
+            0: IntrinsicColumnWidth(),
+            1: FlexColumnWidth(),
+          },
+          children: [
+            row(
+              i18n.t('rd.home.plan.statOperators'),
+              counts == null
+                  ? const Text(
+                      '—',
+                      style: TextStyle(fontSize: 13, color: RdColors.text2),
+                    )
+                  : OperatorCountsText(
+                      key: const Key('home-data-counts'),
+                      i18n: i18n,
+                      counts: counts,
+                      maxLines: 2,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: RdColors.text,
                       ),
                     ),
-                  ],
-                ),
+            ),
+            row(
+              i18n.t('rd.home.data.lastSync'),
+              Text(
+                view.syncTime() ?? '—',
+                key: const Key('home-data-time'),
+                style: const TextStyle(fontSize: 13, color: RdColors.text2),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            regionDataLabel(region, view.status),
-            key: const Key('home-data-version'),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: RdText.mono(fontSize: 22),
-          ),
-          const SizedBox(height: 12),
-          Table(
-            columnWidths: const {
-              0: IntrinsicColumnWidth(),
-              1: FlexColumnWidth(),
-            },
-            children: [
-              row(
-                i18n.t('rd.home.plan.statOperators'),
-                counts == null
-                    ? const Text(
-                        '—',
-                        style: TextStyle(fontSize: 13, color: RdColors.text2),
-                      )
-                    : OperatorCountsText(
-                        key: const Key('home-data-counts'),
-                        i18n: i18n,
-                        counts: counts,
-                        maxLines: 2,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: RdColors.text,
-                        ),
-                      ),
-              ),
-              row(
-                i18n.t('rd.home.data.lastSync'),
-                Text(
-                  view.syncTime() ?? '—',
-                  key: const Key('home-data-time'),
-                  style: const TextStyle(fontSize: 13, color: RdColors.text2),
-                ),
-              ),
-            ],
-          ),
-          if (showRegionSelect) ...[
-            const SizedBox(height: 6),
-            RdRegionSelect(semanticLabel: i18n.t('rd.home.region.label')),
+            ),
           ],
-          const SizedBox(height: 6),
-          const HomeSyncButton(),
-        ],
+        ),
+      ],
+    );
+    if (!showRegionSelect) {
+      return RdCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [info, const SizedBox(height: 6), const HomeSyncButton()],
+        ),
+      );
+    }
+    // Medium width: the card spans the column, so the region select and the
+    // refresh button get their own column beside the facts when they fit.
+    final controls = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ExcludeSemantics(
+          child: Text(
+            i18n.t('rd.home.region.label'),
+            style: const TextStyle(fontSize: 12, color: RdColors.text3),
+          ),
+        ),
+        const SizedBox(height: 6),
+        RdRegionSelect(semanticLabel: i18n.t('rd.home.region.label')),
+        const SizedBox(height: 10),
+        const HomeSyncButton(),
+      ],
+    );
+    return RdCard(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 560) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [info, const SizedBox(height: 6), controls],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(child: info),
+              const SizedBox(width: 24),
+              SizedBox(width: 280, child: controls),
+            ],
+          );
+        },
       ),
     );
   }

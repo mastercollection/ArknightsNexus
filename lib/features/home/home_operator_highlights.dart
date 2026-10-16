@@ -91,22 +91,28 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Flexible(
-          child: Semantics(
-            header: true,
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: RdText.sectionTitle,
-            ),
+        Expanded(
+          child: Row(
+            children: [
+              Flexible(
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: RdText.sectionTitle,
+                  ),
+                ),
+              ),
+              if (caption != null) ...[
+                const SizedBox(width: 10),
+                Text(caption!, style: RdText.small),
+              ],
+            ],
           ),
         ),
-        if (caption != null) ...[
-          const SizedBox(width: 10),
-          Text(caption!, style: RdText.small),
-        ],
-        const Spacer(),
+        const SizedBox(width: 8),
         Semantics(
           link: true,
           child: InkWell(
@@ -369,7 +375,7 @@ class HomeUnreleasedPreviewSection extends ConsumerWidget {
             _HighlightStrip(
               compact: compact,
               count: unreleased.length,
-              minTileWidth: 168,
+              minTileWidth: 160,
               maxColumns: 6,
               tileWidth: 96,
               gap: compact ? 10 : 12,
