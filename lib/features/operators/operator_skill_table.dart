@@ -38,7 +38,9 @@ class OperatorSkillTable extends StatefulWidget {
 
 const _fontSize = 13.0;
 const _cellPadding = EdgeInsets.symmetric(horizontal: 10, vertical: 8);
-const _stickyFill = Color(0xFF0B0F19);
+
+/// The section card behind the table ([RdInset.section]).
+const _stickyFill = RdColors.surface2;
 const _rowLine = RdColors.white8;
 
 class _OperatorSkillTableState extends State<OperatorSkillTable> {
@@ -202,7 +204,7 @@ class _OperatorSkillTableState extends State<OperatorSkillTable> {
           style: TextStyle(
             fontSize: _fontSize,
             fontWeight: FontWeight.w600,
-            color: header ? RdColors.secondary2 : Colors.white,
+            color: header ? RdColors.text2 : RdColors.text,
           ),
         ),
       );
@@ -233,7 +235,7 @@ class _OperatorSkillTableState extends State<OperatorSkillTable> {
           for (final level in levels)
             dataCell(
               isSelected: level.level == selected,
-              selectedFill: const Color(0x2959B5FF),
+              selectedFill: RdColors.accentSoft,
               child: rdMasteryAsset(level.level) != null
                   ? RdMasteryIcon(
                       level.level,
@@ -246,7 +248,7 @@ class _OperatorSkillTableState extends State<OperatorSkillTable> {
                         fontSize: _fontSize,
                         fontWeight: FontWeight.w600,
                         color: level.level == selected
-                            ? Colors.white
+                            ? RdColors.accentText
                             : RdColors.secondary2,
                       ),
                     ),
@@ -271,14 +273,14 @@ class _OperatorSkillTableState extends State<OperatorSkillTable> {
                   dataCell(
                     isSelected:
                         i < levels.length && levels[i].level == selected,
-                    selectedFill: const Color(0x1F59B5FF),
+                    selectedFill: RdColors.accentSoft,
                     child: Text(
                       row.values[i],
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: _fontSize,
                         color: i < levels.length && levels[i].level == selected
-                            ? Colors.white
+                            ? RdColors.accentText
                             : RdColors.body,
                       ),
                     ),

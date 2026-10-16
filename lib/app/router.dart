@@ -6,12 +6,12 @@ import 'logging_navigator_observer.dart';
 import 'page_transitions.dart';
 import 'providers.dart';
 import 'shell.dart';
-import '../ui/redesign/rd_tokens.dart';
 import '../features/home/home_screen.dart';
 import '../features/items/item_detail_screen.dart';
 import '../features/items/items_screen.dart';
 import '../features/operators/operator_detail_screen.dart';
 import '../features/operators/operators_screen.dart';
+import '../features/operators/operators_workspace.dart';
 import '../features/plan/operator_plan_screen.dart';
 import '../features/plan/plan_screen.dart';
 import '../features/settings/settings_screen.dart';
@@ -148,9 +148,9 @@ GoRouter createRouter({List<NavigatorObserver> Function()? observers}) {
   );
 }
 
-/// At expanded width `/operators` and `/operators/:id` both render the same
-/// master-detail workspace, so switching between them must not animate the
-/// whole page; narrower layouts use the push transition like every route.
+/// From [operatorsMasterDetailWidth] `/operators` and `/operators/:id` both
+/// render the same master-detail workspace, so switching between them must
+/// not animate the whole page; narrower layouts use the push transition like every route.
 ///
 /// Both cases are a [NexusPage], so the routes delegate the same exit
 /// transition as their neighbours (a different one would rebuild the page
@@ -169,6 +169,6 @@ Page<void> _operatorsPage(
     state,
     child,
     transition:
-        context.rdLayout == RdLayout.expanded ? NexusPageTransition.none : null,
+        operatorsMasterDetail(context) ? NexusPageTransition.none : null,
   );
 }

@@ -1,17 +1,32 @@
 import 'dart:async';
 
 import 'package:arknight_nexus/data_sources/region_code.dart';
+import 'package:arknight_nexus/domain/operator.dart';
 import 'package:arknight_nexus/domain/user_data.dart';
 import 'package:arknight_nexus/features/home/home_sidebar_panel.dart';
 import 'package:arknight_nexus/features/settings/settings_screen.dart';
+import 'package:arknight_nexus/features/shared/region_data_label.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'home_test_support.dart';
 
+OperatorSummary _summary(String id, {String? source, int rarity = 5}) =>
+    OperatorSummary(
+      id: id,
+      name: 'Op $id',
+      rarity: rarity,
+      profession: 'GUARD',
+      branch: 'lord',
+      thumbnailHue: 0,
+      unreleasedSource: source,
+    );
+
 void main() {
+  final syncTime = formatSyncTime(homeFetchedAt)!;
+
   group('home layout', () {
-    testWidgets('phone: header, search, plan, tiles, notice', (tester) async {
+    testWidgets('phone: header, status, search, plan, notice', (tester) async {
       await pumpHomeArea(tester, size: phoneSize);
       expectNoErrors(tester);
 
@@ -22,69 +37,185 @@ void main() {
       expect(tester.getSize(sync).height, greaterThanOrEqualTo(44));
       expect(find.byKey(const Key('region-select')), findsOneWidget);
       expect(find.text('KR'), findsOneWidget);
-      expect(find.text('KR 데이터 · 준비됨 · 415명'), findsOneWidget);
+      expect(find.text('KR 52.0.0 · 415명'), findsOneWidget);
+      expect(find.text(syncTime), findsOneWidget);
 
+      // Enter submits; phones have no separate search button.
       expect(find.byKey(const Key('home-search-field')), findsOneWidget);
-      expect(find.byKey(const Key('home-search-button')), findsOneWidget);
+      expect(find.byKey(const Key('home-search-button')), findsNothing);
       expect(find.text('육성 계획 요약'), findsOneWidget);
       expect(find.text('아직 육성 계획에 오퍼레이터가 없습니다.'), findsOneWidget);
-      for (final id in ['operators', 'plan', 'items', 'enemies']) {
-        expect(find.byKey(Key('home-menu-$id')), findsOneWidget);
-      }
-      expect(find.text('준비중'), findsOneWidget);
-      // The shell's bottom tabs, not a sidebar.
+      // No shortcut tiles: the tabs are the navigation.
+      expect(find.byKey(const Key('home-menu-operators')), findsNothing);
       expect(find.byKey(const Key('tab-home')), findsOneWidget);
       expect(find.byType(HomeSidebarPanel), findsNothing);
 
       await tester.scrollUntilVisible(
-        find.text('비공식 팬 프로젝트'),
+        find.byKey(const Key('home-rights-notice')),
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('비공식 팬 프로젝트'), findsOneWidget);
+      expect(find.textContaining('비공식 팬 앱'), findsOneWidget);
       expectNoErrors(tester);
     });
 
-    testWidgets('desktop: sidebar panel and main column', (tester) async {
+    testWidgets('desktop: sidebar panel and data card', (tester) async {
       await pumpHomeArea(tester, size: desktopSize);
       expectNoErrors(tester);
 
       expect(find.byType(HomeSidebarPanel), findsOneWidget);
       expect(find.text('데이터 지역 · 언어'), findsOneWidget);
       expect(find.text('KR · 한국어'), findsOneWidget);
-      expect(find.text('준비됨 · 415명'), findsOneWidget);
-      expect(find.text('새로고침'), findsOneWidget);
+      expect(find.text('KR 52.0.0 · 415명'), findsOneWidget);
       expect(find.byKey(const Key('home-sidebar-settings')), findsOneWidget);
 
-      expect(find.text('Enter'), findsOneWidget);
-      expect(find.text('바로가기'), findsOneWidget);
-      expect(find.text('비공식 팬 프로젝트'), findsOneWidget);
+      // Data card: state, version, counts, last sync, refresh.
+      expect(find.text('데이터'), findsOneWidget);
+      expect(find.text('준비됨'), findsOneWidget);
+      expect(find.text('KR 52.0.0'), findsOneWidget);
+      expect(find.text('415명'), findsOneWidget);
+      expect(find.text(syncTime), findsOneWidget);
+      expect(find.text('새로고침'), findsOneWidget);
+      expect(find.byKey(const Key('home-sync-button')), findsOneWidget);
+
+      expect(find.byKey(const Key('home-search-button')), findsOneWidget);
+      expect(find.text('Enter'), findsNothing);
+      expect(find.text('바로가기'), findsNothing);
+      expect(find.byKey(const Key('home-menu-operators')), findsNothing);
+      expect(find.byKey(const Key('home-rights-notice')), findsOneWidget);
     });
 
-    testWidgets('medium: region and sync in the page, tiles in view',
+    testWidgets('counts native and unreleased operators', (tester) async {
+      await pumpHomeArea(
+        tester,
+        size: desktopSize,
+        operators: HomeFakeOperatorService(
+          summaries: [
+            _summary('char_c', source: 'cn'),
+            _summary('char_a'),
+            _summary('char_b'),
+          ],
+        ),
+      );
+      expectNoErrors(tester);
+
+      expect(find.text('KR 52.0.0 · 2명 · 미실장 1명'), findsOneWidget);
+      expect(find.text('2명 · 미실장 1명'), findsOneWidget);
+    });
+
+    testWidgets('medium: region and sync in the data card, no tiles',
         (tester) async {
-      final router = await pumpHomeArea(tester, size: const Size(800, 600));
+      await pumpHomeArea(tester, size: const Size(800, 600));
       expectNoErrors(tester);
 
       expect(find.byKey(const Key('region-select')), findsOneWidget);
       expect(find.byKey(const Key('home-sync-button')), findsOneWidget);
       expect(find.byType(HomeSidebarPanel), findsNothing);
+      expect(find.byKey(const Key('home-menu-operators')), findsNothing);
+      // The cards stack in the narrow column: data above the plan.
+      expect(
+        tester.getTopLeft(find.text('데이터')).dy,
+        lessThan(tester.getTopLeft(find.text('육성 계획 요약')).dy),
+      );
+    });
+  });
 
-      // Other areas' tests open their page from these tiles at 800x600.
-      for (final id in ['operators', 'plan', 'items', 'enemies']) {
-        expect(
-          tester.getCenter(find.byKey(Key('home-menu-$id'))).dy,
-          lessThan(600),
-        );
+  group('home operator sections', () {
+    final summaries = [
+      _summary('char_u1', source: 'cn'),
+      for (var i = 0; i < 10; i++) _summary('char_$i', rarity: 6),
+      _summary('char_u2', source: 'en'),
+    ];
+
+    testWidgets('desktop: newest eight natives and the unreleased preview',
+        (tester) async {
+      await pumpHomeArea(
+        tester,
+        size: desktopSize,
+        operators: HomeFakeOperatorService(summaries: summaries),
+      );
+      expectNoErrors(tester);
+
+      expect(find.text('새로 실장'), findsOneWidget);
+      // List order (newest first), natives only, eight on a wide window.
+      for (var i = 0; i < 8; i++) {
+        expect(find.byKey(Key('home-new-char_$i')), findsOneWidget);
       }
-      await tester.tap(find.byKey(const Key('home-menu-items')));
+      expect(find.byKey(const Key('home-new-char_8')), findsNothing);
+      expect(find.byKey(const Key('home-new-char_u1')), findsNothing);
+      expect(
+        tester.getTopLeft(find.byKey(const Key('home-new-char_0'))).dx,
+        lessThan(
+          tester.getTopLeft(find.byKey(const Key('home-new-char_1'))).dx,
+        ),
+      );
+
+      expect(find.text('미실장 미리보기'), findsOneWidget);
+      expect(find.text('2명 모두 보기'), findsOneWidget);
+      expect(find.byKey(const Key('home-unreleased-char_u1')), findsOneWidget);
+      expect(find.byKey(const Key('home-unreleased-char_u2')), findsOneWidget);
+      expect(find.text('미실장 · CN'), findsOneWidget);
+      expect(find.text('미실장 · EN'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('home-new-char_3')));
       await tester.pumpAndSettle();
-      expect(find.text('stub items'), findsOneWidget);
+      expect(find.text('stub operator:char_3'), findsOneWidget);
+    });
+
+    testWidgets('phone: scrollers open the operator detail', (tester) async {
+      final router = await pumpHomeArea(
+        tester,
+        size: phoneSize,
+        operators: HomeFakeOperatorService(summaries: summaries),
+      );
+      expectNoErrors(tester);
+
+      final unreleased = find.byKey(const Key('home-unreleased-char_u2'));
+      await tester.scrollUntilVisible(
+        unreleased,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('모두 보기'), findsOneWidget);
+      await tester.tap(unreleased);
+      await tester.pumpAndSettle();
+      expect(find.text('stub operator:char_u2'), findsOneWidget);
+
       router.pop();
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('home-menu-operators')));
+      await tester.tap(find.byKey(const Key('home-new-releases-all')));
       await tester.pumpAndSettle();
       expect(find.text('stub operators:'), findsOneWidget);
+    });
+
+    testWidgets('no unreleased preview when the region has none',
+        (tester) async {
+      await pumpHomeArea(
+        tester,
+        size: desktopSize,
+        operators: HomeFakeOperatorService(
+          summaries: [_summary('char_a'), _summary('char_b')],
+        ),
+      );
+      expectNoErrors(tester);
+
+      expect(find.byKey(const Key('home-new-char_a')), findsOneWidget);
+      expect(find.byKey(const Key('home-unreleased-preview')), findsNothing);
+      expect(find.text('미실장 미리보기'), findsNothing);
+    });
+
+    testWidgets('no operator sections before the region has data',
+        (tester) async {
+      await pumpHomeArea(
+        tester,
+        size: desktopSize,
+        regionSync: HomeFakeRegionSyncService()..ready = false,
+        operators: HomeFakeOperatorService(summaries: summaries),
+      );
+      expectNoErrors(tester);
+
+      expect(find.byKey(const Key('home-new-releases')), findsNothing);
+      expect(find.byKey(const Key('home-unreleased-preview')), findsNothing);
     });
   });
 
@@ -94,8 +225,6 @@ void main() {
 
       await tester.enterText(find.byType(TextField), '  amiya ');
       await tester.pump();
-      expect(find.text('“amiya” 오퍼레이터 검색'), findsOneWidget);
-
       await tester.testTextInput.receiveAction(TextInputAction.search);
       await tester.pumpAndSettle();
       expect(find.text('stub operators:amiya'), findsOneWidget);
@@ -103,24 +232,11 @@ void main() {
 
     testWidgets('search button with no keyword opens the full list',
         (tester) async {
-      await pumpHomeArea(tester, size: desktopSize);
+      final router = await pumpHomeArea(tester, size: desktopSize);
 
       await tester.tap(find.byKey(const Key('home-search-button')));
       await tester.pumpAndSettle();
       expect(find.text('stub operators:'), findsOneWidget);
-    });
-
-    testWidgets('menu tiles push their page; the pending tile is inert',
-        (tester) async {
-      final router = await pumpHomeArea(tester, size: desktopSize);
-
-      await tester.tap(find.byKey(const Key('home-menu-enemies')));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const Key('home-menu-enemies')), findsOneWidget);
-
-      await tester.tap(find.byKey(const Key('home-menu-items')));
-      await tester.pumpAndSettle();
-      expect(find.text('stub items'), findsOneWidget);
       // Pushed, so back returns home.
       expect(router.canPop(), isTrue);
     });
@@ -138,7 +254,8 @@ void main() {
 
       expect(find.text('Operators'), findsWidgets);
       expect(find.text('EN · English'), findsOneWidget);
-      expect(find.text('Ready · 415 operators'), findsOneWidget);
+      expect(find.text('EN 52.0.0 · 415 operators'), findsOneWidget);
+      expect(find.text('Ready'), findsOneWidget);
       expect(sync.statusRegions.last, RegionCode.en);
     });
 
@@ -161,7 +278,8 @@ void main() {
       sync.ensureGate!.complete();
       await tester.pumpAndSettle();
 
-      expect(find.text('준비됨 · 415명'), findsOneWidget);
+      expect(find.text('준비됨'), findsOneWidget);
+      expect(find.text('KR 52.0.0 · 415명'), findsOneWidget);
       expect(sync.ensureCalls, 1);
     });
 
@@ -170,7 +288,7 @@ void main() {
         ..ready = false
         ..failSync = true;
       await pumpHomeArea(tester, size: phoneSize, regionSync: sync);
-      expect(find.text('KR 데이터 · 동기화 필요'), findsOneWidget);
+      expect(find.text('KR · 동기화 필요'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('home-sync-button')));
       await tester.pumpAndSettle();
@@ -183,18 +301,21 @@ void main() {
       await tester.tap(find.byKey(const Key('home-sync-button')));
       await tester.pumpAndSettle();
       expect(sync.syncCalls, 2);
-      expect(find.text('KR 데이터 · 준비됨 · 415명'), findsOneWidget);
+      expect(find.text('KR 52.0.0 · 415명'), findsOneWidget);
     });
 
-    testWidgets('sidebar sync and settings link (desktop)', (tester) async {
+    testWidgets('data card refresh and sidebar settings link (desktop)',
+        (tester) async {
       final sync = HomeFakeRegionSyncService()..ready = false;
       await pumpHomeArea(tester, size: desktopSize, regionSync: sync);
       expect(find.text('동기화 필요'), findsOneWidget);
+      expect(find.text('KR · 동기화 필요'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('home-sync-button')));
       await tester.pumpAndSettle();
       expect(sync.syncCalls, 1);
-      expect(find.text('준비됨 · 415명'), findsOneWidget);
+      expect(find.text('준비됨'), findsOneWidget);
+      expect(find.text('KR 52.0.0 · 415명'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('home-sidebar-settings')));
       await tester.pumpAndSettle();
@@ -225,11 +346,14 @@ void main() {
         find.text('용문폐 부족 1,000 · CE-6 1회 · LS-6 1회 · 이성 72'),
         findsOneWidget,
       );
-      expect(find.text('계획 중인 오퍼레이터'), findsOneWidget);
-      expect(find.text('Mon3tr'), findsOneWidget);
+      final planned = find.byKey(const Key('home-planned-char_x'));
+      expect(
+        find.descendant(of: planned, matching: find.text('Mon3tr')),
+        findsOneWidget,
+      );
       expect(find.text('E0 Lv.1 → E1 Lv.1'), findsOneWidget);
 
-      await tester.tap(find.byKey(const Key('home-planned-char_x')));
+      await tester.tap(planned);
       await tester.pumpAndSettle();
       expect(find.text('stub plan:char_x'), findsOneWidget);
     });
@@ -252,7 +376,13 @@ void main() {
       );
       expectNoErrors(tester);
       expect(find.text('필요 EXP'), findsOneWidget);
-      expect(find.text('Mon3tr'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('home-planned-char_x')),
+          matching: find.text('Mon3tr'),
+        ),
+        findsOneWidget,
+      );
 
       await tester.tap(find.byKey(const Key('home-open-plan')));
       await tester.pumpAndSettle();

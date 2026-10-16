@@ -425,8 +425,9 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
           for (final elite in const [0, 1, 2])
             RdSegment(
               elite,
-              'E$elite',
-              leading: RdEliteIcon(elite, excludeSemantics: true),
+              '',
+              leading: RdEliteIcon(elite, size: 20, excludeSemantics: true),
+              semanticLabel: '$eliteLabel $elite',
               key: Key('plan-$side-elite-$elite'),
             ),
         ],
@@ -530,7 +531,7 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
                 charId: operator.id,
                 name: operator.name,
                 size: compact ? 60 : 72,
-                radius: 24,
+                radius: RdRadii.control,
               ),
               SizedBox(width: compact ? 12 : 14),
               Expanded(
@@ -630,7 +631,7 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
             SizedBox(height: compact ? 10 : 12),
             RdInset(
               padding: EdgeInsets.all(compact ? 12 : 14),
-              radius: compact ? RdRadii.inner : 16,
+              radius: RdRadii.card,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -774,7 +775,7 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
 
     return RdInset(
       padding: EdgeInsets.all(compact ? 12 : 14),
-      radius: compact ? RdRadii.inner : 16,
+      radius: RdRadii.card,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -786,9 +787,9 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
                   height: compact ? 36 : 40,
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: const Color(0xD9071224),
+                    color: RdColors.surface3,
                     borderRadius: BorderRadius.circular(RdRadii.control),
-                    border: Border.all(color: RdColors.white8),
+                    border: Border.all(color: RdColors.hairline),
                   ),
                   child: Image(image: icon, fit: BoxFit.contain),
                 ),
@@ -812,14 +813,14 @@ class _OperatorPlanScreenState extends ConsumerState<OperatorPlanScreen> {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0x1F8BD6FF),
-                    borderRadius: BorderRadius.circular(RdRadii.pill),
+                    color: RdColors.accentSoft,
+                    borderRadius: BorderRadius.circular(RdRadii.chip),
                   ),
                   child: Text(
                     typeLabel,
                     style: RdText.mono(
                       fontSize: 11,
-                      color: const Color(0xFFCDEEFF),
+                      color: RdColors.accentText,
                     ),
                   ),
                 ),
@@ -1190,7 +1191,7 @@ class _DetailSkeleton extends StatelessWidget {
               SizedBox(height: 14),
               RdSkeleton(
                 height: 180,
-                radius: 16,
+                radius: RdRadii.card,
                 color: RdColors.white5,
               ),
             ],

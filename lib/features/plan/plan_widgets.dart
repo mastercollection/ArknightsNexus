@@ -7,44 +7,45 @@ import '../../ui/redesign/rd_widgets.dart';
 
 export '../shared/number_format.dart' show formatPlanNumber;
 
-/// Colours of the redesigned plan pages that `RdColors` does not name.
+/// Plan-page roles of the palette-A tokens.
 class PlanColors {
   const PlanColors._();
 
-  /// `#ffb3b3`: shortage counts.
-  static const shortage = Color(0xFFFFB3B3);
+  /// Shortage counts.
+  static const shortage = RdColors.dangerText;
 
-  /// `#ffc6c6`: validation messages.
-  static const validation = Color(0xFFFFC6C6);
-  static const validationFill = Color(0x14FF6666);
-  static const validationBorder = Color(0x40FF7878);
+  /// Validation messages.
+  static const validation = RdColors.dangerText;
+  static const validationFill = RdColors.dangerFill;
+  static const validationBorder = RdColors.dangerLine;
 
   /// Removal (selection mode) colours.
-  static const dangerBorder = Color(0x73FF7878);
-  static const dangerFill = Color(0x29FF7878);
-  static const dangerText = Color(0xFFFFD0D0);
-  static const pendingFill = Color(0x3378141C);
-  static const pendingBorder = Color(0x66FF7878);
+  static const dangerBorder = RdColors.dangerLine;
+  static const dangerFill = RdColors.dangerFill;
+  static const dangerText = RdColors.dangerText;
+  static const pendingFill = RdColors.dangerFill;
+  static const pendingBorder = RdColors.dangerLine;
 
-  /// Muted footnote / separator colour (`#6f7c94`).
-  static const faint = Color(0xFF6F7C94);
+  /// Muted footnote / separator colour.
+  static const faint = RdColors.text3;
 
   /// Error toast.
-  static const toastFill = Color(0xFF2A1215);
+  static const toastFill = RdColors.dangerSolid;
 
-  /// Item icon outline tints by material tier (`TIER_TINT` of the canvas).
+  /// Item icon outline tints by material tier (gold, violet, iris, green,
+  /// then neutral), at 45–60% so the icon stays the focus.
   static Color tierTint(int tier) => switch (tier) {
-        5 => const Color(0x99FFCF70),
-        4 => const Color(0x8CC4A0FF),
-        3 => const Color(0x808BD6FF),
-        2 => const Color(0x736EE7A8),
-        1 => const Color(0x40FFFFFF),
-        _ => const Color(0x2EFFFFFF),
+        5 => const Color(0x99F2B544),
+        4 => const Color(0x8CC39BFF),
+        3 => const Color(0x807C8CFF),
+        2 => const Color(0x734ADE9A),
+        1 => RdColors.white20,
+        _ => RdColors.border,
       };
 
   /// EXP (gold) and LMD (violet) resource icon outlines.
-  static const expTint = Color(0x8CFFCF70);
-  static const lmdTint = Color(0x8CC4A0FF);
+  static const expTint = Color(0x8CF2B544);
+  static const lmdTint = Color(0x8CC39BFF);
 }
 
 /// `max(0, required - owned)`: owned counts come from the item inventory.
@@ -186,8 +187,8 @@ class PlanStars extends StatelessWidget {
         fontSize: fontSize,
         height: 1,
         letterSpacing: fontSize * 0.04,
-        color: RdColors.gold,
-        shadows: const [Shadow(color: Color(0xCC000000), blurRadius: 4)],
+        color: RdColors.rarity,
+        shadows: const [Shadow(color: RdColors.barrier, blurRadius: 4)],
       ),
     );
   }
@@ -227,12 +228,12 @@ class PlanOperatorTile extends StatelessWidget {
     final portrait = compact ? 76.0 : 84.0;
     final (Color fill, Color border) = switch (mode) {
       PlanTileMode.open => (RdColors.inner, RdColors.line2),
-      PlanTileMode.favorite => (RdColors.inner, const Color(0x5985B6FF)),
+      PlanTileMode.favorite => (RdColors.inner, RdColors.accentLine),
       PlanTileMode.pick => pending
           ? (PlanColors.pendingFill, PlanColors.pendingBorder)
-          : (const Color(0x05FFFFFF), RdColors.white10),
+          : (RdColors.surface3, RdColors.border),
     };
-    final radius = BorderRadius.circular(compact ? 16 : RdRadii.tile);
+    final radius = BorderRadius.circular(RdRadii.tile);
 
     Widget? badge;
     if (mode == PlanTileMode.pick) {
@@ -241,15 +242,15 @@ class PlanOperatorTile extends StatelessWidget {
         height: 24,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: pending ? const Color(0xFF4A1A20) : const Color(0xFF0A0F1E),
+          color: pending ? RdColors.dangerSolid : RdColors.surface1,
           border: Border.all(
-            color: pending ? const Color(0x80FF7878) : RdColors.white14,
+            color: pending ? RdColors.dangerLine : RdColors.border,
           ),
         ),
         child: Icon(
           Icons.check,
           size: 14,
-          color: pending ? PlanColors.shortage : const Color(0xFF8592AA),
+          color: pending ? PlanColors.shortage : RdColors.text3,
         ),
       );
     } else if (mode == PlanTileMode.favorite) {
@@ -259,11 +260,11 @@ class PlanOperatorTile extends StatelessWidget {
         alignment: Alignment.center,
         decoration: const BoxDecoration(
           shape: BoxShape.circle,
-          color: RdColors.gold,
+          color: RdColors.rarity,
         ),
         child: const Text(
           '★',
-          style: TextStyle(fontSize: 12, color: Color(0xFF1A1205)),
+          style: TextStyle(fontSize: 12, color: RdColors.bg),
         ),
       );
     }
@@ -296,7 +297,7 @@ class PlanOperatorTile extends StatelessWidget {
                       charId: operatorId,
                       name: name,
                       size: portrait,
-                      radius: 24,
+                      radius: RdRadii.control,
                     ),
                     Positioned(
                       left: 0,
@@ -537,15 +538,15 @@ class PlanFarmingRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: gold ? RdColors.goldFill : RdColors.blueFill,
-            borderRadius: BorderRadius.circular(RdRadii.pill),
+            color: gold ? RdColors.warningFill : RdColors.accentSoft,
+            borderRadius: BorderRadius.circular(RdRadii.chip),
           ),
           child: Text(
             chip,
             style: TextStyle(
               fontSize: 12,
               fontWeight: gold ? FontWeight.w700 : FontWeight.w400,
-              color: gold ? RdColors.warnText : RdColors.blueText,
+              color: gold ? RdColors.warningText : RdColors.accentText,
             ),
           ),
         ),
@@ -663,9 +664,9 @@ class PlanSaveStatusPill extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           color: failed ? PlanColors.toastFill : RdColors.inner2,
-          borderRadius: BorderRadius.circular(RdRadii.pill),
+          borderRadius: BorderRadius.circular(RdRadii.chip),
           border: Border.all(
-            color: failed ? const Color(0x80FF7878) : RdColors.white10,
+            color: failed ? RdColors.dangerLine : RdColors.border,
           ),
         ),
         child: Row(
@@ -721,8 +722,6 @@ class PlanErrorToast extends StatelessWidget {
               child: Material(
                 key: const Key('plan-save-error-toast'),
                 color: PlanColors.toastFill,
-                elevation: 8,
-                shadowColor: const Color(0x73000000),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(RdRadii.control),
                   side: const BorderSide(color: PlanColors.dangerBorder),
@@ -811,10 +810,10 @@ class PlanSkillLevelPicker extends StatelessWidget {
     final on = level == selected;
     final mastery = rdMasteryAsset(level);
     final (Color fill, Color border, Color text) = on
-        ? (RdColors.segmentOn, const Color(0xB385B6FF), RdColors.onSegment)
+        ? (RdColors.accentSoft, RdColors.accentLine, RdColors.accentText)
         : mastery != null
-            ? (const Color(0x0FFFCF70), const Color(0x47FFCF70), RdColors.gold)
-            : (RdColors.segmentTrack, RdColors.white10, RdColors.secondary);
+            ? (RdColors.warningFill, RdColors.border, RdColors.warningText)
+            : (RdColors.surface3, RdColors.border, RdColors.text2);
     return Semantics(
       key: Key('$chipKeyPrefix-$level'),
       button: true,
@@ -827,11 +826,11 @@ class PlanSkillLevelPicker extends StatelessWidget {
       child: Material(
         color: fill,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(RdRadii.chip),
           side: BorderSide(color: border),
         ),
         child: InkWell(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(RdRadii.chip),
           onTap: on ? null : () => onChanged(level),
           child: SizedBox(
             height: height,
@@ -882,7 +881,8 @@ class PlanSkillLevelBadge extends StatelessWidget {
       level,
       size: fontSize + 8,
       semanticLabel: masteryLabel(level - 7),
-      fallbackStyle: RdText.mono(fontSize: fontSize, color: RdColors.gold),
+      fallbackStyle:
+          RdText.mono(fontSize: fontSize, color: RdColors.warningText),
     );
   }
 }

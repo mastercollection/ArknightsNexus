@@ -18,8 +18,8 @@ Future<bool> showSettingsConfirm({
     maxWidth: 460,
     builder: (dialogContext) => _SettingsDialog(
       badge: '!',
-      badgeColor: RdColors.gold,
-      badgeFill: RdColors.goldFill,
+      badgeColor: RdColors.warning,
+      badgeFill: RdColors.warningFill,
       title: title,
       body: Text(
         message,
@@ -53,8 +53,8 @@ Future<void> showSettingsAlert({
     maxWidth: 460,
     builder: (dialogContext) => _SettingsDialog(
       badge: 'i',
-      badgeColor: RdColors.cyan,
-      badgeFill: const Color(0x248BD6FF),
+      badgeColor: RdColors.accentHover,
+      badgeFill: RdColors.accentSoft,
       title: title,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

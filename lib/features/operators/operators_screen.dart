@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../i18n/nexus_i18n.dart';
 import '../../ui/redesign/rd_widgets.dart';
+import '../shared/region_operator_counts.dart';
 import 'operators_filters.dart';
 import 'operators_list_controller.dart';
 import 'operators_list_view.dart';
@@ -12,8 +13,8 @@ import 'operators_workspace.dart';
 
 /// `/operators` (port of `src/pages/operators.vue`, redesigned).
 ///
-/// Expanded width: the PC master-detail [OperatorsWorkspace] with nothing
-/// selected. Narrower: the list page with a condensing header, filter chips
+/// From [operatorsMasterDetailWidth]: the master-detail [OperatorsWorkspace]
+/// with nothing selected. Narrower: the list page with a condensing header, filter chips
 /// and filter sheets; tapping an operator pushes its detail page.
 class OperatorsScreen extends ConsumerStatefulWidget {
   const OperatorsScreen({this.initialQuery, super.key});
@@ -59,7 +60,7 @@ class _OperatorsScreenState extends ConsumerState<OperatorsScreen> {
   Widget build(BuildContext context) {
     // Keeps the shared list state alive while this page is mounted.
     ref.watch(operatorsListControllerProvider.select((_) => 0));
-    if (context.rdLayout == RdLayout.expanded) {
+    if (operatorsMasterDetail(context)) {
       return const OperatorsWorkspace();
     }
     return const OperatorsListPage();
@@ -158,7 +159,7 @@ class _OperatorsListPageState extends ConsumerState<OperatorsListPage> {
     final hasDimension = list.filters.hasDimension;
     final count = list.isLoading || list.errorMessage.isNotEmpty
         ? ''
-        : i18n.t('rd.operators.count', {'count': list.operatorList.length});
+        : formatOperatorCounts(i18n, list.counts);
     final side = compact ? 12.0 : rdPagePadding(context).left;
 
     final header = Container(
@@ -174,13 +175,9 @@ class _OperatorsListPageState extends ConsumerState<OperatorsListPage> {
           children: [
             Row(
               children: [
-                RdIconButton(
-                  icon: Icons.chevron_left,
-                  tooltip: i18n.t('common.back'),
-                  filled: false,
-                  onPressed: () => context.go('/'),
-                ),
-                const SizedBox(width: 6),
+                // A section root: no back button (Esc, the mouse back button
+                // and Android back climb through the shell).
+                const SizedBox(width: 4),
                 Expanded(
                   child: Semantics(
                     header: true,
@@ -221,15 +218,6 @@ class _OperatorsListPageState extends ConsumerState<OperatorsListPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Dropped (not only hidden) while condensed, like
-                        // the Vue top bar's description.
-                        if (!_isCondensed) ...[
-                          Text(
-                            i18n.t('operatorsList.topBar.description'),
-                            style: RdText.small,
-                          ),
-                          const SizedBox(height: 10),
-                        ],
                         ExcludeFocus(
                           excluding: _isCondensed,
                           child: RdSearchField(

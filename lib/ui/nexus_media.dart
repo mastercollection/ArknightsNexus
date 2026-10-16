@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../data_sources/image_source.dart';
 import '../widgets/cached_image.dart';
+import 'redesign/rd_tokens.dart';
 
 const _operatorSilhouetteAsset = 'assets/icons/operator-silhouette.svg';
 
@@ -20,11 +21,11 @@ class _SilhouetteSkeleton extends StatelessWidget {
         final iconSize = constraints.biggest.shortestSide * iconFraction;
         return DecoratedBox(
           decoration: const BoxDecoration(
-            color: Color(0x05FFFFFF),
+            color: RdColors.white3,
             gradient: RadialGradient(
               center: Alignment.topCenter,
               radius: 1.1,
-              colors: [Color(0x245EB6FF), Color(0x005EB6FF)],
+              colors: [Color(0x1F7C8CFF), Color(0x007C8CFF)], // accent glow
               stops: [0, 0.64],
             ),
           ),
@@ -61,7 +62,7 @@ class ItemIcon extends StatelessWidget {
   final double size;
 
   /// Mirrors a Vue `class="h-[N] w-[N]"` override on `ItemIcon.vue`: only the
-  /// outer box changes size while the 18px radius, 58px image and 0.72rem
+  /// outer box changes size while the 14px radius, 58px image and 0.72rem
   /// fallback keep their CSS sizes. A larger image overflows the grid track
   /// from the top-left and is clipped by the box, exactly like the web app.
   final bool fixedContent;
@@ -79,7 +80,7 @@ class ItemIcon extends StatelessWidget {
           fontSize: 11.52 * scale,
           height: 1.25,
           fontWeight: FontWeight.w700,
-          color: const Color(0xE0DFE8FF),
+          color: RdColors.text2,
         ),
       ),
     );
@@ -91,8 +92,8 @@ class ItemIcon extends StatelessWidget {
       decoration: BoxDecoration(
         // The root is a <div>: `border border-soft` has no border-style (and
         // so no width) without a CSS reset.
-        color: const Color(0xE6071224),
-        borderRadius: BorderRadius.circular(18 * scale),
+        color: RdColors.surface3,
+        borderRadius: BorderRadius.circular(14 * scale),
       ),
       child: resolvedId.isEmpty
           ? fallback

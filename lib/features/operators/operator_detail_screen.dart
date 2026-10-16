@@ -12,8 +12,8 @@ export 'operator_detail_view.dart' show DetailSection, showOperatorTermSheet;
 /// `/operators/:operatorId` (port of `src/pages/operators/[operatorId].vue`,
 /// redesigned).
 ///
-/// Expanded width: the PC master-detail [OperatorsWorkspace] with this
-/// operator selected. Narrower: the full detail page with section tabs.
+/// From [operatorsMasterDetailWidth]: the master-detail [OperatorsWorkspace]
+/// with this operator selected. Narrower: the full detail page with section tabs.
 class OperatorDetailScreen extends ConsumerWidget {
   const OperatorDetailScreen({
     required this.operatorId,
@@ -26,7 +26,7 @@ class OperatorDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (context.rdLayout == RdLayout.expanded) {
+    if (operatorsMasterDetail(context)) {
       // Keeps the shared list state alive while the workspace is shown.
       ref.watch(operatorsListControllerProvider.select((_) => 0));
       return OperatorsWorkspace(selectedId: operatorId);

@@ -8,7 +8,7 @@ import 'rd_tokens.dart';
 /// App mark (`nexus-beacon.svg`) of the sidebar, home and settings headers.
 const rdAppIconAsset = 'assets/icons/app/nexus-beacon.svg';
 
-/// The app mark in its rounded navy box (32px in the brand rows, 28px in the
+/// The app mark in its accent-soft box (32px in the brand rows, 28px in the
 /// settings header).
 class RdAppMark extends StatelessWidget {
   const RdAppMark({this.size = 32, super.key});
@@ -23,9 +23,9 @@ class RdAppMark extends StatelessWidget {
         height: size,
         padding: EdgeInsets.all((size * 3 / 16).roundToDouble()),
         decoration: BoxDecoration(
-          color: const Color(0xFF0D1730),
-          borderRadius: BorderRadius.circular((size * 9 / 32).roundToDouble()),
-          border: Border.all(color: const Color(0x598BD6FF)),
+          color: RdColors.accentSoft,
+          borderRadius: BorderRadius.circular((size * 10 / 32).roundToDouble()),
+          border: Border.all(color: RdColors.accentLine),
         ),
         child: SvgPicture.asset(rdAppIconAsset),
       ),
@@ -112,7 +112,7 @@ class RdMasteryIcon extends StatelessWidget {
   }
 }
 
-/// Cached operator portrait in a rounded `#16223a` box; the initial letter
+/// Cached operator portrait in a rounded surface-3 box; the initial letter
 /// stands in while the image loads or is missing.
 class RdPortrait extends StatelessWidget {
   const RdPortrait({
@@ -139,8 +139,8 @@ class RdPortrait extends StatelessWidget {
         initial,
         style: TextStyle(
           fontSize: size * 0.32,
-          fontWeight: FontWeight.w800,
-          color: RdColors.cyan,
+          fontWeight: FontWeight.w600,
+          color: RdColors.text2,
         ),
       ),
     );

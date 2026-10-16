@@ -8,10 +8,11 @@ const maxOwnedCount = 9999999;
 final _ownedCountFormatter = NumberFormat.decimalPattern();
 
 /// Port of `formatOwnedCount` from `items.vue`; LMD keeps a compact K/M
-/// notation.
+/// notation from 1,000 up. Smaller LMD counts are written out so an empty
+/// wallet reads "0" rather than "0.0K".
 String formatOwnedCount(num count, [String? itemId]) {
   final normalized = count < 0 ? 0 : count.truncate();
-  if (itemId != lmdItemId) {
+  if (itemId != lmdItemId || normalized < 1000) {
     return _ownedCountFormatter.format(normalized);
   }
   if (normalized < 1000000) {
@@ -105,3 +106,80 @@ class InfiniteSlice {
 
   bool hasMore(int sourceLength) => visibleCount < sourceLength;
 }
+
+/// Kind of an item, derived from the game data: the item table has no
+/// single field for it (`classifyType` is `MATERIAL` for chips, skill
+/// summaries and class tokens alike), so the id families and `itemType`
+/// decide.
+enum ItemKind {
+  /// LMD (`itemType` GOLD).
+  currency,
+
+  /// Battle records (`itemType` CARD_EXP).
+  exp,
+
+  /// Skill summaries (`3301`…`3303`).
+  skill,
+
+  /// Module data block / data supplement (`mod_*`).
+  module,
+
+  /// Chips, dualchips and the chip catalyst (`32xx`, `32001`).
+  chip,
+
+  /// Elite / promotion materials (everything else that is a material).
+  material,
+
+  /// Class tokens (`tier<N>_<class>`).
+  token,
+
+  /// Any non-material item a detail page can still be opened for.
+  other,
+}
+
+final _skillIdPattern = RegExp(r'^33\d\d$');
+final _chipIdPattern = RegExp(r'^32\d+$');
+final _tokenIdPattern = RegExp(r'^tier\d_');
+final _tierPattern = RegExp(r'(\d+)');
+
+/// [ItemKind] of [item]; see the enum for the rules.
+ItemKind itemKindOf(ItemEntry item) {
+  final id = item.itemId;
+  final itemType = item.itemType.toUpperCase();
+  if (itemType == 'GOLD') {
+    return ItemKind.currency;
+  }
+  if (itemType == 'CARD_EXP') {
+    return ItemKind.exp;
+  }
+  if (item.classifyType.toUpperCase() != 'MATERIAL') {
+    return ItemKind.other;
+  }
+  if (_skillIdPattern.hasMatch(id)) {
+    return ItemKind.skill;
+  }
+  if (id.startsWith('mod_')) {
+    return ItemKind.module;
+  }
+  if (_chipIdPattern.hasMatch(id)) {
+    return ItemKind.chip;
+  }
+  if (_tokenIdPattern.hasMatch(id)) {
+    return ItemKind.token;
+  }
+  return ItemKind.material;
+}
+
+/// Tier (1…6) from the rarity (`TIER_4` in the game data); 0 when unknown.
+int itemTierOf(ItemEntry item) {
+  final match = _tierPattern.firstMatch(item.rarity);
+  return match == null ? 0 : int.parse(match.group(1)!);
+}
+
+/// Kinds whose list section is split into tier sub-sections (T6 first).
+bool itemKindHasTierSections(ItemKind kind) =>
+    kind == ItemKind.material || kind == ItemKind.token;
+
+/// Whether the detail header shows a tier chip: LMD's rarity says nothing.
+bool itemKindShowsTier(ItemKind kind) =>
+    kind != ItemKind.currency && kind != ItemKind.other;

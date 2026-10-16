@@ -72,8 +72,8 @@ class RdSkeleton extends StatelessWidget {
     this.width,
     this.height = 14,
     this.widthFactor,
-    this.radius = RdRadii.pill,
-    this.color = RdColors.white8,
+    this.radius = RdRadii.chip,
+    this.color = RdColors.border,
     super.key,
   });
 
@@ -129,7 +129,7 @@ enum RdStateSurface {
   /// [RdInset] (radius 16) inside a card.
   inset,
 
-  /// Solid inner block (`#111b30` unless [RdStatePanel.color] is given).
+  /// Solid surface-3 block unless [RdStatePanel.color] is given.
   inner,
 }
 
@@ -182,12 +182,12 @@ class RdStatePanel extends StatelessWidget {
       constraints: const BoxConstraints(minHeight: 192),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: RdColors.card,
+        color: RdColors.surface2,
         borderRadius: BorderRadius.circular(RdRadii.card),
         border: Border.all(
           color: kind == RdStateKind.error
-              ? RdColors.dangerBorder
-              : RdColors.line2,
+              ? RdColors.dangerLine
+              : RdColors.hairline,
         ),
       ),
       child: Center(
@@ -201,7 +201,7 @@ class RdStatePanel extends StatelessWidget {
                 child: CircularProgressIndicator(
                   strokeWidth: 2.4,
                   color: RdColors.accent,
-                  backgroundColor: Color(0x4085B6FF),
+                  backgroundColor: RdColors.accentSoft,
                 ),
               ),
               const SizedBox(height: 12),
@@ -223,7 +223,7 @@ class RdStatePanel extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 13,
                   height: 1.6,
-                  color: RdColors.muted,
+                  color: RdColors.text3,
                 ),
               ),
             ],
@@ -245,21 +245,22 @@ class RdStatePanel extends StatelessWidget {
           title,
           style: TextStyle(
             fontSize: inner ? 14 : 15,
-            color: RdColors.stateTitle,
+            fontWeight: FontWeight.w600,
+            color: RdColors.text,
           ),
         ),
         if (message != null && message!.isNotEmpty) ...[
           SizedBox(height: inner ? 6 : 8),
           Text(
             message!,
-            style: const TextStyle(fontSize: 13, color: RdColors.secondary2),
+            style: const TextStyle(fontSize: 13, color: RdColors.text2),
           ),
         ],
         if (detail != null) ...[
           const SizedBox(height: 10),
           SelectableText(
             detail!,
-            style: RdText.mono(fontSize: 13, color: RdColors.secondary2),
+            style: RdText.mono(fontSize: 13, color: RdColors.text2),
           ),
         ],
         if (action != null) ...[
@@ -274,12 +275,12 @@ class RdStatePanel extends StatelessWidget {
         RdStateSurface.card => RdCard.tile(child: content),
         RdStateSurface.inset => RdInset(
             padding: EdgeInsets.all(compact ? 16 : 18),
-            radius: 16,
+            radius: RdRadii.inner,
             child: content,
           ),
         RdStateSurface.inner => RdInset(
             padding: const EdgeInsets.all(16),
-            color: color ?? RdColors.inner,
+            color: color ?? RdColors.surface3,
             child: content,
           ),
       },
@@ -296,7 +297,7 @@ class RdStatePanel extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: error ? RdColors.dangerText : RdColors.secondary,
+            color: error ? RdColors.dangerText : RdColors.text2,
           ),
         ),
         if (message != null && message!.isNotEmpty) ...[
@@ -308,7 +309,7 @@ class RdStatePanel extends StatelessWidget {
             style: const TextStyle(
               fontSize: 13,
               height: 1.5,
-              color: RdColors.muted,
+              color: RdColors.text3,
             ),
           ),
         ],
@@ -348,20 +349,20 @@ class RdNotice extends StatelessWidget {
     final (Color fill, Color? border, Color color, IconData icon) =
         switch (tone) {
       RdNoticeTone.info => (
-          RdColors.soft2,
+          RdColors.surface3,
           null,
-          RdColors.secondary,
+          RdColors.text2,
           Icons.info_outline,
         ),
       RdNoticeTone.warn => (
-          RdColors.warnBg,
+          RdColors.warningFill,
           null,
-          RdColors.warnText,
+          RdColors.warningText,
           Icons.warning_amber_rounded,
         ),
       RdNoticeTone.danger => (
           RdColors.dangerFill,
-          RdColors.dangerBorder,
+          RdColors.dangerLine,
           RdColors.dangerText,
           Icons.error_outline,
         ),
@@ -383,7 +384,7 @@ class RdNotice extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: TextStyle(fontSize: 14, height: 1.45, color: color),
+              style: TextStyle(fontSize: 13, height: 1.45, color: color),
             ),
           ),
         ],

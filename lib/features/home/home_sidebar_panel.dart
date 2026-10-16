@@ -6,8 +6,9 @@ import '../../ui/redesign/rd_widgets.dart';
 import 'home_region_sync.dart';
 import '../shared/region_select.dart';
 
-/// Bottom block of the PC home sidebar (`Main.dc.html`): data region / UI
-/// language select, sync status with a sync button, and the settings link.
+/// Bottom block of the PC home sidebar (`PcHome.dc.html`): data region / UI
+/// language select, the sync status line and the settings link. The refresh
+/// button lives in the page's data card.
 ///
 /// The shell lays the sidebar out with `IntrinsicHeight`, so nothing in here
 /// may need a `LayoutBuilder`.
@@ -29,11 +30,9 @@ class HomeSidebarPanel extends ConsumerWidget {
 
   Widget _panel(BuildContext context, NexusI18n i18n) {
     return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0B1324),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: RdColors.line),
+      padding: const EdgeInsets.fromLTRB(4, 16, 4, 0),
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: RdColors.hairline)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -42,45 +41,36 @@ class HomeSidebarPanel extends ConsumerWidget {
           ExcludeSemantics(
             child: Text(
               i18n.t('rd.home.region.label'),
-              style: const TextStyle(
-                fontSize: 12,
-                letterSpacing: 0.96,
-                color: RdColors.muted,
-              ),
+              style: const TextStyle(fontSize: 12, color: RdColors.text3),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           RdRegionSelect(semanticLabel: i18n.t('rd.home.region.label')),
           const SizedBox(height: 12),
-          const Row(
-            children: [
-              Expanded(child: HomeSyncStatusLine()),
-              SizedBox(width: 8),
-              HomeSyncButton(),
-            ],
-          ),
+          const HomeSyncStatusLine(),
           const SizedBox(height: 12),
           Semantics(
             button: true,
             child: InkWell(
               key: const Key('home-sidebar-settings'),
-              borderRadius: BorderRadius.circular(RdRadii.small),
+              borderRadius: BorderRadius.circular(RdRadii.control),
               onTap: onOpenSettings,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 36),
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 40),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Row(
                   children: [
                     const Icon(
                       Icons.settings_outlined,
-                      size: 16,
-                      color: RdColors.secondary,
+                      size: 20,
+                      color: RdColors.text2,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                     Text(
                       i18n.t('shell.nav.settings'),
                       style: const TextStyle(
                         fontSize: 14,
-                        color: RdColors.secondary,
+                        color: RdColors.text2,
                       ),
                     ),
                   ],

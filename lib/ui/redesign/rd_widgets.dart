@@ -10,19 +10,19 @@ export 'rd_media.dart';
 export 'rd_sheet.dart';
 export 'rd_tokens.dart';
 
-/// Card surface (`#0c1426`, 1px line, radius 20).
+/// Card surface (surface-2, hairline outline, radius 14).
 class RdCard extends StatelessWidget {
   const RdCard({
     required this.child,
-    EdgeInsetsGeometry this.padding = const EdgeInsets.all(22),
+    EdgeInsetsGeometry this.padding = const EdgeInsets.all(20),
     this.color = RdColors.card,
     double this.radius = RdRadii.card,
     this.borderColor = RdColors.line2,
     super.key,
   });
 
-  /// Card of the list and detail pages: radius 18 (16 on phones) and, unless
-  /// [padding] is given, 18px padding (14 on phones).
+  /// Card of the list and detail pages: radius 14 and, unless [padding] is
+  /// given, 18px padding (14 on phones).
   const RdCard.tile({
     required this.child,
     this.padding,
@@ -44,8 +44,7 @@ class RdCard extends StatelessWidget {
       padding: padding ?? EdgeInsets.all(compact ? 14 : 18),
       decoration: BoxDecoration(
         color: color,
-        borderRadius:
-            BorderRadius.circular(radius ?? (compact ? 16 : RdRadii.tile)),
+        borderRadius: BorderRadius.circular(radius ?? RdRadii.tile),
         border: borderColor == null ? null : Border.all(color: borderColor!),
       ),
       child: child,
@@ -91,16 +90,21 @@ class RdIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final enabled = onPressed != null;
     final background = active
-        ? RdColors.chipOnFill
+        ? RdColors.accentSoft
         : filled
-            ? RdColors.inner
+            ? RdColors.surface3
             : Colors.transparent;
+    final side = active
+        ? const BorderSide(color: RdColors.accentLine)
+        : filled
+            ? const BorderSide(color: RdColors.border)
+            : BorderSide.none;
     Widget glyph = Icon(
       icon,
       size: iconSize,
       color: !enabled
-          ? RdColors.muted
-          : iconColor ?? (active ? RdColors.text : RdColors.secondary),
+          ? RdColors.text3
+          : iconColor ?? (active ? RdColors.accentText : RdColors.text2),
     );
     if (spinning) {
       glyph = RdSpin(child: glyph);
@@ -118,9 +122,7 @@ class RdIconButton extends StatelessWidget {
           color: background,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(RdRadii.control),
-            side: active
-                ? const BorderSide(color: RdColors.chipOnBorder)
-                : BorderSide.none,
+            side: side,
           ),
           child: InkWell(
             borderRadius: BorderRadius.circular(RdRadii.control),
@@ -180,23 +182,23 @@ class RdButton extends StatelessWidget {
           null,
         ),
       RdButtonVariant.secondary => (
-          RdColors.inner,
-          RdColors.secondary,
-          RdColors.line3,
+          RdColors.surface3,
+          RdColors.text,
+          RdColors.border,
         ),
       RdButtonVariant.ghost => (
           Colors.transparent,
-          RdColors.secondary,
-          RdColors.line3,
+          RdColors.text2,
+          RdColors.border,
         ),
       RdButtonVariant.danger => (
-          const Color(0x1FFF8A8A),
-          const Color(0xFFFFC2C2),
-          const Color(0x4DFF8A8A),
+          RdColors.dangerFill,
+          RdColors.dangerText,
+          RdColors.dangerLine,
         ),
       RdButtonVariant.tonal => enabled || busy
-          ? (RdColors.tonalFill, RdColors.text, RdColors.tonalBorder)
-          : (RdColors.white3, RdColors.placeholder, RdColors.white8),
+          ? (RdColors.accentSoft, RdColors.accentText, RdColors.accentLine)
+          : (RdColors.white3, RdColors.text3, RdColors.border),
     };
     final bold =
         variant == RdButtonVariant.primary || variant == RdButtonVariant.tonal;
@@ -242,7 +244,7 @@ class RdButton extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
-                        fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+                        fontWeight: bold ? FontWeight.w600 : FontWeight.w500,
                         color: foreground,
                       ),
                     ),
@@ -257,7 +259,7 @@ class RdButton extends StatelessWidget {
   }
 }
 
-/// Pill chip; [selected] uses the accent outline/fill of the canvas.
+/// Filter chip (radius 6); [selected] uses the accent fill and outline.
 class RdChip extends StatelessWidget {
   const RdChip({
     required this.label,
@@ -282,14 +284,15 @@ class RdChip extends StatelessWidget {
       button: onPressed != null,
       selected: selected,
       child: Material(
-        color: selected ? RdColors.chipOnFill : Colors.transparent,
-        shape: StadiumBorder(
+        color: selected ? RdColors.accentSoft : Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(RdRadii.chip),
           side: BorderSide(
-            color: selected ? RdColors.chipOnBorder : RdColors.line3,
+            color: selected ? RdColors.accentLine : RdColors.border,
           ),
         ),
         child: InkWell(
-          customBorder: const StadiumBorder(),
+          borderRadius: BorderRadius.circular(RdRadii.chip),
           onTap: onPressed,
           child: Container(
             height: height,
@@ -302,8 +305,8 @@ class RdChip extends StatelessWidget {
                   label,
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
-                    color: selected ? RdColors.text : RdColors.secondary,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                    color: selected ? RdColors.accentText : RdColors.text2,
                   ),
                 ),
                 if (trailing != null) ...[const SizedBox(width: 6), trailing!],
@@ -316,12 +319,12 @@ class RdChip extends StatelessWidget {
   }
 }
 
-/// Small non-interactive label pill (status, tag, rarity).
+/// Small non-interactive badge (status, tag, rarity), radius 6.
 class RdPill extends StatelessWidget {
   const RdPill({
     required this.label,
-    this.color = RdColors.soft,
-    this.textColor = RdColors.secondary,
+    this.color = RdColors.surface3,
+    this.textColor = RdColors.text2,
     this.fontSize = 12,
     super.key,
   });
@@ -337,7 +340,7 @@ class RdPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(RdRadii.pill),
+        borderRadius: BorderRadius.circular(RdRadii.chip),
       ),
       child: Text(
         label,
@@ -378,10 +381,17 @@ class RdSearchField extends StatefulWidget {
 }
 
 class _RdSearchFieldState extends State<RdSearchField> {
+  FocusNode? _ownFocusNode;
+
+  /// The caller's node, or one of our own; its focus draws the accent ring.
+  FocusNode get _focusNode =>
+      widget.focusNode ?? (_ownFocusNode ??= FocusNode());
+
   @override
   void initState() {
     super.initState();
     widget.controller.addListener(_changed);
+    _focusNode.addListener(_changed);
   }
 
   @override
@@ -391,15 +401,25 @@ class _RdSearchFieldState extends State<RdSearchField> {
       oldWidget.controller.removeListener(_changed);
       widget.controller.addListener(_changed);
     }
+    if (oldWidget.focusNode != widget.focusNode) {
+      (oldWidget.focusNode ?? _ownFocusNode)?.removeListener(_changed);
+      _focusNode.addListener(_changed);
+    }
   }
 
   @override
   void dispose() {
     widget.controller.removeListener(_changed);
+    _focusNode.removeListener(_changed);
+    _ownFocusNode?.dispose();
     super.dispose();
   }
 
-  void _changed() => setState(() {});
+  void _changed() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -408,18 +428,20 @@ class _RdSearchFieldState extends State<RdSearchField> {
       height: widget.height,
       padding: const EdgeInsets.only(left: 14, right: 4),
       decoration: BoxDecoration(
-        color: RdColors.inner2,
+        color: RdColors.surface3,
         borderRadius: BorderRadius.circular(RdRadii.control),
-        border: Border.all(color: RdColors.searchBorder),
+        border: Border.all(
+          color: _focusNode.hasFocus ? RdColors.accentLine : RdColors.border,
+        ),
       ),
       child: Row(
         children: [
-          const Icon(Icons.search, size: 18, color: RdColors.muted),
+          const Icon(Icons.search, size: 18, color: RdColors.text3),
           const SizedBox(width: 10),
           Expanded(
             child: TextField(
               controller: widget.controller,
-              focusNode: widget.focusNode,
+              focusNode: _focusNode,
               autofocus: widget.autofocus,
               onChanged: widget.onChanged,
               onSubmitted: widget.onSubmitted,
@@ -432,7 +454,7 @@ class _RdSearchFieldState extends State<RdSearchField> {
                 hintText: widget.hintText,
                 hintStyle: const TextStyle(
                   fontSize: 15,
-                  color: RdColors.placeholder,
+                  color: RdColors.text3,
                 ),
               ),
             ),
@@ -462,10 +484,19 @@ class _RdSearchFieldState extends State<RdSearchField> {
 
 /// One option of an [RdSegmented].
 class RdSegment<T> {
-  const RdSegment(this.value, this.label, {this.leading, this.key});
+  const RdSegment(
+    this.value,
+    this.label, {
+    this.leading,
+    this.semanticLabel,
+    this.key,
+  });
 
   final T value;
   final String label;
+
+  /// Read by screen readers; set it on an icon-only segment (empty [label]).
+  final String? semanticLabel;
 
   /// Icon before the label (elite icon).
   final Widget? leading;
@@ -474,9 +505,9 @@ class RdSegment<T> {
   final Key? key;
 }
 
-/// Segmented control (`radiogroup`, track `#111a2c`, equal-width segments,
-/// selected `rgba(92,148,220,0.9)`). [height] is the segment height; the
-/// track adds 4px (3px on phones) around it.
+/// Segmented control (`radiogroup`, surface-3 track, equal-width segments,
+/// the selected one accent-soft). [height] is the segment height; the track
+/// adds 3px around it.
 class RdSegmented<T> extends StatelessWidget {
   const RdSegmented({
     required this.segments,
@@ -499,12 +530,12 @@ class RdSegmented<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gap = context.rdLayout == RdLayout.compact ? 3.0 : 4.0;
+    const gap = 2.0;
     return Semantics(
       container: true,
       label: semanticLabel,
       child: Container(
-        padding: EdgeInsets.all(gap),
+        padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
           color: RdColors.segmentTrack,
           borderRadius: BorderRadius.circular(RdRadii.control),
@@ -512,7 +543,7 @@ class RdSegmented<T> extends StatelessWidget {
         child: Row(
           children: [
             for (var i = 0; i < segments.length; i++) ...[
-              if (i > 0) SizedBox(width: gap),
+              if (i > 0) const SizedBox(width: gap),
               Expanded(child: _segment(segments[i])),
             ],
           ],
@@ -526,14 +557,15 @@ class RdSegmented<T> extends StatelessWidget {
     final onChanged = this.onChanged;
     return Semantics(
       key: segment.key,
+      label: segment.semanticLabel,
       button: true,
       selected: on,
       inMutuallyExclusiveGroup: true,
       child: Material(
-        color: on ? RdColors.segmentOn : Colors.transparent,
-        borderRadius: BorderRadius.circular(9),
+        color: on ? RdColors.accentSoft : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
         child: InkWell(
-          borderRadius: BorderRadius.circular(9),
+          borderRadius: BorderRadius.circular(8),
           onTap:
               on || onChanged == null ? null : () => onChanged(segment.value),
           child: SizedBox(
@@ -553,8 +585,8 @@ class RdSegmented<T> extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 13,
-                        fontWeight: on ? FontWeight.w700 : FontWeight.w500,
-                        color: on ? RdColors.onSegment : RdColors.secondary2,
+                        fontWeight: on ? FontWeight.w600 : FontWeight.w500,
+                        color: on ? RdColors.accentText : RdColors.text2,
                       ),
                     ),
                   ),
@@ -569,10 +601,14 @@ class RdSegmented<T> extends StatelessWidget {
 
 /// Header bar of a redesigned page.
 ///
-/// PC (medium/expanded): a rounded `#070c19` card inside the page padding.
-/// Compact: a full-width bar with a bottom border. [onBack] adds the 44px
-/// back button; [leading] sits between it and the title (app mark, item
-/// icon).
+/// PC (medium/expanded): a rounded surface-1 card inside the page padding.
+/// Compact: a full-width surface-1 bar with a hairline below it and no
+/// [subtitle] (phones show the title alone).
+///
+/// [onBack] adds the 44px back button. Section roots (the pages a rail or
+/// tab opens) pass none: Esc, the mouse back button and Android back still
+/// climb through the shell. [leading] sits between the back button and the
+/// title (app mark, item icon).
 class RdPageHeader extends StatelessWidget {
   const RdPageHeader({
     required this.title,
@@ -602,7 +638,8 @@ class RdPageHeader extends StatelessWidget {
   /// Title style on phones (PC uses [RdText.pageTitle]).
   final TextStyle compactTitleStyle;
 
-  /// Clamps the subtitle (with an ellipsis); unlimited when null.
+  /// Clamps the subtitle (with an ellipsis); unlimited when null. Compact
+  /// layouts never show the subtitle.
   final int? subtitleMaxLines;
 
   /// Small widget right after the title (e.g. a count on phones).
@@ -631,13 +668,13 @@ class RdPageHeader extends StatelessWidget {
             style: compact ? compactTitleStyle : RdText.pageTitle,
           ),
         ),
-        if (subtitle != null && subtitle!.isNotEmpty) ...[
-          SizedBox(height: compact ? 2 : 4),
+        if (!compact && subtitle != null && subtitle!.isNotEmpty) ...[
+          const SizedBox(height: 4),
           Text(
             subtitle!,
             maxLines: subtitleMaxLines,
             overflow: subtitleMaxLines == null ? null : TextOverflow.ellipsis,
-            style: compact ? RdText.small : RdText.secondary,
+            style: RdText.muted,
           ),
         ],
       ],
@@ -677,8 +714,8 @@ class RdPageHeader extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
         decoration: const BoxDecoration(
-          color: RdColors.header,
-          border: Border(bottom: BorderSide(color: RdColors.line)),
+          color: RdColors.surface1,
+          border: Border(bottom: BorderSide(color: RdColors.hairline)),
         ),
         child: SafeArea(bottom: false, child: content),
       );
@@ -686,9 +723,9 @@ class RdPageHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
-        color: RdColors.header,
+        color: RdColors.surface1,
         borderRadius: BorderRadius.circular(RdRadii.card),
-        border: Border.all(color: RdColors.line),
+        border: Border.all(color: RdColors.hairline),
       ),
       child: content,
     );

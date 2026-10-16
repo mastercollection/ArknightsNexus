@@ -27,6 +27,10 @@ import '../../support/fake_image_cache_service.dart';
 import '../../support/noop_app_logger.dart';
 
 const phoneSize = Size(390, 844);
+
+/// Data version and fetch time of [HomeFakeRegionSyncService]'s ready status.
+const homeDataVersion = '52.0.0';
+const homeFetchedAt = '2026-05-17T03:04:00Z';
 const desktopSize = Size(1440, 900);
 
 /// Pumps home and settings inside the real [NexusShell] with a router that
@@ -60,6 +64,11 @@ Future<GoRouter> pumpHomeArea(
             builder: (_, state) => _Stub(
               'operators:${state.uri.queryParameters['q'] ?? ''}',
             ),
+          ),
+          GoRoute(
+            path: '/operators/:id',
+            builder: (_, state) =>
+                _Stub('operator:${state.pathParameters['id']}'),
           ),
           GoRoute(path: '/items', builder: (_, __) => const _Stub('items')),
           GoRoute(path: '/plan', builder: (_, __) => const _Stub('plan')),
@@ -154,6 +163,8 @@ class HomeFakeRegionSyncService implements RegionSyncService {
     statusRegions.add(region);
     return RegionSyncStatus(
       region: region,
+      sourceVersion: ready ? homeDataVersion : null,
+      fetchedAt: ready ? homeFetchedAt : null,
       operatorCount: 415,
       isReady: ready,
     );
@@ -180,9 +191,12 @@ class HomeFakeRegionSyncService implements RegionSyncService {
 }
 
 class HomeFakeOperatorService implements OperatorService {
-  HomeFakeOperatorService({this.details = const []});
+  HomeFakeOperatorService({this.details = const [], this.summaries = const []});
 
   final List<OperatorDetail> details;
+
+  /// Listed after the [details]' summaries (e.g. unreleased operators).
+  final List<OperatorSummary> summaries;
 
   @override
   Future<OperatorDetail?> getOperatorDetail(
@@ -204,6 +218,7 @@ class HomeFakeOperatorService implements OperatorService {
           branch: detail.branch,
           thumbnailHue: detail.thumbnailHue,
         ),
+      ...summaries,
     ];
   }
 }

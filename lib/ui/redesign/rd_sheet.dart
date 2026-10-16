@@ -17,7 +17,7 @@ enum RdSheetMode {
   dialog,
 }
 
-/// Opens [builder] as a bottom sheet (`#141414`, 22px top radius) or as a
+/// Opens [builder] as a bottom sheet (surface-2, 20px top radius) or as a
 /// faded-in dialog over the canvas barrier, per [mode]. The content usually
 /// is an [RdSheetFrame], which draws the surface that matches the route.
 ///
@@ -150,7 +150,7 @@ class RdSheetFrame extends StatefulWidget {
   /// Route name for screen readers; defaults to [title].
   final String? semanticLabel;
 
-  /// Surface colour; `#141414` for sheets and `#0f1729` for dialogs.
+  /// Surface colour; surface-2 for sheets and dialogs.
   final Color? color;
 
   /// Fixed sheet height; otherwise the sheet wraps its content up to
@@ -235,7 +235,7 @@ class _RdSheetFrameState extends State<RdSheetFrame> {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 17,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: RdColors.text,
                   ),
                 ),
@@ -277,7 +277,7 @@ class _RdSheetFrameState extends State<RdSheetFrame> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: RdColors.white20,
+                color: RdColors.handle,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -302,8 +302,11 @@ class _RdSheetFrameState extends State<RdSheetFrame> {
                   .clamp(200.0, double.infinity),
         ),
         decoration: BoxDecoration(
-          color: widget.color ?? RdColors.sheet,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+          color: widget.color ?? RdColors.surface2,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(RdRadii.sheet),
+          ),
+          border: const Border(top: BorderSide(color: RdColors.hairline)),
         ),
         child: SafeArea(
           top: false,
@@ -317,16 +320,9 @@ class _RdSheetFrameState extends State<RdSheetFrame> {
       surface = Container(
         padding: widget.dialogPadding,
         decoration: BoxDecoration(
-          color: widget.color ?? RdColors.inner2,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: RdColors.white10),
-          boxShadow: const [
-            BoxShadow(
-              color: RdColors.barrier,
-              offset: Offset(0, 24),
-              blurRadius: 60,
-            ),
-          ],
+          color: widget.color ?? RdColors.surface2,
+          borderRadius: BorderRadius.circular(RdRadii.sheet),
+          border: Border.all(color: RdColors.border),
         ),
         child: column,
       );

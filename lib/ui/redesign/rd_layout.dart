@@ -92,23 +92,23 @@ class RdAutoGrid extends StatelessWidget {
   }
 }
 
-/// Tinted block inside a card (`rgba(255,255,255,0.03)`, radius 14).
+/// Inner tile inside a card (surface-3, radius 10).
 class RdInset extends StatelessWidget {
   const RdInset({
     required this.child,
     this.padding = const EdgeInsets.all(12),
     this.radius = RdRadii.inner,
-    this.color = RdColors.white3,
+    this.color = RdColors.surface3,
     super.key,
   });
 
-  /// Section block of the operator detail panels (`rgba(255,255,255,0.04)`,
-  /// radius 20, padding 16).
+  /// Section block of the operator detail panels (a surface-2 card on the
+  /// surface-1 pane, radius 14, padding 16).
   const RdInset.section({
     required this.child,
     this.padding = const EdgeInsets.all(16),
-    this.radius = 20,
-    this.color = RdColors.soft2,
+    this.radius = RdRadii.card,
+    this.color = RdColors.surface2,
     super.key,
   });
 

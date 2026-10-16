@@ -467,38 +467,42 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
 
     final sections = _sections(operator);
     final section = sections.contains(_section) ? _section : sections.first;
-    final header = _DetailHeader(
-      name: operator.name,
-      sectionLabel: i18n.t('operatorDetail.sections.${section.name}'),
+    final favoriteButton = _FavoriteButton(
       favorite: _isFavorite,
-      compact: _compact,
-      backTooltip: i18n.t('common.back'),
-      favoriteTooltip: i18n.t('rd.operators.detail.favorite'),
-      onBack: widget.onBack,
-      onToggleFavorite: _toggleFavorite,
-      unreleased: operator.unreleasedSource == null
-          ? null
-          : UnreleasedBadge(
-              key: const Key('operator-detail-unreleased'),
-              label: unreleasedLabel(i18n, operator.unreleasedSource!),
-              tooltip: unreleasedDescription(i18n, operator.unreleasedSource!),
-            ),
+      tooltip: i18n.t('rd.operators.detail.favorite'),
+      size: _compact ? 44 : 36,
+      // A bare icon in the app bar; a boxed button in the pane hero.
+      filled: !_compact,
+      onPressed: _toggleFavorite,
     );
-    final hero = _HeroCard(operator: operator, i18n: i18n, compact: _compact);
-    final tabs = RdSegmented<DetailSection>(
+    final hero = _HeroCard(
+      operator: operator,
+      i18n: i18n,
+      compact: _compact,
+      // Phones keep the favorite in the app bar; the pane has no bar, so
+      // its hero carries the favorite and the button closing the pane.
+      trailing: _compact
+          ? null
+          : [
+              favoriteButton,
+              RdIconButton(
+                icon: Icons.close,
+                tooltip: i18n.t('common.close'),
+                onPressed: widget.onBack,
+                size: 36,
+                iconSize: 18,
+              ),
+            ],
+    );
+    final tabs = _DetailTabs(
       key: const ValueKey('detail-tabs'),
       semanticLabel: i18n.t('rd.operators.detail.sections'),
-      height: _compact ? 44 : 40,
       selected: section,
-      segments: [
+      sections: [
         for (final entry in sections)
-          RdSegment(entry, i18n.t('operatorDetail.sections.${entry.name}')),
+          (entry, i18n.t('operatorDetail.sections.${entry.name}')),
       ],
       onChanged: (value) => setState(() => _section = value),
-    );
-    final summary = Text(
-      i18n.t('operatorDetail.summaries.${section.name}'),
-      style: RdText.muted,
     );
     final panel = KeyedSubtree(
       key: ValueKey('panel-${section.name}'),
@@ -507,115 +511,68 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
     final actions = _PlanActions(
       inPlan: _inPlan,
       busy: _addingToPlan,
-      favorite: _isFavorite,
-      showFavorite: !_compact,
+      compact: _compact,
       i18n: i18n,
       onAdd: _addToPlan,
       onOpen: _openPlan,
-      onToggleFavorite: _toggleFavorite,
     );
 
-    if (!_compact) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-            child: header,
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  hero,
-                  const SizedBox(height: 16),
-                  tabs,
-                  const SizedBox(height: 10),
-                  summary,
-                  const SizedBox(height: 16),
-                  panel,
-                  const SizedBox(height: 24),
-                  actions,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Phones and the pane use their whole width; a tablet page centres
+        // an 860px column.
+        final side =
+            _compact ? math.max(16.0, (constraints.maxWidth - 860) / 2) : 20.0;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_compact)
+              _PageBar(
+                name: operator.name,
+                backTooltip: i18n.t('common.back'),
+                onBack: widget.onBack,
+                favorite: favoriteButton,
+              ),
+            Expanded(
+              child: CustomScrollView(
+                controller: _scrollController,
+                slivers: [
+                  SliverPadding(
+                    padding:
+                        EdgeInsets.fromLTRB(side, _compact ? 14 : 20, side, 0),
+                    sliver: SliverToBoxAdapter(child: hero),
+                  ),
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _StickyTabsDelegate(
+                      background: _compact ? RdColors.bg : RdColors.surface1,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: side),
+                        child: tabs,
+                      ),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: EdgeInsets.fromLTRB(side, 14, side, 24),
+                    sliver: SliverToBoxAdapter(child: panel),
+                  ),
                 ],
               ),
             ),
-          ),
-        ],
-      );
-    }
-
-    // Page: centred column on tablets, sticky tabs, bottom action bar.
-    return LayoutBuilder(
-      builder: (context, constraints) => _buildPage(
-        header: header,
-        hero: hero,
-        tabs: tabs,
-        summary: summary,
-        panel: panel,
-        actions: actions,
-        side: math.max(16.0, (constraints.maxWidth - 860) / 2),
-      ),
-    );
-  }
-
-  Widget _buildPage({
-    required Widget header,
-    required Widget hero,
-    required Widget tabs,
-    required Widget summary,
-    required Widget panel,
-    required Widget actions,
-    required double side,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        header,
-        Expanded(
-          child: CustomScrollView(
-            controller: _scrollController,
-            slivers: [
-              SliverPadding(
-                padding: EdgeInsets.fromLTRB(side, 12, side, 0),
-                sliver: SliverToBoxAdapter(child: hero),
+            // Sticky plan actions under the scrolling detail.
+            Container(
+              padding: _compact
+                  ? EdgeInsets.fromLTRB(side, 10, side, 10)
+                  : const EdgeInsets.fromLTRB(20, 12, 20, 16),
+              decoration: const BoxDecoration(
+                color: RdColors.surface1,
+                border: Border(top: BorderSide(color: RdColors.border)),
               ),
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _StickyTabsDelegate(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: side),
-                    child: tabs,
-                  ),
-                ),
-              ),
-              SliverPadding(
-                padding: EdgeInsets.fromLTRB(side, 2, side, 24),
-                sliver: SliverToBoxAdapter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      summary,
-                      const SizedBox(height: 14),
-                      panel,
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Container(
-          padding: EdgeInsets.fromLTRB(side, 10, side, 12),
-          decoration: const BoxDecoration(
-            color: RdColors.rail,
-            border: Border(top: BorderSide(color: RdColors.white8)),
-          ),
-          child: actions,
-        ),
-      ],
+              child: SafeArea(top: false, child: actions),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -737,7 +694,7 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
                     child: CircularProgressIndicator(
                       strokeWidth: 2.4,
                       color: RdColors.accent,
-                      backgroundColor: Color(0x4085B6FF),
+                      backgroundColor: RdColors.accentSoft,
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -792,7 +749,7 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
                 onPressed: widget.onBack,
                 size: 44,
                 iconSize: 22,
-                iconColor: const Color(0xFFEBF0FF),
+                iconColor: RdColors.text,
               ),
             ),
           ),
@@ -804,11 +761,14 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
 }
 
 class _StickyTabsDelegate extends SliverPersistentHeaderDelegate {
-  const _StickyTabsDelegate({required this.child});
+  const _StickyTabsDelegate({required this.child, required this.background});
 
   final Widget child;
 
-  static const _height = 44 + 8 + 20.0;
+  /// The scroll view's background, so pinned tabs hide what scrolls under.
+  final Color background;
+
+  static const _height = _DetailTabs.height + 8;
 
   @override
   double get minExtent => _height;
@@ -823,121 +783,67 @@ class _StickyTabsDelegate extends SliverPersistentHeaderDelegate {
     bool overlapsContent,
   ) {
     return ColoredBox(
-      color: RdColors.bg,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Center(child: child),
-      ),
+      color: background,
+      child: Align(alignment: Alignment.bottomCenter, child: child),
     );
   }
 
   @override
   bool shouldRebuild(_StickyTabsDelegate oldDelegate) =>
-      oldDelegate.child != child;
+      oldDelegate.child != child || oldDelegate.background != background;
 }
 
 // ---------------------------------------------------------------------------
-// Header / hero / actions
+// App bar / hero / tabs / actions
 // ---------------------------------------------------------------------------
 
-class _DetailHeader extends StatelessWidget {
-  const _DetailHeader({
+/// App bar of the detail page: back, the operator name, favorite.
+class _PageBar extends StatelessWidget {
+  const _PageBar({
     required this.name,
-    required this.sectionLabel,
-    required this.favorite,
-    required this.compact,
     required this.backTooltip,
-    required this.favoriteTooltip,
     required this.onBack,
-    required this.onToggleFavorite,
-    this.unreleased,
+    required this.favorite,
   });
 
   final String name;
-  final String sectionLabel;
-
-  /// [UnreleasedBadge] of an operator the region has not released yet.
-  final Widget? unreleased;
-  final bool favorite;
-  final bool compact;
   final String backTooltip;
-  final String favoriteTooltip;
   final VoidCallback onBack;
-  final VoidCallback onToggleFavorite;
+  final Widget favorite;
 
   @override
   Widget build(BuildContext context) {
-    final size = compact ? 44.0 : 40.0;
-    final row = Row(
-      children: [
-        RdIconButton(
-          icon: Icons.chevron_left,
-          tooltip: backTooltip,
-          onPressed: onBack,
-          size: size,
-          iconSize: 22,
-          iconColor: const Color(0xFFEBF0FF),
-        ),
-        SizedBox(width: compact ? 8 : 10),
-        Flexible(
-          child: Text(
-            name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: RdColors.text,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: const Color(0x246890FF),
-            borderRadius: BorderRadius.circular(RdRadii.pill),
-          ),
-          child: Text(
-            sectionLabel,
-            style: const TextStyle(fontSize: 12, color: Color(0xFFD8E5FF)),
-          ),
-        ),
-        if (unreleased != null) ...[
-          const SizedBox(width: 6),
-          Flexible(child: unreleased!),
-        ],
-        const Spacer(),
-        _FavoriteButton(
-          favorite: favorite,
-          tooltip: favoriteTooltip,
-          size: size,
-          onPressed: onToggleFavorite,
-        ),
-      ],
-    );
-    if (compact) {
-      return Container(
-        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-        decoration: const BoxDecoration(
-          color: RdColors.header,
-          border: Border(bottom: BorderSide(color: RdColors.line)),
-        ),
-        child: SafeArea(bottom: false, child: row),
-      );
-    }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: RdColors.white8),
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xF2080C18), Color(0xC7080C18)],
+      padding: const EdgeInsets.fromLTRB(6, 8, 6, 8),
+      decoration: const BoxDecoration(
+        color: RdColors.surface1,
+        border: Border(bottom: BorderSide(color: RdColors.hairline)),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Row(
+          children: [
+            RdIconButton(
+              icon: Icons.chevron_left,
+              tooltip: backTooltip,
+              onPressed: onBack,
+              filled: false,
+              iconSize: 22,
+              iconColor: RdColors.text,
+            ),
+            const SizedBox(width: 2),
+            Expanded(
+              child: Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: RdText.mobileTitle,
+              ),
+            ),
+            favorite,
+          ],
         ),
       ),
-      child: row,
     );
   }
 }
@@ -948,8 +854,10 @@ class _FavoriteButton extends StatelessWidget {
     required this.tooltip,
     required this.onPressed,
     this.size = 40,
+    this.filled = true,
   });
 
+  final bool filled;
   final bool favorite;
   final String tooltip;
   final VoidCallback onPressed;
@@ -962,180 +870,286 @@ class _FavoriteButton extends StatelessWidget {
       tooltip: tooltip,
       onPressed: onPressed,
       size: size,
+      filled: filled,
       toggled: favorite,
       iconSize: 20,
-      iconColor: RdColors.gold,
+      iconColor: RdColors.rarity,
     );
   }
 }
 
+/// Underlined section tabs right under the hero.
+class _DetailTabs extends StatelessWidget {
+  const _DetailTabs({
+    required this.sections,
+    required this.selected,
+    required this.onChanged,
+    required this.semanticLabel,
+    super.key,
+  });
+
+  static const height = 42.0;
+
+  final List<(DetailSection, String)> sections;
+  final DetailSection selected;
+  final ValueChanged<DetailSection> onChanged;
+  final String semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      label: semanticLabel,
+      child: Container(
+        height: height,
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: RdColors.border)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final (section, label) in sections)
+              Expanded(
+                child: _DetailTab(
+                  label: label,
+                  selected: section == selected,
+                  onTap: () => onChanged(section),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailTab extends StatelessWidget {
+  const _DetailTab({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                width: 2,
+                color: selected ? RdColors.accent : Colors.transparent,
+              ),
+            ),
+          ),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              maxLines: 1,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                color: selected ? RdColors.text : RdColors.text3,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Compact horizontal hero: portrait on the left; name (with the
+/// unreleased badge), rarity and chips on the right; the quote on one line
+/// and the base / term tags below.
 class _HeroCard extends StatelessWidget {
   const _HeroCard({
     required this.operator,
     required this.i18n,
     required this.compact,
+    this.trailing,
   });
 
   final OperatorDetail operator;
   final NexusI18n i18n;
   final bool compact;
 
+  /// Buttons at the end of the name row (pane: favorite and close).
+  final List<Widget>? trailing;
+
   @override
   Widget build(BuildContext context) {
-    final portrait = compact ? 92.0 : 112.0;
-    return Container(
-      padding: EdgeInsets.all(compact ? 16 : 20),
-      decoration: BoxDecoration(
-        color: opPanelFill,
-        borderRadius: BorderRadius.circular(compact ? 24 : 28),
-        border: Border.all(color: RdColors.line2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: compact ? 12 : 14,
-        children: [
-          Wrap(
-            spacing: compact ? 6 : 8,
-            runSpacing: compact ? 6 : 8,
-            children: [
-              for (final team in operator.teams)
-                OpChip.text(team, kind: OpChipKind.team),
-              for (final nation in operator.nations)
-                OpChip.text(nation, kind: OpChipKind.nation),
-              for (final group in operator.groups)
-                OpChip.text(group, kind: OpChipKind.group),
-              OpChip.text(
-                i18n.profession(operator.profession),
-                kind: OpChipKind.prof,
-              ),
-              OpChip.text(operator.branch, kind: OpChipKind.branch),
-            ],
+    final source = operator.unreleasedSource;
+    final name = Wrap(
+      spacing: 8,
+      runSpacing: 6,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Semantics(
+          header: true,
+          child: Text(
+            operator.name,
+            style: compact ? RdText.mobileTitle : RdText.pageTitle,
           ),
-          Semantics(
-            header: true,
-            child: _FittedName(operator.name, maxSize: compact ? 40 : 48),
+        ),
+        // Never truncated: it wraps under a long name instead.
+        if (source != null)
+          UnreleasedBadge(
+            key: const Key('operator-detail-unreleased'),
+            label: unreleasedLabel(i18n, source),
+            tooltip: unreleasedDescription(i18n, source),
           ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            spacing: compact ? 12 : 16,
-            children: [
-              Expanded(
-                child: Align(
-                  alignment: Alignment.topLeft,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: 10,
-                    children: [
-                      Text(
-                        operator.quote,
-                        style: TextStyle(
-                          fontSize: compact ? 13 : 14,
-                          height: 1.7,
-                          color: RdColors.secondary,
-                        ),
-                      ),
-                      if (operator.tags.isNotEmpty)
-                        Semantics(
-                          container: true,
-                          label: i18n.t('operatorDetail.labels.baseTags'),
-                          child: Wrap(
-                            spacing: 6,
-                            runSpacing: 6,
-                            children: [
-                              for (final tag in operator.tags) OpChip.text(tag),
-                            ],
-                          ),
-                        ),
-                      if (operator.baTags.isNotEmpty)
-                        Semantics(
-                          container: true,
-                          label: i18n.t('operatorDetail.labels.termTags'),
-                          child: Wrap(
-                            spacing: 6,
-                            runSpacing: 6,
-                            children: [
-                              for (final tag in operator.baTags)
-                                OpChip.text(tag, kind: OpChipKind.ba),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+      ],
+    );
+    final info = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 8,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: name,
               ),
-              Column(
+            ),
+            if (trailing != null)
+              Row(
                 mainAxisSize: MainAxisSize.min,
-                spacing: compact ? 8 : 10,
-                children: [
-                  RdPortrait(
-                    charId: operator.id,
-                    name: operator.name,
-                    size: portrait,
-                    radius: compact ? 24 : 28,
-                  ),
-                  Text(
-                    '★' * operator.rarity,
-                    style: TextStyle(
-                      fontSize: compact ? 12 : 13,
-                      letterSpacing: compact ? 1.2 : 1.56,
-                      color: RdColors.gold,
-                    ),
-                  ),
-                ],
+                spacing: 6,
+                children: trailing!,
               ),
+          ],
+        ),
+        Text(
+          '★' * operator.rarity,
+          style: TextStyle(
+            fontSize: compact ? 13 : 14,
+            height: 1,
+            letterSpacing: 0.4,
+            color: RdColors.rarity,
+          ),
+        ),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            for (final team in operator.teams)
+              OpChip.text(team, kind: OpChipKind.team),
+            for (final nation in operator.nations)
+              OpChip.text(nation, kind: OpChipKind.nation),
+            for (final group in operator.groups)
+              OpChip.text(group, kind: OpChipKind.group),
+            OpChip.text(
+              i18n.profession(operator.profession),
+              kind: OpChipKind.prof,
+            ),
+            OpChip.text(operator.branch, kind: OpChipKind.branch),
+          ],
+        ),
+      ],
+    );
+    final tags = [
+      if (operator.tags.isNotEmpty)
+        Semantics(
+          container: true,
+          label: i18n.t('operatorDetail.labels.baseTags'),
+          child: Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [for (final tag in operator.tags) OpChip.text(tag)],
+          ),
+        ),
+      if (operator.baTags.isNotEmpty)
+        Semantics(
+          container: true,
+          label: i18n.t('operatorDetail.labels.termTags'),
+          child: Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final tag in operator.baTags)
+                OpChip.text(tag, kind: OpChipKind.ba),
             ],
           ),
-        ],
+        ),
+    ];
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: 10,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            RdPortrait(
+              charId: operator.id,
+              name: operator.name,
+              size: compact ? 104 : 112,
+              radius: 12,
+            ),
+            SizedBox(width: compact ? 14 : 16),
+            Expanded(child: info),
+          ],
+        ),
+        if (operator.quote.isNotEmpty) _QuoteLine(operator.quote),
+        ...tags,
+      ],
+    );
+    if (compact) {
+      return content;
+    }
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: RdColors.surface2,
+        borderRadius: BorderRadius.circular(RdRadii.card),
+        border: Border.all(color: RdColors.hairline),
       ),
+      child: content,
     );
   }
 }
 
-/// `fitOperatorName`: [maxSize] (48px PC / 40px phone), shrinking 1px at a
-/// time down to 24px until the single line fits.
-class _FittedName extends StatelessWidget {
-  const _FittedName(this.name, {required this.maxSize});
+/// The operator's quote on one line; a tap shows the whole quote.
+class _QuoteLine extends StatefulWidget {
+  const _QuoteLine(this.quote);
 
-  final String name;
-  final double maxSize;
+  final String quote;
+
+  @override
+  State<_QuoteLine> createState() => _QuoteLineState();
+}
+
+class _QuoteLineState extends State<_QuoteLine> {
+  bool _expanded = false;
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        var size = maxSize;
-        TextStyle styleFor(double size) => TextStyle(
-              fontSize: size,
-              height: 1.05,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.03 * size,
-              color: RdColors.text,
-            );
-        final direction = Directionality.of(context);
-        final scaler = MediaQuery.textScalerOf(context);
-        double measure(double size) {
-          final painter = TextPainter(
-            text: TextSpan(text: name, style: styleFor(size)),
-            textDirection: direction,
-            textScaler: scaler,
-            maxLines: 1,
-          )..layout();
-          final width = painter.width;
-          painter.dispose();
-          return width;
-        }
-
-        while (measure(size) > constraints.maxWidth && size > 24) {
-          size -= 1;
-        }
-        return Text(
-          name,
-          maxLines: 1,
-          softWrap: false,
-          overflow: TextOverflow.clip,
-          style: styleFor(size),
-        );
-      },
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => setState(() => _expanded = !_expanded),
+      child: Text(
+        widget.quote,
+        maxLines: _expanded ? null : 1,
+        overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+        style: const TextStyle(
+          fontSize: 13,
+          height: 1.5,
+          color: RdColors.text2,
+        ),
+      ),
     );
   }
 }
@@ -1144,47 +1158,44 @@ class _PlanActions extends StatelessWidget {
   const _PlanActions({
     required this.inPlan,
     required this.busy,
-    required this.favorite,
-    required this.showFavorite,
+    required this.compact,
     required this.i18n,
     required this.onAdd,
     required this.onOpen,
-    required this.onToggleFavorite,
   });
 
   final bool inPlan;
   final bool busy;
-  final bool favorite;
-  final bool showFavorite;
+  final bool compact;
   final NexusI18n i18n;
   final VoidCallback onAdd;
   final VoidCallback onOpen;
-  final VoidCallback onToggleFavorite;
 
   @override
   Widget build(BuildContext context) {
+    final height = compact ? 48.0 : 44.0;
     final add = inPlan
         ? Semantics(
             button: true,
             enabled: false,
             child: Container(
               key: const Key('operator-detail-in-plan'),
-              height: 48,
+              height: height,
               padding: const EdgeInsets.symmetric(horizontal: 14),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: const Color(0x1F6EE7A8),
+                color: RdColors.successFill,
                 borderRadius: BorderRadius.circular(RdRadii.control),
-                border: Border.all(color: const Color(0x666EE7A8)),
+                border: Border.all(color: RdColors.success),
               ),
               child: Text(
                 i18n.t('rd.operators.detail.inPlan'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFFC8F5DC),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: RdColors.success,
                 ),
               ),
             ),
@@ -1193,7 +1204,7 @@ class _PlanActions extends StatelessWidget {
             key: const Key('operator-detail-add-to-plan'),
             label: i18n.t('rd.operators.detail.addToPlan'),
             variant: RdButtonVariant.primary,
-            height: 48,
+            height: height,
             expand: true,
             busy: busy,
             onPressed: onAdd,
@@ -1201,64 +1212,31 @@ class _PlanActions extends StatelessWidget {
     final open = Material(
       color: Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(showFavorite ? 12 : 14),
-        side: const BorderSide(color: RdColors.tonalBorder),
+        borderRadius: BorderRadius.circular(RdRadii.control),
+        side: const BorderSide(color: RdColors.border),
       ),
       child: InkWell(
         key: const Key('operator-detail-open-plan'),
-        borderRadius: BorderRadius.circular(showFavorite ? 12 : 14),
+        borderRadius: BorderRadius.circular(RdRadii.control),
         onTap: onOpen,
         child: Container(
-          height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
+          height: height,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           alignment: Alignment.center,
           child: Text(
             i18n.t('common.openPlan'),
             style: const TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: RdColors.linkText,
+              fontWeight: FontWeight.w500,
+              color: RdColors.text,
             ),
           ),
         ),
       ),
     );
     return Row(
-      spacing: 10,
-      children: [
-        Expanded(child: add),
-        open,
-        if (showFavorite)
-          Tooltip(
-            message: i18n.t('rd.operators.detail.favorite'),
-            child: Semantics(
-              button: true,
-              toggled: favorite,
-              label: i18n.t('rd.operators.detail.favorite'),
-              excludeSemantics: true,
-              child: Material(
-                color: Colors.transparent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(RdRadii.control),
-                  side: const BorderSide(color: RdColors.white14),
-                ),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(RdRadii.control),
-                  onTap: onToggleFavorite,
-                  child: SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: Icon(
-                      favorite ? Icons.star : Icons.star_border,
-                      size: 20,
-                      color: RdColors.gold,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
+      spacing: 8,
+      children: [Expanded(child: add), open],
     );
   }
 }
@@ -1323,8 +1301,8 @@ class _TermContentState extends State<_TermContent> {
   Widget build(BuildContext context) {
     final compact = widget.compact;
     final radius = compact
-        ? const BorderRadius.vertical(top: Radius.circular(22))
-        : BorderRadius.circular(22);
+        ? const BorderRadius.vertical(top: Radius.circular(RdRadii.sheet))
+        : BorderRadius.circular(RdRadii.sheet);
     return Material(
       type: MaterialType.transparency,
       child: Semantics(
@@ -1337,116 +1315,99 @@ class _TermContentState extends State<_TermContent> {
           decoration: BoxDecoration(
             borderRadius: radius,
             border: compact
-                ? const Border(top: BorderSide(color: Color(0x2E82AAFF)))
-                : Border.all(color: const Color(0x2E82AAFF)),
-            gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF0B1120), Color(0xFF09101D)],
-            ),
-            boxShadow: compact
-                ? null
-                : const [BoxShadow(color: Color(0x8C000000), blurRadius: 60)],
+                ? const Border(top: BorderSide(color: RdColors.hairline))
+                : Border.all(color: RdColors.hairline),
+            color: RdColors.surface2,
           ),
           child: ClipRRect(
             borderRadius: radius,
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.topCenter,
-                  radius: 0.9,
-                  colors: [Color(0x246DCCFF), Color(0x006DCCFF)],
-                  stops: [0, 0.34],
+            child: SafeArea(
+              top: false,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  compact ? 16 : 20,
+                  compact ? 12 : 18,
+                  compact ? 16 : 20,
+                  compact ? 28 : 22,
                 ),
-              ),
-              child: SafeArea(
-                top: false,
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(
-                    compact ? 16 : 20,
-                    compact ? 12 : 18,
-                    compact ? 16 : 20,
-                    compact ? 28 : 22,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (compact) ...[
-                        Center(
-                          child: Container(
-                            width: 40,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: RdColors.white20,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (compact) ...[
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: RdColors.white20,
+                            borderRadius: BorderRadius.circular(4),
                           ),
                         ),
-                        const SizedBox(height: 12),
-                      ],
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              spacing: 4,
-                              children: [
-                                Text(
-                                  widget.i18n
-                                      .t('operatorDetail.labels.termSheet'),
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    letterSpacing: 1.4,
-                                    color: RdColors.muted,
-                                  ),
-                                ),
-                                Text(
-                                  _label,
-                                  style: const TextStyle(
-                                    fontSize: 19,
-                                    fontWeight: FontWeight.w700,
-                                    color: RdColors.text,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          RdIconButton(
-                            icon: Icons.close,
-                            tooltip: widget.i18n.t('common.close'),
-                            size: compact ? 44 : 40,
-                            filled: false,
-                            onPressed: () => Navigator.of(context).maybePop(),
-                          ),
-                        ],
                       ),
-                      SizedBox(height: compact ? 12 : 10),
-                      RichTextContent(
-                        segments: parseRichDescription(_description),
-                        style: TextStyle(
-                          fontSize: compact ? 15 : 14,
-                          height: 1.75,
-                          color: RdColors.body,
-                        ),
-                        onTermTap: (key, label) {
-                          final next = widget.terms[key];
-                          if (next == null || next.isEmpty) {
-                            return;
-                          }
-                          setState(() {
-                            _label = label;
-                            _description = next;
-                          });
-                          SemanticsService.announce(
-                            label,
-                            Directionality.of(context),
-                          );
-                        },
-                      ),
+                      const SizedBox(height: 12),
                     ],
-                  ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            spacing: 4,
+                            children: [
+                              Text(
+                                widget.i18n
+                                    .t('operatorDetail.labels.termSheet'),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  letterSpacing: 1.4,
+                                  color: RdColors.muted,
+                                ),
+                              ),
+                              Text(
+                                _label,
+                                style: const TextStyle(
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.w700,
+                                  color: RdColors.text,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        RdIconButton(
+                          icon: Icons.close,
+                          tooltip: widget.i18n.t('common.close'),
+                          size: compact ? 44 : 40,
+                          filled: false,
+                          onPressed: () => Navigator.of(context).maybePop(),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: compact ? 12 : 10),
+                    RichTextContent(
+                      segments: parseRichDescription(_description),
+                      style: TextStyle(
+                        fontSize: compact ? 15 : 14,
+                        height: 1.75,
+                        color: RdColors.body,
+                      ),
+                      onTermTap: (key, label) {
+                        final next = widget.terms[key];
+                        if (next == null || next.isEmpty) {
+                          return;
+                        }
+                        setState(() {
+                          _label = label;
+                          _description = next;
+                        });
+                        SemanticsService.announce(
+                          label,
+                          Directionality.of(context),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),

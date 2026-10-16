@@ -166,8 +166,8 @@ class _IconRail extends StatelessWidget {
         width: 76,
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
         decoration: const BoxDecoration(
-          color: RdColors.rail,
-          border: Border(right: BorderSide(color: RdColors.line)),
+          color: RdColors.surface1,
+          border: Border(right: BorderSide(color: RdColors.border)),
         ),
         child: SafeArea(
           right: false,
@@ -213,7 +213,7 @@ class _RailButton extends StatelessWidget {
         label: label,
         excludeSemantics: true,
         child: Material(
-          color: selected ? RdColors.chipOnFill : Colors.transparent,
+          color: selected ? RdColors.accentSoft : Colors.transparent,
           borderRadius: BorderRadius.circular(RdRadii.control),
           child: InkWell(
             borderRadius: BorderRadius.circular(RdRadii.control),
@@ -224,7 +224,7 @@ class _RailButton extends StatelessWidget {
               child: Icon(
                 icon,
                 size: 22,
-                color: selected ? RdColors.text : RdColors.secondary,
+                color: selected ? RdColors.accentHover : RdColors.text2,
               ),
             ),
           ),
@@ -251,11 +251,11 @@ class _Sidebar extends StatelessWidget {
       container: true,
       label: i18n.t('shell.nav.label'),
       child: Container(
-        width: 256,
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+        width: 248,
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
         decoration: const BoxDecoration(
-          color: RdColors.rail,
-          border: Border(right: BorderSide(color: RdColors.line)),
+          color: RdColors.surface1,
+          border: Border(right: BorderSide(color: RdColors.border)),
         ),
         child: SafeArea(
           right: false,
@@ -339,7 +339,7 @@ class _SidebarLink extends StatelessWidget {
       button: true,
       selected: selected,
       child: Material(
-        color: selected ? RdColors.chipOnFill : Colors.transparent,
+        color: selected ? RdColors.accentSoft : Colors.transparent,
         borderRadius: BorderRadius.circular(RdRadii.control),
         child: InkWell(
           borderRadius: BorderRadius.circular(RdRadii.control),
@@ -352,16 +352,16 @@ class _SidebarLink extends StatelessWidget {
                 Icon(
                   icon,
                   size: 20,
-                  color: selected ? RdColors.text : RdColors.secondary,
+                  color: selected ? RdColors.accentHover : RdColors.text2,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     label,
                     style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                      color: selected ? RdColors.text : RdColors.secondary,
+                      fontSize: 14,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                      color: selected ? RdColors.text : RdColors.text2,
                     ),
                   ),
                 ),
@@ -392,8 +392,8 @@ class _BottomTabs extends StatelessWidget {
       label: i18n.t('shell.nav.label'),
       child: Container(
         decoration: const BoxDecoration(
-          color: RdColors.rail,
-          border: Border(top: BorderSide(color: RdColors.white8)),
+          color: RdColors.surface1,
+          border: Border(top: BorderSide(color: RdColors.border)),
         ),
         padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
         // The tab InkWells need a Material ancestor for their ink.
@@ -438,7 +438,7 @@ class _TabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? RdColors.accent : RdColors.muted;
+    final color = selected ? RdColors.accentHover : RdColors.text2;
     return Semantics(
       button: true,
       selected: selected,
@@ -450,8 +450,18 @@ class _TabButton extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 20, color: color),
-              const SizedBox(height: 4),
+              // The selected tab's icon sits on an accent-soft pill.
+              Container(
+                width: 52,
+                height: 28,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: selected ? RdColors.accentSoft : Colors.transparent,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, size: 20, color: color),
+              ),
+              const SizedBox(height: 3),
               Text(
                 label,
                 maxLines: 1,
@@ -459,7 +469,7 @@ class _TabButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   color: color,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
             ],
