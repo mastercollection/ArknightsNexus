@@ -6,6 +6,7 @@ import 'package:arknight_nexus/domain/sync_status.dart';
 import 'package:arknight_nexus/domain/user_data.dart';
 import 'package:arknight_nexus/features/operators/operator_detail_screen.dart';
 import 'package:arknight_nexus/features/operators/operators_screen.dart';
+import 'package:arknight_nexus/features/operators/operators_workspace.dart';
 import 'package:arknight_nexus/i18n/nexus_i18n.dart';
 import 'package:arknight_nexus/repositories/user_data_repository.dart';
 import 'package:arknight_nexus/services/operator_service.dart';
@@ -236,11 +237,11 @@ void main() {
       expect(find.byType(OperatorsScreen), findsNothing);
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      // List stays; the pane shows the operator (header + hero name).
+      // List stays; the pane shows the operator (tile + hero name).
       expect(find.byType(OperatorDetailScreen), findsOneWidget);
       expect(find.text('Amiya'), findsOneWidget);
       expect(find.text('Doctor.'), findsOneWidget);
-      expect(find.text('Kaltsit'), findsNWidgets(3));
+      expect(find.text('Kaltsit'), findsNWidgets(2));
 
       // Another tile switches the pane in place.
       await tester
@@ -248,8 +249,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Leader'), findsOneWidget);
 
-      // The pane's back button deselects.
-      await tester.tap(find.byTooltip('뒤로가기'));
+      // The pane's close button deselects.
+      await tester.tap(find.byTooltip('닫기'));
       await tester.pumpAndSettle();
       expect(find.byType(OperatorsScreen), findsOneWidget);
       expect(find.text('Leader'), findsNothing);
@@ -344,6 +345,12 @@ void main() {
               'operators-filter-affiliation-T${i.toString().padLeft(2, '0')}',
             ),
           );
+      // The long affiliation list starts folded.
+      expect(chip(0), findsNothing);
+      await tester.tap(
+        find.byKey(const ValueKey('operators-filter-group-affiliation')),
+      );
+      await tester.pumpAndSettle();
       // Wrap layout: runs start at the same x, chips 6px apart in a run.
       final first = tester.getRect(chip(0));
       final second = tester.getRect(chip(1));
@@ -453,8 +460,9 @@ void main() {
       // Condensing folds the search field away (clipped to zero height).
       final search = find.byType(RdSearchField).hitTestable();
       expect(search, findsOneWidget);
-      // The chip row always says when nothing is filtered.
-      expect(find.text('필터 없음'), findsOneWidget);
+      // Nothing filtered: the chip row starts with the dimension chips.
+      expect(find.text('필터 없음'), findsNothing);
+      expect(find.byKey(const Key('operators-filter-rarity')), findsOneWidget);
       expect(find.text('Op 0'), findsOneWidget);
 
       int revealed() =>
@@ -469,7 +477,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(search, findsNothing);
-      expect(find.text('필터 없음'), findsOneWidget);
+      expect(find.byKey(const Key('operators-filter-rarity')), findsOneWidget);
 
       // Batches of 24 are revealed as the sentinel nears the viewport.
       for (var i = 0; i < 40 && find.text('Op 79').evaluate().isEmpty; i++) {
@@ -486,12 +494,15 @@ void main() {
 
     group('unreleased operators', () {
       const badge = '미실장 · CN';
+      const stripTitle = '미실장 1명';
+      final stripToggle =
+          find.byKey(const Key('operators-unreleased-strip-toggle'));
 
       setUp(() => operatorService.addUnreleased());
 
       testWidgets(
-          'are listed first with a badge, found by name and hidden '
-          'by the toggle', (tester) async {
+          'sit in a collapsed strip above the grid, open on a search and '
+          'are hidden by the toggle', (tester) async {
         tester.view.physicalSize = const Size(390, 844);
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.reset);
@@ -505,44 +516,76 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(tester.takeException(), isNull);
-        expect(find.text('Nova'), findsOneWidget);
+        // Collapsed by default: the strip names the count, not the tiles.
+        expect(find.text(stripTitle), findsOneWidget);
+        expect(find.text('Nova'), findsNothing);
+        expect(find.text('2명 · 미실장 1명'), findsOneWidget);
+        // The strip sits above the released operators.
         expect(
-          find.byKey(const ValueKey('operator-unreleased-char_900_nova')),
-          findsOneWidget,
-        );
-        expect(find.text(badge), findsOneWidget);
-        expect(
-          tester.getTopLeft(find.text('Nova')).dy,
-          lessThan(tester.getTopLeft(find.text('Amiya')).dy + 1),
+          tester.getTopLeft(stripToggle).dy,
+          lessThan(tester.getTopLeft(find.text('Amiya')).dy),
         );
 
-        // The borrowed name is searchable like any other.
+        // Expanding shows the small tile with the source badge.
+        await tester.tap(stripToggle);
+        await tester.pumpAndSettle();
+        expect(find.text('Nova'), findsOneWidget);
+        final tileBadge =
+            find.byKey(const ValueKey('operator-unreleased-char_900_nova'));
+        expect(tileBadge, findsOneWidget);
+        expect(
+          find.descendant(of: tileBadge, matching: find.text('CN')),
+          findsOneWidget,
+        );
+        expect(
+          tester.getTopLeft(find.text('Nova')).dy,
+          lessThan(tester.getTopLeft(find.text('Amiya')).dy),
+        );
+        await tester.tap(stripToggle);
+        await tester.pumpAndSettle();
+        expect(find.text('Nova'), findsNothing);
+
+        // A search finds the borrowed name and opens the strip on it,
+        // instead of the "no operators" state of the empty grid.
         await tester.enterText(find.byType(TextField), 'nov');
         await tester.pumpAndSettle();
         expect(find.text('Nova'), findsOneWidget);
         expect(find.text('Amiya'), findsNothing);
+        expect(find.text('조건에 맞는 오퍼레이터가 없습니다.'), findsNothing);
+        expect(find.text('0명 · 미실장 1명'), findsOneWidget);
         await tester.enterText(find.byType(TextField), '');
         await tester.pumpAndSettle();
+        // Clearing the search folds it again.
+        expect(find.text('Nova'), findsNothing);
+        expect(find.text(stripTitle), findsOneWidget);
 
         final toggle =
             find.byKey(const Key('operators-filter-hide-unreleased'));
         await tester.ensureVisible(toggle);
         await tester.tap(toggle);
         await tester.pumpAndSettle();
-        expect(find.text('Nova'), findsNothing);
-        expect(find.text(badge), findsNothing);
+        expect(stripToggle, findsNothing);
+        expect(find.text(stripTitle), findsNothing);
         expect(find.text('Amiya'), findsOneWidget);
+        expect(find.text('2명'), findsOneWidget);
+        // Hidden stays hidden for a search that matches them.
+        await tester.enterText(find.byType(TextField), 'nov');
+        await tester.pumpAndSettle();
+        expect(find.text('Nova'), findsNothing);
+        await tester.enterText(find.byType(TextField), '');
+        await tester.pumpAndSettle();
 
-        // The reset chip shows it again.
+        // The reset chip shows them again.
         final reset = find.byKey(const Key('operators-filter-chip-reset'));
         await tester.ensureVisible(reset);
         await tester.pumpAndSettle();
         await tester.tap(reset);
         await tester.pumpAndSettle();
-        expect(find.text('Nova'), findsOneWidget);
+        expect(find.text(stripTitle), findsOneWidget);
       });
 
-      testWidgets('show the badge in the detail header', (tester) async {
+      testWidgets('show the badge next to the name in the detail hero',
+          (tester) async {
         tester.view.physicalSize = const Size(390, 844);
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.reset);
@@ -555,6 +598,8 @@ void main() {
         await tester.tap(find.byKey(const Key('tab-operators')));
         await tester.pumpAndSettle();
 
+        await tester.tap(stripToggle);
+        await tester.pumpAndSettle();
         await tester
             .tap(find.byKey(const ValueKey('operator-tile-char_900_nova')));
         await tester.pumpAndSettle();
@@ -564,6 +609,16 @@ void main() {
         expect(
           find.descendant(of: header, matching: find.text(badge)),
           findsOneWidget,
+        );
+        // Whole, beside the hero name (the app bar only has the name).
+        final name = find.text('Nova').last;
+        expect(
+          tester.getCenter(header).dy,
+          closeTo(tester.getCenter(name).dy, 8),
+        );
+        expect(
+          tester.getSize(header).width,
+          greaterThan(tester.getSize(find.text(badge)).width),
         );
 
         await tester.tap(find.byTooltip('뒤로가기'));
@@ -577,7 +632,7 @@ void main() {
         );
       });
 
-      testWidgets('PC sidebar toggle hides them', (tester) async {
+      testWidgets('PC sidebar switch hides the strip', (tester) async {
         tester.view.physicalSize = const Size(1440, 900);
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.reset);
@@ -590,17 +645,34 @@ void main() {
         await tester.tap(find.byKey(const Key('sidebar-operators')));
         await tester.pumpAndSettle();
 
-        expect(find.text('Nova'), findsOneWidget);
+        expect(find.text(stripTitle), findsOneWidget);
+        expect(find.byKey(const Key('operators-count')), findsOneWidget);
+        expect(find.text('2명 · 미실장 1명'), findsOneWidget);
         final toggle =
             find.byKey(const ValueKey('operators-filter-hide-unreleased'));
         await tester.ensureVisible(toggle);
         await tester.tap(toggle);
         await tester.pumpAndSettle();
-        expect(find.text('Nova'), findsNothing);
+        expect(find.text(stripTitle), findsNothing);
         expect(find.text('Kaltsit'), findsOneWidget);
+        expect(find.text('2명'), findsOneWidget);
         await tester.tap(toggle);
         await tester.pumpAndSettle();
-        expect(find.text('Nova'), findsOneWidget);
+        expect(find.text(stripTitle), findsOneWidget);
+
+        // A strip tile fills the detail pane like a grid tile.
+        await tester.tap(stripToggle);
+        await tester.pumpAndSettle();
+        await tester
+            .tap(find.byKey(const ValueKey('operator-tile-char_900_nova')));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(
+          find.byKey(const Key('operator-detail-unreleased')),
+          findsOneWidget,
+        );
+        // The open strip stays open on the selection route.
+        expect(find.text('Nova'), findsNWidgets(2));
       });
     });
 
@@ -622,7 +694,175 @@ void main() {
         find.byKey(const Key('operators-filter-hide-unreleased')),
         findsNothing,
       );
-      expect(find.text('미실장 · CN'), findsNothing);
+      expect(
+        find.byKey(const Key('operators-unreleased-strip-toggle')),
+        findsNothing,
+      );
+      expect(find.text('2명'), findsOneWidget);
+    });
+
+    testWidgets(
+        'master-detail from 1000px wide, without the sidebar below '
+        'the expanded width', (tester) async {
+      tester.view.physicalSize = const Size(1024, 768);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await _pumpApp(
+        tester,
+        operatorService,
+        regionSyncService,
+        userDataRepository,
+      );
+      await tester.tap(find.byKey(const Key('rail-operators')));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(OperatorsWorkspace), findsOneWidget);
+      // The filters fold into the button and the chip row over the list.
+      expect(find.byKey(const Key('operators-filter-button')), findsOneWidget);
+      expect(find.byKey(const Key('operators-filter-rarity')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('operators-filter-group-rarity')),
+        findsNothing,
+      );
+      expect(
+        find.text(const NexusI18n(RegionCode.kr).t('rd.operators.detail.none')),
+        findsOneWidget,
+      );
+      // The list keeps a 404px start next to the resizable pane.
+      final handle = find.byKey(const Key('operator-detail-resize'));
+      expect(tester.getCenter(handle).dx, closeTo(76 + 404 + 4.5, 2));
+
+      await tester
+          .tap(find.byKey(const ValueKey('operator-tile-char_003_kalts')));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(OperatorsWorkspace), findsOneWidget);
+      expect(find.text('Doctor.'), findsOneWidget);
+      expect(find.text('Amiya'), findsOneWidget);
+      // Sticky plan actions in the pane.
+      expect(
+        find.byKey(const Key('operator-detail-add-to-plan')),
+        findsOneWidget,
+      );
+
+      // The list never gets narrower than 360px.
+      await tester.drag(
+        handle,
+        const Offset(-2000, 0),
+        kind: PointerDeviceKind.mouse,
+        touchSlopX: 0,
+      );
+      await tester.pumpAndSettle();
+      expect(tester.getCenter(handle).dx, closeTo(76 + 360 + 4.5, 2));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('below 1000px the list pushes the detail page', (tester) async {
+      tester.view.physicalSize = const Size(990, 768);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await _pumpApp(
+        tester,
+        operatorService,
+        regionSyncService,
+        userDataRepository,
+      );
+      await tester.tap(find.byKey(const Key('rail-operators')));
+      await tester.pumpAndSettle();
+      expect(find.byType(OperatorsWorkspace), findsNothing);
+      expect(find.byType(OperatorsListPage), findsOneWidget);
+
+      await tester
+          .tap(find.byKey(const ValueKey('operator-tile-char_003_kalts')));
+      await tester.pumpAndSettle();
+      expect(find.byType(OperatorsListPage), findsNothing);
+      expect(find.text('Doctor.'), findsOneWidget);
+      expect(find.byTooltip('뒤로가기'), findsOneWidget);
+    });
+
+    testWidgets('PC sidebar groups fold and unfold', (tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await _pumpApp(
+        tester,
+        operatorService,
+        regionSyncService,
+        userDataRepository,
+      );
+      await tester.tap(find.byKey(const Key('sidebar-operators')));
+      await tester.pumpAndSettle();
+
+      Finder group(String name) =>
+          find.byKey(ValueKey('operators-filter-group-$name'));
+      Finder header(String name) => find
+          .descendant(of: group(name), matching: find.byType(InkWell))
+          .first;
+      const rarity = ValueKey('operators-filter-rarity-6 ★');
+      const caster = ValueKey('operators-filter-profession-all');
+      const rhodes = ValueKey('operators-filter-affiliation-Rhodes Island');
+      const healing = ValueKey('operators-filter-ba-tags-Healing');
+
+      // Rarity and profession open; affiliation and BA tags folded with
+      // their option counts.
+      expect(find.byKey(rarity), findsOneWidget);
+      expect(find.byKey(caster), findsOneWidget);
+      expect(find.byKey(rhodes), findsNothing);
+      expect(find.byKey(healing), findsNothing);
+      expect(
+        find.descendant(of: group('affiliation'), matching: find.text('2')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: group('ba-tags'), matching: find.text('1')),
+        findsOneWidget,
+      );
+
+      // Unfolded, the long lists keep their search box.
+      await tester.tap(header('affiliation'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(rhodes), findsOneWidget);
+      await tester.enterText(
+        find.descendant(
+          of: group('affiliation'),
+          matching: find.byType(TextField),
+        ),
+        'medical',
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(rhodes), findsNothing);
+      await tester.tap(
+        find.byKey(
+          const ValueKey('operators-filter-affiliation-Medical Department'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Amiya'), findsNothing);
+
+      // Folded again, the group shows the picked value.
+      await tester.tap(header('affiliation'));
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: group('affiliation'),
+          matching: find.text('Medical Department'),
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(header('rarity'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(rarity), findsNothing);
+
+      // The folds survive selecting an operator (another route).
+      await tester
+          .tap(find.byKey(const ValueKey('operator-tile-char_003_kalts')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(rarity), findsNothing);
+
+      await tester.tap(find.byKey(const Key('operators-filter-reset')));
+      await tester.pumpAndSettle();
+      expect(find.text('Amiya'), findsOneWidget);
     });
 
     testWidgets(

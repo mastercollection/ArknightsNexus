@@ -248,7 +248,6 @@ class OperatorAbilitiesPanel extends StatelessWidget {
           ),
         RdHeading(
           i18n.t('operatorDetail.labels.trait'),
-          description: i18n.t('operatorDetail.descriptions.trait'),
           color: RdColors.heading,
         ),
         for (final trait in traits)
@@ -290,7 +289,6 @@ class OperatorAbilitiesPanel extends StatelessWidget {
             padding: const EdgeInsets.only(top: 4),
             child: RdHeading(
               i18n.t('operatorDetail.labels.talent'),
-              description: i18n.t('operatorDetail.descriptions.talent'),
               color: RdColors.heading,
             ),
           ),
@@ -619,8 +617,6 @@ class OperatorSkillsPanel extends StatelessWidget {
           children: [
             RdHeading(
               i18n.t('operatorDetail.labels.displayLevel'),
-              description:
-                  i18n.t('operatorDetail.descriptions.skillDisplayLevel'),
               color: RdColors.heading,
             ),
             OpRangeControl(
@@ -651,8 +647,6 @@ class OperatorSkillsPanel extends StatelessWidget {
           children: [
             RdHeading(
               i18n.t('operatorDetail.labels.levelComparison'),
-              description:
-                  i18n.t('operatorDetail.descriptions.skillLevelComparison'),
               color: RdColors.heading,
             ),
             if (range != null)

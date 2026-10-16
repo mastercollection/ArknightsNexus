@@ -34,7 +34,8 @@ void main() {
   Future<void> pumpDetail(
     WidgetTester tester, {
     String id = _operatorId,
-    Size size = const Size(1000, 6000),
+    // Below the operators master-detail width: the detail page.
+    Size size = const Size(900, 6000),
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -88,7 +89,7 @@ void main() {
     await pumpDetail(tester);
 
     expect(sync.ensureFreshCalls, 1);
-    // Header title + hero name.
+    // App bar title + hero name.
     expect(find.text('Testia'), findsNWidgets(2));
     expect(find.text('A quote.'), findsOneWidget);
     expect(find.text('Rhodes Island'), findsOneWidget);
@@ -97,7 +98,8 @@ void main() {
     expect(find.text('Arts Damage'), findsOneWidget);
     expect(find.text('★★★★★'), findsOneWidget);
 
-    // One tab per section; the header pill names the current one.
+    // One tab per section, right under the hero, without a description
+    // line for the tab or for the headings inside it.
     for (final section in [
       'stats',
       'abilities',
@@ -108,12 +110,24 @@ void main() {
       await openSection(tester, section);
       expect(
         find.text(_i18n.t('operatorDetail.summaries.$section')),
-        findsOneWidget,
+        findsNothing,
       );
       expect(
         find.text(_i18n.t('operatorDetail.sections.$section')),
-        findsNWidgets(2),
+        findsOneWidget,
       );
+      for (final key in [
+        'trait',
+        'talent',
+        'skillDisplayLevel',
+        'skillLevelComparison',
+      ]) {
+        expect(
+          find.text(_i18n.t('operatorDetail.descriptions.$key')),
+          findsNothing,
+          reason: '$section $key',
+        );
+      }
     }
 
     await openSection(tester, 'potentials');

@@ -38,6 +38,10 @@ const Map<String, Map<String, String>> operatorsExtraMessages = {
         '선택한 서버에 아직 실장되지 않은 오퍼레이터입니다. {source} 서버의 공식 데이터로 표시합니다.',
     'rd.operators.filter.unreleased': '미실장',
     'rd.operators.filter.hideUnreleased': '미실장 숨기기',
+    'rd.operators.strip.title': '미실장 {count}명',
+    'rd.operators.strip.source': '{source} 공식 데이터',
+    'rd.operators.filter.showUnreleased': '미실장 표시',
+    'rd.operators.filter.unreleasedNote': '{source} 선공개 {count}명',
   },
   'cn': {
     'rd.operators.count': '{count}名',
@@ -75,6 +79,10 @@ const Map<String, Map<String, String>> operatorsExtraMessages = {
         '所选服务器尚未实装的干员，显示的是 {source} 服务器的官方数据。',
     'rd.operators.filter.unreleased': '未实装',
     'rd.operators.filter.hideUnreleased': '隐藏未实装',
+    'rd.operators.strip.title': '未实装 {count}名',
+    'rd.operators.strip.source': '{source} 官方数据',
+    'rd.operators.filter.showUnreleased': '显示未实装',
+    'rd.operators.filter.unreleasedNote': '{source} 先行实装 {count}名',
   },
   'jp': {
     'rd.operators.count': '{count}名',
@@ -112,6 +120,10 @@ const Map<String, Map<String, String>> operatorsExtraMessages = {
         '選択したサーバーにはまだ実装されていないオペレーターです。{source} サーバーの公式データで表示しています。',
     'rd.operators.filter.unreleased': '未実装',
     'rd.operators.filter.hideUnreleased': '未実装を隠す',
+    'rd.operators.strip.title': '未実装 {count}名',
+    'rd.operators.strip.source': '{source} 公式データ',
+    'rd.operators.filter.showUnreleased': '未実装を表示',
+    'rd.operators.filter.unreleasedNote': '{source} 先行実装 {count}名',
   },
   'tw': {
     'rd.operators.count': '{count}名',
@@ -149,6 +161,10 @@ const Map<String, Map<String, String>> operatorsExtraMessages = {
         '所選伺服器尚未實裝的幹員，顯示的是 {source} 伺服器的官方資料。',
     'rd.operators.filter.unreleased': '未實裝',
     'rd.operators.filter.hideUnreleased': '隱藏未實裝',
+    'rd.operators.strip.title': '未實裝 {count}名',
+    'rd.operators.strip.source': '{source} 官方資料',
+    'rd.operators.filter.showUnreleased': '顯示未實裝',
+    'rd.operators.filter.unreleasedNote': '{source} 先行實裝 {count}名',
   },
   'en': {
     'rd.operators.count': '{count}',
@@ -189,5 +205,9 @@ const Map<String, Map<String, String>> operatorsExtraMessages = {
         'Not yet released on the selected server; shown with the official {source} server data.',
     'rd.operators.filter.unreleased': 'Unreleased',
     'rd.operators.filter.hideUnreleased': 'Hide unreleased',
+    'rd.operators.strip.title': '{count} unreleased',
+    'rd.operators.strip.source': '{source} official data',
+    'rd.operators.filter.showUnreleased': 'Show unreleased',
+    'rd.operators.filter.unreleasedNote': '{count} early on {source}',
   },
 };
