@@ -61,7 +61,7 @@ class PublishedSnapshotSyncService implements RegionSyncService {
           .ensureRegionFresh(region);
     }
 
-    if (cached != null && _isCurrent(published, cached)) {
+    if (cached != null && await _isCurrent(published, cached)) {
       return readyResult(cached);
     }
     final fallback = _fallback;
@@ -77,7 +77,7 @@ class PublishedSnapshotSyncService implements RegionSyncService {
       return _fallbackFor(region, 'snapshot download failed', error, stackTrace)
           .ensureRegionFresh(region);
     }
-    await writeNormalizedRegion(_cache, normalized);
+    await writeNormalizedRegion(_cache, _fromPublished(normalized, published));
     return normalized.result;
   }
 
@@ -96,7 +96,7 @@ class PublishedSnapshotSyncService implements RegionSyncService {
     final fallback = _fallback;
     if (fallback != null &&
         cached != null &&
-        !_isCurrent(published, cached) &&
+        !await _isCurrent(published, cached) &&
         _isOlderThanCache(published, cached)) {
       _logFallback(region, 'published snapshot is older than the cache');
       yield* fallback.syncRegion(region);
@@ -139,7 +139,7 @@ class PublishedSnapshotSyncService implements RegionSyncService {
       phase: SyncPhase.writingSnapshot,
       remoteVersion: remoteVersion,
     );
-    await writeNormalizedRegion(_cache, normalized);
+    await writeNormalizedRegion(_cache, _fromPublished(normalized, published));
     _logger.info(
       'Synced ${region.value} from the published snapshot $remoteVersion',
     );
@@ -176,22 +176,60 @@ class PublishedSnapshotSyncService implements RegionSyncService {
     }
   }
 
-  /// The cached snapshot is the published one: same region version and same
-  /// versions of the regions its unreleased operators come from. A raw sync
-  /// has none of those, so a newer published copy that has them replaces
-  /// it.
-  bool _isCurrent(PublishedRegion published, RegionSnapshot cached) {
-    return published.matchesVersions(
+  /// The cached snapshot is the published one: same region version, same
+  /// versions of the regions its unreleased operators come from, and the
+  /// same published file. The file changes without a game update when the
+  /// generator improves (localized labels, parsing fixes), so a cache written
+  /// from an earlier file, or by a raw sync, is replaced by the published
+  /// copy unless that copy is older ([_isOlderThanCache]).
+  Future<bool> _isCurrent(
+    PublishedRegion published,
+    RegionSnapshot cached,
+  ) async {
+    if (!published.matchesVersions(
       cached.sourceVersion.versionControl,
       cached.unreleasedSourceVersions,
+    )) {
+      return false;
+    }
+    final RegionSyncStatus? status;
+    try {
+      status = await _cache.readStatus(cached.region);
+    } catch (_) {
+      return false;
+    }
+    return status?.publishedSha256 == published.snapshot.sha256;
+  }
+
+  /// [normalized] with the published file recorded in its status.
+  NormalizedRegion _fromPublished(
+    NormalizedRegion normalized,
+    PublishedRegion published,
+  ) {
+    final status = normalized.status;
+    return NormalizedRegion(
+      snapshot: normalized.snapshot,
+      summary: normalized.summary,
+      status: RegionSyncStatus(
+        region: status.region,
+        sourceRevision: status.sourceRevision,
+        sourceVersion: status.sourceVersion,
+        fetchedAt: status.fetchedAt,
+        operatorCount: status.operatorCount,
+        isReady: status.isReady,
+        publishedSha256: published.snapshot.sha256,
+      ),
+      terms: normalized.terms,
+      result: normalized.result,
     );
   }
 
   /// Version strings are not ordered, so the snapshots' `fetchedAt` decides:
   /// a published copy normalized before the cached one was fetched must not
-  /// replace it.
+  /// replace it. One from the same moment may (the cache is then an
+  /// earlier file of it; [_isCurrent] already ruled out the same file).
   bool _isOlderThanCache(PublishedRegion published, RegionSnapshot? cached) {
-    return cached != null && !published.fetchedAt.isAfter(cached.fetchedAt);
+    return cached != null && published.fetchedAt.isBefore(cached.fetchedAt);
   }
 
   Future<PublishedRegion> _fetchPublishedRegion(RegionCode region) async {
