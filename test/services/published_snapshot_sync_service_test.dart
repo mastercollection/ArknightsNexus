@@ -140,8 +140,14 @@ void main() {
         _roundTrip((await rawCache.readSummary(RegionCode.kr))!.toJson()),
       ),
     );
+    // The status also records which published file it came from.
+    final status = (await cache.readStatus(RegionCode.kr))!;
     expect(
-      _withoutFetchedAt((await cache.readStatus(RegionCode.kr))!.toJson()),
+      status.publishedSha256,
+      manifest.regions[RegionCode.kr]!.snapshot.sha256,
+    );
+    expect(
+      _withoutFetchedAt(status.toJson()..remove('publishedSha256')),
       _withoutFetchedAt((await rawCache.readStatus(RegionCode.kr))!.toJson()),
     );
     expect(
@@ -194,6 +200,39 @@ void main() {
 
     expect(result.status, 'ready');
     expect(pages.requestedUris, [_manifestUri]);
+    expect(fallback.calls, isEmpty);
+  });
+
+  test('a republished file at the same versions replaces the cache once',
+      () async {
+    await publish();
+    await service.ensureRegionFresh(RegionCode.kr);
+    // The cache came from an earlier file of the same versions (an older
+    // generator), or from an app that did not record the file.
+    for (final recorded in ['0' * 64, null]) {
+      final status = (await cache.readStatus(RegionCode.kr))!;
+      await cache.writeStatus(
+        RegionSyncStatus(
+          region: status.region,
+          sourceRevision: status.sourceRevision,
+          sourceVersion: status.sourceVersion,
+          fetchedAt: status.fetchedAt,
+          operatorCount: status.operatorCount,
+          isReady: status.isReady,
+          publishedSha256: recorded,
+        ),
+      );
+      pages.requestedUris.clear();
+
+      final replaced = await service.ensureRegionFresh(RegionCode.kr);
+      expect(replaced.status, 'success');
+      expect(pages.requestedUris, [_manifestUri, _snapshotUri]);
+
+      pages.requestedUris.clear();
+      final again = await service.ensureRegionFresh(RegionCode.kr);
+      expect(again.status, 'ready');
+      expect(pages.requestedUris, [_manifestUri]);
+    }
     expect(fallback.calls, isEmpty);
   });
 

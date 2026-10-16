@@ -28,6 +28,7 @@ class RegionSyncStatus {
     this.fetchedAt,
     required this.operatorCount,
     required this.isReady,
+    this.publishedSha256,
   });
 
   final RegionCode region;
@@ -37,6 +38,12 @@ class RegionSyncStatus {
   final int operatorCount;
   final bool isReady;
 
+  /// SHA-256 of the published snapshot file the cache was written from;
+  /// null after a raw upstream sync. The published copy can change while the
+  /// game versions stay the same (a better normalizer), so this is what
+  /// tells that the cache holds the current copy.
+  final String? publishedSha256;
+
   factory RegionSyncStatus.fromJson(Map<String, Object?> json) {
     return RegionSyncStatus(
       region: RegionCode.fromJson(json['region']),
@@ -45,6 +52,7 @@ class RegionSyncStatus {
       fetchedAt: json['fetchedAt'] as String?,
       operatorCount: (json['operatorCount'] as num).toInt(),
       isReady: json['isReady'] as bool,
+      publishedSha256: json['publishedSha256'] as String?,
     );
   }
 
@@ -56,6 +64,7 @@ class RegionSyncStatus {
       'fetchedAt': fetchedAt,
       'operatorCount': operatorCount,
       'isReady': isReady,
+      if (publishedSha256 != null) 'publishedSha256': publishedSha256,
     };
   }
 }
