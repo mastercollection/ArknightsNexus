@@ -471,6 +471,8 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
       favorite: _isFavorite,
       tooltip: i18n.t('rd.operators.detail.favorite'),
       size: _compact ? 44 : 36,
+      // A bare icon in the app bar; a boxed button in the pane hero.
+      filled: !_compact,
       onPressed: _toggleFavorite,
     );
     final hero = _HeroCard(
@@ -852,8 +854,10 @@ class _FavoriteButton extends StatelessWidget {
     required this.tooltip,
     required this.onPressed,
     this.size = 40,
+    this.filled = true,
   });
 
+  final bool filled;
   final bool favorite;
   final String tooltip;
   final VoidCallback onPressed;
@@ -866,6 +870,7 @@ class _FavoriteButton extends StatelessWidget {
       tooltip: tooltip,
       onPressed: onPressed,
       size: size,
+      filled: filled,
       toggled: favorite,
       iconSize: 20,
       iconColor: RdColors.rarity,

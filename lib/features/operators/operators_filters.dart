@@ -512,12 +512,12 @@ class _FilterGroup extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Row(
                     children: [
-                      Text(title, style: RdText.sectionTitle),
-                      const SizedBox(width: 8),
-                      const Spacer(),
+                      Expanded(
+                        child: Text(title, style: RdText.sectionTitle),
+                      ),
                       if (badge != null)
-                        Flexible(
-                          flex: 4,
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 120),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 7,
