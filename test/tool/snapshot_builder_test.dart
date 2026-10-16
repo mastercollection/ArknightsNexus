@@ -9,6 +9,7 @@ import 'package:arknight_nexus/domain/region_snapshot.dart';
 import 'package:arknight_nexus/services/plan_cost_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../tool/src/region_labels.dart';
 import '../../tool/src/snapshot_builder.dart';
 import '../support/fake_http_client.dart';
 import '../support/raw_fixtures.dart';
@@ -329,6 +330,64 @@ void main() {
       );
     });
 
+    test("carry the region's names for factions, branches and tags", () async {
+      // The same fixtures in three "languages"; B's nation is new on CN.
+      await registerRawFixtures(
+        http,
+        RegionCode.cn,
+        labelSuffix: ' (CN)',
+        extraOperators: const [
+          ExtraOperator(id: 'char_900_a', name: 'A-CN'),
+          ExtraOperator(id: 'char_901_b', name: 'B-CN', newFaction: true),
+        ],
+      );
+      await registerRawFixtures(
+        http,
+        RegionCode.en,
+        labelSuffix: ' (EN)',
+        extraOperators: const [ExtraOperator(id: 'char_900_a', name: 'A-EN')],
+      );
+      final result = await build(
+        'first',
+        regions: [RegionCode.cn, RegionCode.kr, RegionCode.en],
+      );
+      expect(result.hasFailures, isFalse);
+
+      final kr = await readSnapshot('first', RegionCode.kr);
+      final operators = {for (final o in kr.operators) o.id: o};
+      final amiya = operators['char_002_amiya']!;
+      for (final id in ['char_900_a', 'char_901_b']) {
+        final borrowed = operators[id]!;
+        expect(borrowed.branch, amiya.branch);
+        expect(borrowed.teams, amiya.teams);
+        expect(borrowed.tags, amiya.tags);
+        expect(borrowed.tags, ['DPS', 'Support']);
+      }
+      expect(operators['char_900_a']!.nations, amiya.nations);
+      expect(operators['char_901_b']!.nations, ['B-CN Nation (CN)']);
+      // The borrowed operators' own term is unknown to KR; the rest is not.
+      expect(operators['char_900_a']!.baTags, ['A-EN (EN)', 'Slow', 'Stun']);
+      expect(operators['char_901_b']!.baTags, ['B-CN (CN)', 'Slow', 'Stun']);
+      expect(operators['char_900_a']!.name, 'A-EN');
+
+      // EN borrows B from CN, in English.
+      final en = await readSnapshot('first', RegionCode.en);
+      final b = en.operators.firstWhere((o) => o.id == 'char_901_b');
+      expect(b.branch, 'Core Caster (EN)');
+      expect(b.teams, ['Rhodes Island (EN)']);
+      expect(b.tags, ['DPS (EN)', 'Support (EN)']);
+
+      final stats = result.regions[1].labelStats!;
+      // Unknown Nation is a humanized id no table names.
+      expect(stats.kept, {
+        'baTags: A-EN (EN)': 1,
+        'nations: Unknown Nation': 1,
+        'baTags: B-CN (CN)': 1,
+        'nations: B-CN Nation (CN)': 1,
+      });
+      expect(result.regions[0].labelStats, isNull);
+    });
+
     test('regenerate a region when a source changed', () async {
       await build('first', fingerprint: 'f1');
       await serveAsPrevious('first');
@@ -373,6 +432,20 @@ void main() {
       expect(requestedTables(RegionCode.kr), isTrue);
       expect(requestedTables(RegionCode.en), isFalse);
       expect(requestedTables(RegionCode.cn), isFalse);
+      // Of the sources, only the tables naming the labels.
+      for (final source in [RegionCode.en, RegionCode.cn]) {
+        expect(
+          http.requestedUris.where(
+            (uri) =>
+                uri.path.contains('/${source.value}/gamedata/excel/') &&
+                uri.path.endsWith('.json'),
+          ),
+          unorderedEquals([
+            for (final file in RegionLabels.tableFiles)
+              source.descriptor.tableUri(file),
+          ]),
+        );
+      }
       final kr = await readSnapshot('second', RegionCode.kr);
       expect(
         kr.operators

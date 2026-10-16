@@ -5,6 +5,8 @@ import 'package:arknight_nexus/domain/item.dart';
 import 'package:arknight_nexus/domain/operator.dart';
 import 'package:arknight_nexus/domain/region_snapshot.dart';
 
+import 'region_labels.dart';
+
 /// Regions whose official data fills in the operators [region] has not
 /// released yet, in priority order: the global (EN) server first, then CN,
 /// which releases everything first. CN has no unreleased operators.
@@ -34,21 +36,41 @@ List<RegionCode> unreleasedSourcesFor(RegionCode region) {
 /// then the snapshot's, so costs read in the region's language wherever
 /// the region has the item.
 ///
+/// When [labels] has both the region's and a source's [RegionLabels], the
+/// operators taken from that source get the region's names for their
+/// factions, branch, recruitment tags and BA tags ([localizeLabels]), so the
+/// filters do not list a faction twice in two languages; [labelStats]
+/// tallies that.
+///
 /// [RegionSnapshot.unreleasedSourceVersions] records every source's version
 /// even when nothing was added: the snapshot depends on them either way.
 RegionSnapshot mergeUnreleasedOperators(
   RegionSnapshot native,
-  List<RegionSnapshot> sources,
-) {
+  List<RegionSnapshot> sources, {
+  Map<RegionCode, RegionLabels> labels = const {},
+  LabelLocalizationStats? labelStats,
+}) {
   final known = {for (final operator in native.operators) operator.id};
+  final targetLabels = labels[native.region];
   final borrowedBySource = <List<OperatorDetail>>[];
   for (final source in sources) {
+    final sourceLabels = labels[source.region];
     final borrowed = <OperatorDetail>[];
     for (final operator in source.operators) {
       if (operator.isUnreleased || !known.add(operator.id)) {
         continue;
       }
-      borrowed.add(operator.asUnreleased(source.region.value));
+      final unreleased = operator.asUnreleased(source.region.value);
+      borrowed.add(
+        targetLabels == null || sourceLabels == null
+            ? unreleased
+            : localizeLabels(
+                unreleased,
+                source: sourceLabels,
+                target: targetLabels,
+                stats: labelStats,
+              ),
+      );
     }
     borrowedBySource.add(borrowed);
   }

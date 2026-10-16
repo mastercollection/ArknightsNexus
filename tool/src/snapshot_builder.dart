@@ -11,6 +11,7 @@ import 'package:arknight_nexus/domain/region_snapshot.dart';
 import 'package:arknight_nexus/services/region_source.dart';
 import 'package:path/path.dart' as p;
 
+import 'region_labels.dart';
 import 'unreleased_operators.dart';
 
 /// What happened to one region during a build.
@@ -23,6 +24,7 @@ class RegionBuildReport {
     this.elapsed = Duration.zero,
     this.error,
     this.unreleasedCounts = const {},
+    this.labelStats,
   });
 
   final RegionCode region;
@@ -32,6 +34,11 @@ class RegionBuildReport {
   /// Unreleased operators added per source region code; only for a
   /// [RegionBuildOutcome.generated] region.
   final Map<String, int> unreleasedCounts;
+
+  /// How many categorical labels of the unreleased operators were put in
+  /// the region's language, and which were kept in a source's; only for a
+  /// [RegionBuildOutcome.generated] region with unreleased operator sources.
+  final LabelLocalizationStats? labelStats;
 
   /// Size after gzip, as GitHub Pages would roughly serve it.
   final int? gzipBytes;
@@ -106,6 +113,12 @@ class SnapshotBuilder {
   final _sourceNatives = <RegionCode, Future<RegionSnapshot>>{};
   final _sourceSnapshots = <RegionCode, Future<RegionSnapshot>>{};
   final _previousBytes = <String, Future<Uint8List>>{};
+
+  /// The [RegionLabels.tableFiles] bodies of a region normalized in this
+  /// run, kept until [_regionLabels] reads them so they are not downloaded
+  /// twice.
+  final _labelBodies = <RegionCode, Map<String, String>>{};
+  final _labels = <RegionCode, Future<RegionLabels>>{};
   PublishedManifest? _previous;
   Uri? _previousManifestUri;
   bool _sameGenerator = false;
@@ -191,9 +204,20 @@ class SnapshotBuilder {
       }
 
       final native = await _native(region);
-      final snapshot = mergeUnreleasedOperators(native, [
+      final sourceSnapshots = [
         for (final source in sources) await _sourceSnapshot(source),
-      ]);
+      ];
+      final labelStats = sources.isEmpty ? null : LabelLocalizationStats();
+      final snapshot = mergeUnreleasedOperators(
+        native,
+        sourceSnapshots,
+        labels: {
+          if (sources.isNotEmpty)
+            for (final labelled in [region, ...sources])
+              labelled: await _regionLabels(labelled),
+        },
+        labelStats: labelStats,
+      );
       final bytes = utf8.encode(jsonEncode(snapshot.toJson()));
       final path = PublishedData.snapshotPath(
         RegionSnapshot.schemaVersion,
@@ -226,6 +250,7 @@ class SnapshotBuilder {
         gzipBytes: gzip.encode(bytes).length,
         elapsed: stopwatch.elapsed,
         unreleasedCounts: unreleasedCounts,
+        labelStats: labelStats,
       );
     } catch (error) {
       // A Pages deploy replaces the whole site: keep the last good copy
@@ -264,6 +289,11 @@ class SnapshotBuilder {
     Future<RegionSnapshot> normalize() async {
       final version = await _version(region);
       final downloaded = await _source.downloadTables(region);
+      // Every region borrows operators or lends them, so needs its labels.
+      _labelBodies[region] = {
+        for (final file in RegionLabels.tableFiles)
+          if (downloaded.bodies[file] case final body?) file: body,
+      };
       final normalized =
           await _source.normalizeInBackground(region, version, downloaded);
       return normalized.snapshot;
@@ -273,6 +303,22 @@ class SnapshotBuilder {
       return normalize();
     }
     return _sourceNatives.putIfAbsent(region, normalize);
+  }
+
+  /// [region]'s [RegionLabels], from the tables [_native] downloaded when
+  /// it normalized the region, the others (and all of them for a region
+  /// read from the previous site) downloaded here.
+  Future<RegionLabels> _regionLabels(RegionCode region) {
+    return _labels.putIfAbsent(region, () async {
+      final bodies = _labelBodies.remove(region) ?? {};
+      for (final file in RegionLabels.tableFiles) {
+        if (!bodies.containsKey(file)) {
+          bodies[file] =
+              await _httpClient.getText(region.descriptor.tableUri(file));
+        }
+      }
+      return RegionLabels.fromTables(bodies);
+    });
   }
 
   static bool _isSource(RegionCode region) => RegionCode.values
@@ -372,7 +418,13 @@ String _describe(RegionBuildReport report) {
   final unreleased = report.outcome != RegionBuildOutcome.generated
       ? ''
       : ' unreleased: ${counts.isEmpty ? 'none' : counts.join(', ')},';
+  final stats = report.labelStats;
+  final keptCount = stats?.kept.values.fold(0, (sum, count) => sum + count);
+  final labels = stats == null
+      ? ''
+      : ' labels: ${stats.mapped} localized, $keptCount kept'
+          '${stats.kept.isEmpty ? '' : ' (${stats.kept.keys.join('; ')})'},';
   return '$region: ${report.outcome.name}'
-      '${entry == null ? '' : ' ${entry.versionControl}'},$size$unreleased '
-      '${seconds}s$error';
+      '${entry == null ? '' : ' ${entry.versionControl}'},'
+      '$size$unreleased$labels ${seconds}s$error';
 }
