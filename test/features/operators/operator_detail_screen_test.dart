@@ -372,6 +372,90 @@ void main() {
     }
   });
 
+  testWidgets('shows the summons tab only for operators with summons',
+      (tester) async {
+    List<String> tabLabels() => [
+          for (final text in tester.widgetList<Text>(
+            find.descendant(
+              of: find.byKey(const ValueKey('detail-tabs')),
+              matching: find.byType(Text),
+            ),
+          ))
+            text.data!,
+        ];
+    final label = _i18n.t('operatorDetail.sections.tokens');
+    expect(label, '소환물');
+
+    await pumpDetail(tester);
+    expect(tabLabels(), isNot(contains(label)));
+
+    await pumpDetail(tester, id: _summonerId);
+    final labels = tabLabels();
+    // Right after the abilities.
+    expect(
+      labels.indexOf(label),
+      labels.indexOf(_i18n.t('operatorDetail.sections.abilities')) + 1,
+    );
+  });
+
+  testWidgets('summons tab: picker, skill badge, stats, abilities and skills',
+      (tester) async {
+    await pumpDetail(tester, id: _summonerId);
+    await openSection(tester, 'tokens');
+
+    // The first summon: in the picker and the header, with its description
+    // and its own stats at the operator's elite 0 level 1.
+    expect(find.text('Drone'), findsNWidgets(2));
+    expect(find.text('Blocks 2 enemies', findRichText: true), findsOneWidget);
+    expect(find.text('700'), findsOneWidget);
+    expect(find.text('1/30'), findsOneWidget);
+    // Its talent and range; the description is not repeated as a trait.
+    expect(find.text('Relay'), findsOneWidget);
+    expect(
+      find.text(_i18n.t('operatorDetail.labels.attackRange')),
+      findsOneWidget,
+    );
+    expect(
+      find.text(_i18n.t('operatorDetail.labels.commonTrait')),
+      findsNothing,
+    );
+    // Its skill with the level table.
+    expect(find.text('Drone Skill'), findsWidgets);
+    expect(find.byKey(const ValueKey('skill-table')), findsWidgets);
+    // Drone comes with every skill, so only Beast's chip has a skill badge.
+    expect(find.text('S2'), findsOneWidget);
+
+    // The second summon belongs to the second skill.
+    await tester.tap(find.byKey(const ValueKey('token-chip-token_beast')));
+    await tester.pumpAndSettle();
+    expect(find.text('Beast'), findsNWidgets(2));
+    expect(find.text('3000'), findsOneWidget);
+    expect(find.text('S2 · Skill Two 사용 시'), findsOneWidget);
+    expect(find.text('Beast Skill'), findsWidgets);
+
+    // Elite 1 of the summon is the operator's elite 1 too.
+    await tester.tap(
+      find.image(const AssetImage('assets/icons/elite/1.webp')).first,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('9000'), findsOneWidget);
+    expect(find.text('1/40'), findsOneWidget);
+    await openSection(tester, 'stats');
+    expect(find.text('1500'), findsOneWidget);
+  });
+
+  testWidgets('summons lay out without overflow on a phone and on PC',
+      (tester) async {
+    for (final size in const [Size(390, 844), Size(1440, 900)]) {
+      await pumpDetail(tester, id: _summonerId, size: size);
+      await openSection(tester, 'tokens');
+      expect(tester.takeException(), isNull, reason: '$size');
+      await tester.tap(find.byKey(const ValueKey('token-chip-token_beast')));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull, reason: '$size');
+    }
+  });
+
   test('range matrix places origin and active cells', () {
     final matrix = buildRangeMatrix(
       const OperatorRange(
@@ -574,13 +658,86 @@ final _fixture = OperatorDetail(
   ],
 );
 
+const _summonerId = 'char_summoner';
+
+/// A summon with [hp] at elite 0 level 1, twice that at its level cap, and
+/// one skill.
+OperatorDetail _token(String id, String name, int hp) => OperatorDetail(
+      id: id,
+      name: name,
+      codename: name,
+      rarity: 1,
+      profession: 'Token',
+      branch: 'Notchar1',
+      thumbnailHue: 0,
+      quote: '',
+      archetypeDescription: r'Blocks <@ba.kw>2</> enemies',
+      eliteCaps: const [30, 40],
+      stats: [
+        OperatorStatProgression(
+          level: 1,
+          min: _stat(hp, 0, 1),
+          max: _stat(hp * 2, 0, 1),
+          range: const OperatorRange(
+            id: 'token-range',
+            grids: [OperatorRangeGrid(row: 0, col: 0)],
+          ),
+        ),
+        OperatorStatProgression(
+          level: 2,
+          min: _stat(hp * 3, 0, 1),
+          max: _stat(hp * 4, 0, 1),
+        ),
+      ],
+      talents: const [
+        OperatorTalent(
+          groupKey: '0',
+          name: 'Relay',
+          description: 'Counts as the summoner',
+          elite: 0,
+          level: 1,
+          requiredPotentialRank: 0,
+        ),
+      ],
+      skills: [
+        OperatorSkill(
+          id: 'sktok_$id',
+          name: '$name Skill',
+          recoveryType: 'unknown_recovery',
+          activationType: 'passive',
+          description: '',
+          levels: [
+            for (var level = 1; level <= 10; level++)
+              _skillLevel(level, 1 + level / 10),
+          ],
+        ),
+      ],
+    );
+
+/// [_fixture] with a summon for every skill and one for its second skill.
+final _summoner = OperatorDetail.fromJson({
+  ..._fixture.toJson(),
+  'id': _summonerId,
+  'tokens': [
+    OperatorToken(detail: _token('token_drone', 'Drone', 700)).toJson(),
+    OperatorToken(
+      skillIds: const ['skill_2'],
+      detail: _token('token_beast', 'Beast', 3000),
+    ).toJson(),
+  ],
+});
+
 class _FakeOperatorService implements OperatorService {
   @override
   Future<OperatorDetail?> getOperatorDetail(
     RegionCode region,
     String operatorId,
   ) async {
-    return operatorId == _operatorId ? _fixture : null;
+    return switch (operatorId) {
+      _operatorId => _fixture,
+      _summonerId => _summoner,
+      _ => null,
+    };
   }
 
   @override
