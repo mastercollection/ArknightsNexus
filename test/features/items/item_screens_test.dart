@@ -417,7 +417,7 @@ GoRouter _router(WidgetTester tester) {
 }
 
 Future<void> _openItems(WidgetTester tester) async {
-  await tester.tap(find.byKey(const Key('home-menu-items')));
+  await tester.tap(find.byKey(const Key('rail-items')));
   await tester.pumpAndSettle();
 }
 

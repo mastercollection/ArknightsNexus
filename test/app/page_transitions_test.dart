@@ -72,7 +72,8 @@ void main() {
     tester,
   ) async {
     await _pumpApp(tester);
-    await tester.tap(find.byKey(const Key('home-menu-operators')));
+    // The home search pushes the operators list.
+    await tester.tap(find.byKey(const Key('home-search-button')));
     await tester.pumpAndSettle();
     expect(find.byType(OperatorsScreen), findsOneWidget);
 
@@ -88,7 +89,7 @@ void main() {
     try {
       await _pumpApp(tester);
 
-      await tester.tap(find.byKey(const Key('home-menu-operators')));
+      await tester.tap(find.byKey(const Key('home-search-button')));
       await tester.pump();
       await tester.pump(nexusFadeDuration ~/ 2);
       // Mid-fade: the operators page is partly transparent over home.

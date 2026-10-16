@@ -13,8 +13,10 @@ import '../../ui/redesign/rd_widgets.dart';
 import '../plan/plan_totals.dart';
 import '../shared/number_format.dart';
 
-/// How many planned operators the home cards list before "+N more".
+/// How many planned operators the home card lists before "+N more": the
+/// phone card stacks them, the PC card sets them beside the farming notice.
 const _plannedPreviewCount = 3;
+const _plannedPreviewCountWide = 2;
 
 /// One operator of the plan as the home page lists it.
 class HomePlannedOperator {
@@ -94,8 +96,9 @@ final homePlanSummaryProvider =
   );
 });
 
-/// "육성 계획 요약" card. [compact] is the phone variant (two stats, the
-/// planned operators inside the same card).
+/// "육성 계획 요약" card with the planned operators. [compact] is the phone
+/// variant (two stats, everything stacked); PC shows three stats and the
+/// planned operators beside the farming notice.
 class HomePlanSummaryCard extends ConsumerWidget {
   const HomePlanSummaryCard({required this.compact, super.key});
 
@@ -113,11 +116,7 @@ class HomePlanSummaryCard extends ConsumerWidget {
             header: true,
             child: Text(
               i18n.t('rd.home.plan.title'),
-              style: TextStyle(
-                fontSize: compact ? 17 : 18,
-                fontWeight: FontWeight.w700,
-                color: RdColors.text,
-              ),
+              style: RdText.sectionTitle,
             ),
           ),
         ),
@@ -189,98 +188,111 @@ class HomePlanSummaryCard extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               for (var i = 0; i < stats.length; i++) ...[
-                if (i > 0) SizedBox(width: compact ? 10 : 12),
+                if (i > 0) SizedBox(width: compact ? 8 : 10),
                 Expanded(
                   child: _StatTile(stat: stats[i], compact: compact),
                 ),
               ],
             ],
           ),
-          if (!totals.valid)
-            RdNotice(
-              tone: RdNoticeTone.warn,
-              text: i18n.t('rd.home.plan.invalid'),
-            )
-          else if (farming.totalSanity > 0)
-            RdNotice(
-              tone: summary.lmdShortage > 0
-                  ? RdNoticeTone.warn
-                  : RdNoticeTone.info,
-              text: [
-                if (summary.lmdShortage > 0)
-                  i18n.t('rd.home.plan.lmdShortage', {
-                    'count': formatWholeNumber(summary.lmdShortage),
-                  }),
-                if (farming.lmdStage.runs > 0)
-                  i18n.t('rd.home.plan.stageRuns', {
-                    'stage': farming.lmdStage.code,
-                    'count': formatWholeNumber(farming.lmdStage.runs),
-                  }),
-                if (farming.expStage.runs > 0)
-                  i18n.t('rd.home.plan.stageRuns', {
-                    'stage': farming.expStage.code,
-                    'count': formatWholeNumber(farming.expStage.runs),
-                  }),
-                i18n.t('rd.home.plan.sanity', {
-                  'count': formatWholeNumber(farming.totalSanity),
-                }),
-              ].join(' · '),
-            ),
-          if (compact) HomePlannedOperatorList(summary: summary, compact: true),
+          ..._planBody(
+            i18n,
+            summary,
+            compact: compact,
+          ),
         ];
       },
     );
 
     return RdCard(
-      padding: EdgeInsets.all(compact ? 18 : 22),
+      padding: EdgeInsets.all(compact ? 16 : 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           header,
           for (final child in body) ...[
-            SizedBox(height: compact ? 14 : 18),
+            SizedBox(height: compact ? 10 : 12),
             child,
           ],
         ],
       ),
     );
   }
-}
 
-/// "계획 중인 오퍼레이터" card of the PC home; only shown when the plan has
-/// operators (the summary card carries the empty state).
-class HomePlannedOperatorsCard extends ConsumerWidget {
-  const HomePlannedOperatorsCard({required this.summary, super.key});
-
-  final HomePlanSummary summary;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final i18n = ref.watch(i18nProvider);
-    return RdCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Semantics(
-            header: true,
-            child: Text(
-              i18n.t('rd.home.plan.planned'),
-              style: RdText.sectionTitle,
-            ),
-          ),
-          const SizedBox(height: 14),
-          HomePlannedOperatorList(summary: summary, compact: false),
-          const SizedBox(height: 14),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: _HomeLink(
-              label: i18n.t('rd.home.plan.addMore'),
-              onTap: () => context.push('/plan'),
-            ),
-          ),
-        ],
-      ),
+  /// Farming notice and planned operators under the stats.
+  List<Widget> _planBody(
+    NexusI18n i18n,
+    HomePlanSummary summary, {
+    required bool compact,
+  }) {
+    final totals = summary.totals!;
+    final farming = summary.farming!;
+    final Widget? notice;
+    if (!totals.valid) {
+      notice = RdNotice(
+        tone: RdNoticeTone.warn,
+        text: i18n.t('rd.home.plan.invalid'),
+      );
+    } else if (farming.totalSanity > 0) {
+      notice = RdNotice(
+        tone: summary.lmdShortage > 0 ? RdNoticeTone.warn : RdNoticeTone.info,
+        text: [
+          if (summary.lmdShortage > 0)
+            i18n.t('rd.home.plan.lmdShortage', {
+              'count': formatWholeNumber(summary.lmdShortage),
+            }),
+          if (farming.lmdStage.runs > 0)
+            i18n.t('rd.home.plan.stageRuns', {
+              'stage': farming.lmdStage.code,
+              'count': formatWholeNumber(farming.lmdStage.runs),
+            }),
+          if (farming.expStage.runs > 0)
+            i18n.t('rd.home.plan.stageRuns', {
+              'stage': farming.expStage.code,
+              'count': formatWholeNumber(farming.expStage.runs),
+            }),
+          i18n.t('rd.home.plan.sanity', {
+            'count': formatWholeNumber(farming.totalSanity),
+          }),
+        ].join(' · '),
+      );
+    } else {
+      notice = null;
+    }
+    if (compact) {
+      return [
+        if (notice != null) notice,
+        HomePlannedOperatorList(summary: summary, compact: true),
+      ];
+    }
+    final planned = HomePlannedOperatorList(
+      summary: summary,
+      compact: true,
+      previewCount: _plannedPreviewCountWide,
     );
+    if (notice == null) {
+      return [planned];
+    }
+    return [
+      LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 560) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [notice!, const SizedBox(height: 12), planned],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: notice!),
+              const SizedBox(width: 12),
+              SizedBox(width: 260, child: planned),
+            ],
+          );
+        },
+      ),
+    ];
   }
 }
 
@@ -290,16 +302,20 @@ class HomePlannedOperatorList extends ConsumerWidget {
   const HomePlannedOperatorList({
     required this.summary,
     required this.compact,
+    this.previewCount = _plannedPreviewCount,
     super.key,
   });
 
   final HomePlanSummary summary;
   final bool compact;
 
+  /// Rows listed before "+N more".
+  final int previewCount;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final i18n = ref.watch(i18nProvider);
-    final shown = summary.operators.take(_plannedPreviewCount).toList();
+    final shown = summary.operators.take(previewCount).toList();
     final rest = summary.operators.length - shown.length;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -413,8 +429,8 @@ class _StatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: compact
-          ? const EdgeInsets.all(12)
-          : const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          ? const EdgeInsets.symmetric(horizontal: 12, vertical: 10)
+          : const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: RdColors.inner,
         borderRadius: BorderRadius.circular(RdRadii.inner),
@@ -426,18 +442,15 @@ class _StatTile extends StatelessWidget {
             stat.label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: compact ? 12 : 13,
-              color: RdColors.muted,
-            ),
+            style: const TextStyle(fontSize: 12, color: RdColors.text3),
           ),
-          SizedBox(height: compact ? 4 : 6),
+          SizedBox(height: compact ? 2 : 4),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: Text(
               stat.value,
-              style: RdText.mono(fontSize: compact ? 18 : 22),
+              style: RdText.mono(fontSize: compact ? 17 : 20),
             ),
           ),
         ],
@@ -470,8 +483,8 @@ class _HomeLink extends StatelessWidget {
               child: Text(
                 label,
                 style: const TextStyle(
-                  fontSize: 14,
-                  color: RdColors.link,
+                  fontSize: 13,
+                  color: RdColors.accentHover,
                 ),
               ),
             ),
