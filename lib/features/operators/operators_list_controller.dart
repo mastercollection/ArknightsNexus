@@ -9,6 +9,7 @@ import '../../domain/operator.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../services/operator_service.dart';
 import '../shared/operator_search.dart';
+import '../shared/region_operator_counts.dart';
 
 /// `useInfiniteSlice` options used by the Vue page.
 const operatorsInitialCount = 36;
@@ -118,7 +119,8 @@ class OperatorFilterOptions {
     required this.baTags,
     required this.rarities,
     required this.professions,
-    this.hasUnreleased = false,
+    this.unreleasedCount = 0,
+    this.unreleasedSources = const [],
   });
 
   factory OperatorFilterOptions.from(List<OperatorSummary> operators) {
@@ -138,7 +140,13 @@ class OperatorFilterOptions {
       professions:
           {for (final operator in operators) operator.profession}.toList()
             ..sort(),
-      hasUnreleased: operators.any((operator) => operator.isUnreleased),
+      unreleasedCount:
+          operators.where((operator) => operator.isUnreleased).length,
+      unreleasedSources: {
+        for (final operator in operators)
+          if (operator.unreleasedSource case final source?)
+            source.toUpperCase(),
+      }.toList(),
     );
   }
 
@@ -147,8 +155,13 @@ class OperatorFilterOptions {
   final List<int> rarities;
   final List<String> professions;
 
+  /// Unreleased operators in the list and their source regions (upper
+  /// case), for the toggle that hides them.
+  final int unreleasedCount;
+  final List<String> unreleasedSources;
+
   /// The list has unreleased operators, so the toggle hiding them is shown.
-  final bool hasUnreleased;
+  bool get hasUnreleased => unreleasedCount > 0;
 }
 
 /// State of the operators list (`src/pages/operators.vue`).
@@ -166,7 +179,13 @@ class OperatorsListController extends ChangeNotifier {
   final Ref _ref;
 
   List<OperatorSummary> _allOperators = const [];
+
+  /// Released operators matching the filters: the grid, newest first.
   List<OperatorSummary> operatorList = const [];
+
+  /// Unreleased operators matching the filters, shown in their own strip
+  /// above the grid; empty while [OperatorFilters.hideUnreleased] is on.
+  List<OperatorSummary> unreleasedList = const [];
   OperatorFilterOptions options = OperatorFilterOptions.from(const []);
   OperatorFilters _filters = const OperatorFilters();
   bool isLoading = true;
@@ -177,6 +196,11 @@ class OperatorsListController extends ChangeNotifier {
   /// another route (PC master-detail selection).
   double scrollOffset = 0;
 
+  /// The user's choice for the unreleased strip; `null` follows
+  /// [isFiltering] (open while a search or filter is active, so matches
+  /// are visible). Cleared whenever the filters change.
+  bool? _unreleasedExpanded;
+
   int _loadToken = 0;
   bool _disposed = false;
   bool _started = false;
@@ -186,6 +210,47 @@ class OperatorsListController extends ChangeNotifier {
   int get operatorCount => _allOperators.length;
 
   bool get hasMore => visibleCount < operatorList.length;
+
+  /// Released and unreleased operators matching the filters, for the
+  /// "415명 · 미실장 17명" count next to the search.
+  RegionOperatorCounts get counts => RegionOperatorCounts(
+        native: operatorList.length,
+        unreleased: unreleasedList.length,
+      );
+
+  /// A search text or one of the four filter dimensions narrows the list.
+  bool get isFiltering {
+    final filters = _filters;
+    return filters.query.trim().isNotEmpty ||
+        filters.affiliation != null ||
+        filters.rarity != null ||
+        filters.profession != null ||
+        filters.baTags.isNotEmpty;
+  }
+
+  /// Whether the unreleased strip shows its operators (collapsed by
+  /// default, open while filtering).
+  bool get unreleasedExpanded => _unreleasedExpanded ?? isFiltering;
+
+  /// Open groups of the PC filter sidebar: rarity and profession start
+  /// open, the long affiliation and BA tag lists start collapsed. Kept here
+  /// so selecting an operator (another route) does not fold them again.
+  final Set<OperatorFilterDimension> openFilterGroups = {
+    OperatorFilterDimension.rarity,
+    OperatorFilterDimension.profession,
+  };
+
+  void toggleFilterGroup(OperatorFilterDimension dimension) {
+    if (!openFilterGroups.remove(dimension)) {
+      openFilterGroups.add(dimension);
+    }
+    _notify();
+  }
+
+  void toggleUnreleasedExpanded() {
+    _unreleasedExpanded = !unreleasedExpanded;
+    _notify();
+  }
 
   /// Starts the first load once; later calls are no-ops.
   ///
@@ -224,6 +289,7 @@ class OperatorsListController extends ChangeNotifier {
     if (reset) {
       _allOperators = const [];
       operatorList = const [];
+      unreleasedList = const [];
     }
     if (changed) {
       _notify();
@@ -256,6 +322,7 @@ class OperatorsListController extends ChangeNotifier {
       }
       errorMessage = '$error';
       operatorList = const [];
+      unreleasedList = const [];
     } finally {
       if (!_disposed && token == _loadToken) {
         isLoading = false;
@@ -428,7 +495,7 @@ class OperatorsListController extends ChangeNotifier {
     final filters = _filters;
     final i18n = _ref.read(i18nProvider);
     final needle = operatorSearchNeedle(filters.query);
-    operatorList = _allOperators.where((operator) {
+    final matching = _allOperators.where((operator) {
       final matchesQuery = operatorMatchesQuery(operator, needle, i18n);
       final affiliation = filters.affiliation;
       final matchesAffiliation = affiliation == null ||
@@ -449,7 +516,16 @@ class OperatorsListController extends ChangeNotifier {
           matchesRarity &&
           matchesProfession &&
           matchesBaTags;
-    }).toList();
+    });
+    operatorList = [
+      for (final operator in matching)
+        if (!operator.isUnreleased) operator,
+    ];
+    unreleasedList = [
+      for (final operator in matching)
+        if (operator.isUnreleased) operator,
+    ];
+    _unreleasedExpanded = null;
     // `useInfiniteSlice` resets whenever the source list changes.
     visibleCount = math.min(operatorsInitialCount, operatorList.length);
     scrollOffset = 0;

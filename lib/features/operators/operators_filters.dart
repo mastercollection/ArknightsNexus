@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../i18n/nexus_i18n.dart';
 import '../../ui/redesign/rd_widgets.dart';
+import '../shared/number_format.dart';
 import 'operators_list_controller.dart';
 
 /// Rounded-rect toggle button of the filter lists (`aria-pressed`).
@@ -254,8 +255,9 @@ class _MiniSearch extends StatelessWidget {
 // PC sidebar
 // ---------------------------------------------------------------------------
 
-/// PC filter sidebar: page title, rarity / profession chips, searchable
-/// affiliation and BA tag chips, and the reset button.
+/// PC filter sidebar: page title, one collapsible group per dimension
+/// (rarity and profession open; the searchable affiliation and BA tag lists
+/// collapsed with their option counts), the unreleased switch and reset.
 class OperatorsFilterSidebar extends ConsumerStatefulWidget {
   const OperatorsFilterSidebar({super.key});
 
@@ -276,48 +278,23 @@ class _OperatorsFilterSidebarState
     super.dispose();
   }
 
-  Widget _group(String title, Widget body, {String? note}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text.rich(
-          TextSpan(
-            text: title,
-            children: [
-              if (note != null)
-                TextSpan(
-                  text: ' · $note',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w400,
-                    color: RdColors.muted,
-                  ),
-                ),
-            ],
-          ),
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: RdColors.secondary,
-          ),
-        ),
-        const SizedBox(height: 10),
-        body,
-      ],
-    );
-  }
-
-  Widget _wrap(List<Widget> children, {double spacing = 8}) {
-    return Wrap(spacing: spacing, runSpacing: spacing, children: children);
+  Widget _wrap(List<Widget> children) {
+    return Wrap(spacing: 6, runSpacing: 6, children: children);
   }
 
   @override
   Widget build(BuildContext context) {
     final i18n = ref.watch(i18nProvider);
-    // Only the filters and the option lists show here; paging the list
-    // (`loadMore`) or loading state changes must not rebuild every chip.
+    // Only the filters, the option lists and the open groups show here;
+    // paging the list (`loadMore`) or loading state changes must not
+    // rebuild every chip.
     ref.watch(
       operatorsListControllerProvider.select(
-        (list) => (list.filters, list.options),
+        (list) => (
+          list.filters,
+          list.options,
+          list.openFilterGroups.fold(0, (mask, d) => mask | (1 << d.index)),
+        ),
       ),
     );
     final list = ref.read(operatorsListControllerProvider);
@@ -339,157 +316,342 @@ class _OperatorsFilterSidebarState
               ),
               label: option.label,
               selected: option.selected,
+              height: 30,
               onTap: () => list.applyFilterOption(option),
             ),
       ];
     }
 
+    Widget searchable(
+      OperatorFilterDimension dimension,
+      TextEditingController controller,
+      double maxHeight,
+    ) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _MiniSearch(
+            controller: controller,
+            height: 36,
+            hint: i18n.t('rd.operators.filter.search', {
+              'title': dimension.title(i18n),
+            }),
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 8),
+          _LazyOptionRuns(
+            maxHeight: maxHeight,
+            buttons: optionButtons(dimension, query: controller.text),
+          ),
+        ],
+      );
+    }
+
+    Widget body(OperatorFilterDimension dimension) => switch (dimension) {
+          OperatorFilterDimension.rarity =>
+            _wrap(optionButtons(OperatorFilterDimension.rarity)),
+          OperatorFilterDimension.profession => _wrap([
+              _OptionButton(
+                key: const ValueKey('operators-filter-profession-all'),
+                label: i18n.t('rd.operators.filter.all'),
+                selected: filters.profession == null,
+                height: 30,
+                onTap: () => list.filters =
+                    list.filters.copyWith(profession: () => null),
+              ),
+              ...optionButtons(OperatorFilterDimension.profession),
+            ]),
+          OperatorFilterDimension.affiliation =>
+            searchable(dimension, _affiliationQuery, 176),
+          OperatorFilterDimension.baTags =>
+            searchable(dimension, _tagQuery, 210),
+        };
+
     return Container(
-      decoration: const BoxDecoration(
-        border: Border(right: BorderSide(color: RdColors.line)),
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(18, 28, 18, 28),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Semantics(
+      color: RdColors.surface1,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 12),
+            child: Semantics(
               header: true,
               child: Text(
                 i18n.t('operatorsList.topBar.title'),
                 style: RdText.pageTitle,
               ),
             ),
-            const SizedBox(height: 22),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: Text(
-                    i18n.t('operatorsList.filters.title'),
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: RdColors.text,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 22),
-            _group(
-              i18n.t('operatorsList.filters.rarity'),
-              _wrap(optionButtons(OperatorFilterDimension.rarity)),
-            ),
-            const SizedBox(height: 22),
-            _group(
-              i18n.t('operatorsList.filters.profession'),
-              _wrap([
-                _OptionButton(
-                  key: const ValueKey('operators-filter-profession-all'),
-                  label: i18n.t('rd.operators.filter.all'),
-                  selected: filters.profession == null,
-                  onTap: () => list.filters =
-                      list.filters.copyWith(profession: () => null),
-                ),
-                ...optionButtons(OperatorFilterDimension.profession),
-              ]),
-            ),
-            const SizedBox(height: 22),
-            _group(
-              i18n.t('operatorsList.filters.affiliation'),
-              note: filters.affiliation ?? i18n.t('rd.operators.filter.all'),
-              Column(
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _MiniSearch(
-                    controller: _affiliationQuery,
-                    hint: i18n.t('rd.operators.filter.search', {
-                      'title': i18n.t('operatorsList.filters.affiliation'),
-                    }),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                  const SizedBox(height: 10),
-                  _LazyOptionRuns(
-                    maxHeight: 176,
-                    buttons: optionButtons(
-                      OperatorFilterDimension.affiliation,
-                      query: _affiliationQuery.text,
+                  for (final dimension in OperatorFilterDimension.values)
+                    _FilterGroup(
+                      key: ValueKey(
+                        'operators-filter-group-${dimension.keyName}',
+                      ),
+                      title: dimension.title(i18n),
+                      open: list.openFilterGroups.contains(dimension),
+                      // The long lists show how many options they hold, or
+                      // the picked value(s) while folded.
+                      badge: list.shownFilterValue(dimension, i18n) ??
+                          (dimension.searchable
+                              ? formatWholeNumber(
+                                  list.filterOptions(dimension, i18n).length,
+                                )
+                              : null),
+                      badgeSelected:
+                          list.shownFilterValue(dimension, i18n) != null,
+                      note: dimension.multi
+                          ? i18n.t('rd.operators.filter.allOf')
+                          : null,
+                      onToggle: () => list.toggleFilterGroup(dimension),
+                      child: body(dimension),
                     ),
-                  ),
+                  if (list.options.hasUnreleased)
+                    _UnreleasedSwitch(
+                      label: i18n.t('rd.operators.filter.showUnreleased'),
+                      note: i18n.t('rd.operators.filter.unreleasedNote', {
+                        'source': list.options.unreleasedSources.join(' · '),
+                        'count':
+                            formatWholeNumber(list.options.unreleasedCount),
+                      }),
+                      value: !filters.hideUnreleased,
+                      onChanged: list.toggleHideUnreleased,
+                    ),
                 ],
               ),
             ),
-            const SizedBox(height: 22),
-            _group(
-              i18n.t('operatorsList.filters.baTags'),
-              note: i18n.t('rd.operators.filter.allOf'),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _MiniSearch(
-                    controller: _tagQuery,
-                    hint: i18n.t('rd.operators.filter.search', {
-                      'title': i18n.t('operatorsList.filters.baTags'),
-                    }),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                  const SizedBox(height: 10),
-                  _LazyOptionRuns(
-                    maxHeight: 210,
-                    buttons: optionButtons(
-                      OperatorFilterDimension.baTags,
-                      query: _tagQuery.text,
-                    ),
-                  ),
-                ],
-              ),
+          ),
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: RdColors.hairline)),
             ),
-            if (list.options.hasUnreleased) ...[
-              const SizedBox(height: 22),
-              _group(
-                i18n.t('rd.operators.filter.unreleased'),
-                _wrap([
-                  _OptionButton(
-                    key: const ValueKey('operators-filter-hide-unreleased'),
-                    label: i18n.t('rd.operators.filter.hideUnreleased'),
-                    selected: filters.hideUnreleased,
-                    onTap: list.toggleHideUnreleased,
-                  ),
-                ]),
+            child: Material(
+              color: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(RdRadii.control),
+                side: const BorderSide(color: RdColors.border),
               ),
-            ],
-            const SizedBox(height: 22),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Material(
-                color: RdColors.accentSoft,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(RdRadii.control),
-                  side: const BorderSide(color: RdColors.accentLine),
-                ),
-                child: InkWell(
-                  key: const Key('operators-filter-reset'),
-                  borderRadius: BorderRadius.circular(RdRadii.control),
-                  onTap: list.clearFilters,
-                  child: Container(
-                    height: 42,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Center(
-                      widthFactor: 1,
-                      child: Text(
-                        i18n.t('operatorsList.filters.reset'),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: RdColors.linkText,
-                        ),
+              child: InkWell(
+                key: const Key('operators-filter-reset'),
+                borderRadius: BorderRadius.circular(RdRadii.control),
+                onTap: list.clearFilters,
+                child: SizedBox(
+                  height: 38,
+                  child: Center(
+                    child: Text(
+                      i18n.t('operatorsList.filters.reset'),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: RdColors.text2,
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One collapsible group of the sidebar: a 40px header (title, badge,
+/// chevron) over its options.
+class _FilterGroup extends StatelessWidget {
+  const _FilterGroup({
+    required this.title,
+    required this.open,
+    required this.onToggle,
+    required this.child,
+    this.badge,
+    this.badgeSelected = false,
+    this.note,
+    super.key,
+  });
+
+  final String title;
+  final bool open;
+  final VoidCallback onToggle;
+  final Widget child;
+
+  /// Option count or the selected value, next to the title.
+  final String? badge;
+  final bool badgeSelected;
+
+  /// Helper under the open header (BA tags: "모두 포함").
+  final String? note;
+
+  @override
+  Widget build(BuildContext context) {
+    final badge = this.badge;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: RdColors.hairline)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Semantics(
+            button: true,
+            expanded: open,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(RdRadii.control),
+              onTap: onToggle,
+              child: SizedBox(
+                height: 40,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Row(
+                    children: [
+                      Text(title, style: RdText.sectionTitle),
+                      const SizedBox(width: 8),
+                      const Spacer(),
+                      if (badge != null)
+                        Flexible(
+                          flex: 4,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: badgeSelected
+                                  ? RdColors.accentSoft
+                                  : RdColors.surface3,
+                              borderRadius: BorderRadius.circular(RdRadii.chip),
+                            ),
+                            child: Text(
+                              badge,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: badgeSelected
+                                  ? const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: RdColors.accentText,
+                                    )
+                                  : RdText.mono(
+                                      fontSize: 12,
+                                      color: RdColors.text2,
+                                    ),
+                            ),
+                          ),
+                        ),
+                      const SizedBox(width: 6),
+                      AnimatedRotation(
+                        turns: open ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 150),
+                        child: const Icon(
+                          Icons.keyboard_arrow_down,
+                          size: 18,
+                          color: RdColors.text3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (open)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (note != null) ...[
+                    Text(note!, style: RdText.small),
+                    const SizedBox(height: 8),
+                  ],
+                  child,
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "미실장 표시" switch: on lists the unreleased strip; off is the
+/// hide-unreleased filter.
+class _UnreleasedSwitch extends StatelessWidget {
+  const _UnreleasedSwitch({
+    required this.label,
+    required this.note,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final String note;
+  final bool value;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      toggled: value,
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      child: InkWell(
+        key: const ValueKey('operators-filter-hide-unreleased'),
+        borderRadius: BorderRadius.circular(RdRadii.control),
+        onTap: onChanged,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 2,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: RdColors.text,
+                      ),
+                    ),
+                    Text(note, style: RdText.small),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: 36,
+                height: 20,
+                padding: const EdgeInsets.all(2),
+                alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+                decoration: BoxDecoration(
+                  color: value ? RdColors.accent : RdColors.surface3,
+                  borderRadius: BorderRadius.circular(RdRadii.pill),
+                  border: value ? null : Border.all(color: RdColors.border),
+                ),
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: value ? RdColors.onAccent : RdColors.text3,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -515,8 +677,8 @@ class OperatorsFilterChipRow extends ConsumerWidget {
     final list = ref.watch(operatorsListControllerProvider);
     final filters = list.filters;
     final query = filters.query.trim();
-    // Canvas chips are 36px; phones get 44px touch targets.
-    final chipHeight = context.rdLayout == RdLayout.compact ? 44.0 : 36.0;
+    // Board chips are 30-32px; phones keep 40px touch targets.
+    final chipHeight = context.rdLayout == RdLayout.compact ? 40.0 : 32.0;
 
     Widget pill({
       Key? key,
@@ -554,29 +716,16 @@ class OperatorsFilterChipRow extends ConsumerWidget {
       padding: const EdgeInsets.only(bottom: 2),
       child: Row(
         children: [
-          if (!filters.hasDimension && query.isEmpty)
-            Container(
-              height: chipHeight,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: RdColors.white5,
-                borderRadius: BorderRadius.circular(RdRadii.chip),
-              ),
-              child: Text(
-                i18n.t('operatorsList.states.noFilters'),
-                style: const TextStyle(fontSize: 13, color: RdColors.muted),
-              ),
-            ),
-          if (filters.hasDimension)
+          if (filters.hasDimension) ...[
             pill(
               key: const Key('operators-filter-chip-reset'),
               label: i18n.t('rd.operators.filter.resetShort'),
               on: false,
               onTap: list.clearFilters,
             ),
+            const SizedBox(width: 6),
+          ],
           if (query.isNotEmpty) ...[
-            const SizedBox(width: 8),
             pill(
               label: i18n.t('rd.operators.chip.query', {'value': query}),
               on: true,
@@ -585,9 +734,11 @@ class OperatorsFilterChipRow extends ConsumerWidget {
                   i18n.t('rd.operators.chip.clearQuery', {'value': query}),
               onTap: onClearQuery,
             ),
+            const SizedBox(width: 6),
           ],
-          for (final dimension in OperatorFilterDimension.values) ...[
-            const SizedBox(width: 8),
+          for (final (i, dimension)
+              in OperatorFilterDimension.values.indexed) ...[
+            if (i > 0) const SizedBox(width: 6),
             Builder(
               builder: (context) {
                 final title = dimension.title(i18n);
@@ -611,7 +762,7 @@ class OperatorsFilterChipRow extends ConsumerWidget {
             ),
           ],
           if (list.options.hasUnreleased) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             pill(
               key: const Key('operators-filter-hide-unreleased'),
               label: i18n.t('rd.operators.filter.hideUnreleased'),

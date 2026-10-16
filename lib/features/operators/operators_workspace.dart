@@ -7,11 +7,23 @@ import 'package:go_router/go_router.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../ui/redesign/rd_widgets.dart';
 import 'operator_detail_view.dart';
+import '../shared/region_operator_counts.dart';
 import 'operators_filters.dart';
 import 'operators_list_controller.dart';
 import 'operators_list_view.dart';
 
-/// PC master-detail (expanded width): filter sidebar | list | detail pane.
+/// Window width from which the operators section is a master-detail
+/// workspace (list next to the detail pane) instead of pushing the detail
+/// page. Lower than [RdBreakpoints.expanded]: below that the filter sidebar
+/// folds into a filter button, so the list and the pane fit side by side.
+const operatorsMasterDetailWidth = 1000.0;
+
+/// Whether `/operators` and `/operators/:id` render [OperatorsWorkspace].
+bool operatorsMasterDetail(BuildContext context) =>
+    MediaQuery.sizeOf(context).width >= operatorsMasterDetailWidth;
+
+/// PC master-detail: filter sidebar (expanded width only) | list | detail
+/// pane.
 ///
 /// Both `/operators` and `/operators/:id` render this widget; the selection
 /// is the route, so picking an operator uses `context.go` (the stack does
@@ -56,7 +68,7 @@ class _OperatorsWorkspaceState extends ConsumerState<OperatorsWorkspace> {
           list.filters,
           list.isLoading,
           list.errorMessage,
-          list.operatorList.length,
+          list.counts,
         ),
       ),
     );
@@ -68,52 +80,112 @@ class _OperatorsWorkspaceState extends ConsumerState<OperatorsWorkspace> {
         selection: TextSelection.collapsed(offset: list.filters.query.length),
       );
     }
-    final chips = list.activeChips(i18n);
+    // Expanded windows get the filter sidebar; narrower ones carry the
+    // title, a filter button and the phone chip row over the list instead.
+    final withSidebar = context.rdLayout == RdLayout.expanded;
     final count = list.isLoading || list.errorMessage.isNotEmpty
         ? ''
-        : i18n.t('rd.operators.count', {'count': list.operatorList.length});
+        : formatOperatorCounts(i18n, list.counts);
+    final search = RdSearchField(
+      controller: _search,
+      height: withSidebar ? 44 : 42,
+      hintText: i18n.t('operatorsList.search.placeholder'),
+      onChanged: list.setQuery,
+      trailing: count.isEmpty
+          ? null
+          : Text(
+              count,
+              key: const Key('operators-count'),
+              style: const TextStyle(fontSize: 12, color: RdColors.text2),
+            ),
+    );
+
+    final Widget top;
+    if (withSidebar) {
+      final chips = list.activeChips(i18n);
+      top = Padding(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 10,
+          children: [
+            search,
+            Semantics(
+              container: true,
+              child: chips.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Text(
+                        i18n.t('operatorsList.states.noFilters'),
+                        style: RdText.small,
+                      ),
+                    )
+                  : Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [for (final chip in chips) _ActiveChip(chip)],
+                    ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      top = Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 10,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      i18n.t('operatorsList.topBar.title'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: RdText.pageTitle,
+                    ),
+                  ),
+                ),
+                RdIconButton(
+                  key: const Key('operators-filter-button'),
+                  icon: Icons.filter_alt_outlined,
+                  tooltip: i18n.t('operatorsList.filters.title'),
+                  size: 40,
+                  active: list.filters.hasDimension,
+                  onPressed: () => showOperatorFiltersSheet(context),
+                ),
+              ],
+            ),
+            search,
+            OperatorsFilterChipRow(
+              onClearQuery: () {
+                _search.clear();
+                list.setQuery('');
+              },
+            ),
+          ],
+        ),
+      );
+    }
 
     final main = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: 14,
-            children: [
-              RdSearchField(
-                controller: _search,
-                height: 48,
-                hintText: i18n.t('operatorsList.search.placeholder'),
-                onChanged: list.setQuery,
-                trailing:
-                    count.isEmpty ? null : Text(count, style: RdText.muted),
-              ),
-              Semantics(
-                container: true,
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final chip in chips) _ActiveChip(chip),
-                    if (chips.isEmpty)
-                      _ActiveChip(
-                        i18n.t('operatorsList.states.noFilters'),
-                        muted: true,
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
+        top,
+        const SizedBox(height: 12),
         Expanded(
           child: OperatorsGridView(
             compact: false,
             selectedId: widget.selectedId,
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+            padding: EdgeInsets.fromLTRB(
+              withSidebar ? 20 : 16,
+              2,
+              withSidebar ? 20 : 16,
+              24,
+            ),
             onSelect: (operator) => context.go('/operators/${operator.id}'),
           ),
         ),
@@ -128,7 +200,7 @@ class _OperatorsWorkspaceState extends ConsumerState<OperatorsWorkspace> {
               child: Text(
                 i18n.t('rd.operators.detail.none'),
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 14, color: RdColors.muted),
+                style: const TextStyle(fontSize: 14, color: RdColors.text3),
               ),
             ),
           )
@@ -142,16 +214,29 @@ class _OperatorsWorkspaceState extends ConsumerState<OperatorsWorkspace> {
       color: RdColors.bg,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          const sidebar = 240.0;
+          final sidebar = withSidebar ? 240.0 : 0.0;
           final rest = constraints.maxWidth - sidebar;
-          final bounds = _PaneBounds.of(rest);
+          final bounds =
+              withSidebar ? _PaneBounds.wide(rest) : _PaneBounds.narrow(rest);
           final paneWidth =
               (ref.watch(operatorDetailPaneWidthProvider) ?? bounds.initial)
                   .clamp(bounds.min, bounds.max);
           return Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(width: sidebar, child: OperatorsFilterSidebar()),
+              if (withSidebar)
+                SizedBox(
+                  width: sidebar,
+                  child: const DecoratedBox(
+                    position: DecorationPosition.foreground,
+                    decoration: BoxDecoration(
+                      border: Border(
+                        right: BorderSide(color: RdColors.border),
+                      ),
+                    ),
+                    child: OperatorsFilterSidebar(),
+                  ),
+                ),
               Expanded(child: main),
               _PaneResizeHandle(
                 label: i18n.t('rd.operators.detail.resize'),
@@ -163,7 +248,7 @@ class _OperatorsWorkspaceState extends ConsumerState<OperatorsWorkspace> {
               ),
               Container(
                 width: paneWidth,
-                color: RdColors.rail,
+                color: RdColors.surface1,
                 child: pane,
               ),
             ],
@@ -179,13 +264,16 @@ class _OperatorsWorkspaceState extends ConsumerState<OperatorsWorkspace> {
 /// survives leaving and reopening the operators section.
 final operatorDetailPaneWidthProvider = StateProvider<double?>((ref) => null);
 
-/// Limits of the detail pane for the width left next to the filter sidebar:
-/// the list keeps at least [_minList], the pane at least [_minPane].
+/// Limits of the detail pane for the width left next to the filter sidebar
+/// (or the rail): the list keeps a minimum width, the pane at least
+/// [_minPane].
 class _PaneBounds {
   const _PaneBounds(this.min, this.max, this.initial);
 
-  factory _PaneBounds.of(double available) {
-    final max = (available - _minList).clamp(_minPane, double.infinity);
+  /// With the sidebar: the pane starts at half the room, up to 720px; the
+  /// list keeps 320px.
+  factory _PaneBounds.wide(double available) {
+    final max = _max(available, 320);
     return _PaneBounds(
       _minPane,
       max,
@@ -193,8 +281,22 @@ class _PaneBounds {
     );
   }
 
+  /// Without the sidebar (narrower windows): the list starts at 404px and
+  /// keeps 360px.
+  factory _PaneBounds.narrow(double available) {
+    // The 9px resize handle sits between the list and the pane.
+    final max = _max(available, 360 + 9);
+    return _PaneBounds(
+      _minPane,
+      max,
+      (available - 404 - 9).clamp(_minPane, max),
+    );
+  }
+
+  static double _max(double available, double minList) =>
+      (available - minList).clamp(_minPane, double.infinity);
+
   static const _minPane = 400.0;
-  static const _minList = 320.0;
 
   final double min;
   final double max;
@@ -295,25 +397,22 @@ class _ShrinkIntent extends Intent {
 }
 
 class _ActiveChip extends StatelessWidget {
-  const _ActiveChip(this.label, {this.muted = false});
+  const _ActiveChip(this.label);
 
   final String label;
-  final bool muted;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: muted ? RdColors.white5 : RdColors.line2,
+        color: RdColors.surface2,
         borderRadius: BorderRadius.circular(RdRadii.chip),
+        border: Border.all(color: RdColors.border),
       ),
       child: Text(
         label,
-        style: TextStyle(
-          fontSize: 13,
-          color: muted ? RdColors.muted : RdColors.body,
-        ),
+        style: const TextStyle(fontSize: 12, color: RdColors.text2),
       ),
     );
   }
