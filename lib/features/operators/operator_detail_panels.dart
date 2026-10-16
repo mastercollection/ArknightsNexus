@@ -520,6 +520,7 @@ class OperatorSkillsPanel extends StatelessWidget {
     required this.onLevelChanged,
     required this.onTermTap,
     required this.compact,
+    this.unlockBadges = false,
     super.key,
   });
 
@@ -532,6 +533,11 @@ class OperatorSkillsPanel extends StatelessWidget {
   final ValueChanged<int> onLevelChanged;
   final TermTapCallback onTermTap;
   final bool compact;
+
+  /// Marks each skill button with the elite that unlocks the skill, for
+  /// skills told apart by that alone (a summon's skills per elite phase,
+  /// often with one name and icon).
+  final bool unlockBadges;
 
   String _masteryLabel(int rank) =>
       i18n.t('rd.operators.detail.mastery', {'value': rank});
@@ -553,6 +559,7 @@ class OperatorSkillsPanel extends StatelessWidget {
                 _SkillButton(
                   skill: entry,
                   icon: skillIcons[entry.id],
+                  unlockElite: unlockBadges ? entry.unlockElite : null,
                   selected: entry.id == skill?.id,
                   onTap: () => onSkillSelected(entry.id),
                 ),
@@ -655,36 +662,38 @@ class OperatorSkillsPanel extends StatelessWidget {
           ),
         ],
       ),
-      RdInset.section(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: 10,
-          children: [
-            RdHeading(
-              i18n.t('operatorDetail.labels.displayLevel'),
-              color: RdColors.heading,
-            ),
-            OpRangeControl(
-              key: const ValueKey('skill-level'),
-              value: selectedLevel,
-              min: 1,
-              max: maxLevel,
-              onChanged: onLevelChanged,
-              buttonSize: compact ? 44 : 40,
-              semanticLabel: i18n.t('rd.operators.detail.skillLevel'),
-              decreaseTooltip: i18n.t('rd.operators.detail.skillLevelDown'),
-              increaseTooltip: i18n.t('rd.operators.detail.skillLevelUp'),
-              readout: rdMasteryAsset(shownLevel) != null
-                  ? RdMasteryIcon(
-                      shownLevel,
-                      size: 26,
-                      semanticLabel: _masteryLabel(shownLevel - 7),
-                    )
-                  : Text('Lv.$shownLevel', style: RdText.mono()),
-            ),
-          ],
+      // A skill with one level (summon skills often) has nothing to pick.
+      if (maxLevel > 1)
+        RdInset.section(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: 10,
+            children: [
+              RdHeading(
+                i18n.t('operatorDetail.labels.displayLevel'),
+                color: RdColors.heading,
+              ),
+              OpRangeControl(
+                key: const ValueKey('skill-level'),
+                value: selectedLevel,
+                min: 1,
+                max: maxLevel,
+                onChanged: onLevelChanged,
+                buttonSize: compact ? 44 : 40,
+                semanticLabel: i18n.t('rd.operators.detail.skillLevel'),
+                decreaseTooltip: i18n.t('rd.operators.detail.skillLevelDown'),
+                increaseTooltip: i18n.t('rd.operators.detail.skillLevelUp'),
+                readout: rdMasteryAsset(shownLevel) != null
+                    ? RdMasteryIcon(
+                        shownLevel,
+                        size: 26,
+                        semanticLabel: _masteryLabel(shownLevel - 7),
+                      )
+                    : Text('Lv.$shownLevel', style: RdText.mono()),
+              ),
+            ],
+          ),
         ),
-      ),
       RdInset.section(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -739,12 +748,16 @@ class _SkillButton extends StatelessWidget {
     required this.icon,
     required this.selected,
     required this.onTap,
+    this.unlockElite,
   });
 
   final OperatorSkill skill;
   final ImageProvider? icon;
   final bool selected;
   final VoidCallback onTap;
+
+  /// Elite icon in the corner; see [OperatorSkillsPanel.unlockBadges].
+  final int? unlockElite;
 
   @override
   Widget build(BuildContext context) {
@@ -760,27 +773,40 @@ class _SkillButton extends StatelessWidget {
         padding: const EdgeInsets.all(6),
         semanticLabel: skill.name,
         onTap: onTap,
-        child: icon != null
-            ? Image(
-                image: icon!,
-                width: 52,
-                height: 52,
-                fit: BoxFit.contain,
-                semanticLabel: skill.name,
-              )
-            : Text(
-                skill.name,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 11,
-                  height: 1.25,
-                  fontWeight: FontWeight.w700,
-                  color: RdColors.text,
-                ),
+        child: unlockElite == null
+            ? _face(iconSize: 52, maxLines: 3)
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                spacing: 2,
+                children: [
+                  Flexible(child: _face(iconSize: 40, maxLines: 2)),
+                  RdEliteIcon(unlockElite!, size: 16, excludeSemantics: true),
+                ],
               ),
       ),
     );
+  }
+
+  Widget _face({required double iconSize, required int maxLines}) {
+    return icon != null
+        ? Image(
+            image: icon!,
+            width: iconSize,
+            height: iconSize,
+            fit: BoxFit.contain,
+            semanticLabel: skill.name,
+          )
+        : Text(
+            skill.name,
+            maxLines: maxLines,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 11,
+              height: 1.25,
+              fontWeight: FontWeight.w700,
+              color: RdColors.text,
+            ),
+          );
   }
 }

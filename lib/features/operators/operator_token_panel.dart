@@ -157,6 +157,10 @@ class OperatorTokensPanel extends StatelessWidget {
                   selectedLevel: skillLevel,
                   skillIcons: skillIcons,
                   compact: compact,
+                  unlockBadges: {
+                        for (final skill in detail.skills) skill.unlockElite,
+                      }.length >
+                      1,
                   onSkillSelected: onSkillSelected,
                   onLevelChanged: onSkillLevelChanged,
                   onTermTap: onTermTap,
@@ -238,39 +242,43 @@ class _TokenChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final name = token.detail.name;
-    return DetailToggle(
-      key: ValueKey('token-chip-${token.id}'),
-      selected: selected,
-      radius: RdRadii.control,
-      height: 44,
-      padding: const EdgeInsets.fromLTRB(6, 6, 12, 6),
-      semanticLabel: [
-        name,
-        for (final (slot, skill) in slots) '${slotLabel(slot)} ${skill.name}',
-      ].join(', '),
-      onTap: onTap,
-      child: ExcludeSemantics(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          spacing: 8,
-          children: [
-            RdPortrait(charId: token.id, name: name, size: 32, radius: 6),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 160),
-              child: Text(
-                name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected ? RdColors.text : RdColors.text2,
+    // The toggle centres its child, which fills the width it is given; the
+    // chip is as wide as its content instead.
+    return IntrinsicWidth(
+      child: DetailToggle(
+        key: ValueKey('token-chip-${token.id}'),
+        selected: selected,
+        radius: RdRadii.control,
+        height: 44,
+        padding: const EdgeInsets.fromLTRB(6, 6, 12, 6),
+        semanticLabel: [
+          name,
+          for (final (slot, skill) in slots) '${slotLabel(slot)} ${skill.name}',
+        ].join(', '),
+        onTap: onTap,
+        child: ExcludeSemantics(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: 8,
+            children: [
+              RdPortrait(charId: token.id, name: name, size: 32, radius: 6),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 160),
+                child: Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    color: selected ? RdColors.text : RdColors.text2,
+                  ),
                 ),
               ),
-            ),
-            for (final (slot, skill) in slots)
-              _SlotChip(label: slotLabel(slot), skillName: skill.name),
-          ],
+              for (final (slot, skill) in slots)
+                _SlotChip(label: slotLabel(slot), skillName: skill.name),
+            ],
+          ),
         ),
       ),
     );

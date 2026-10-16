@@ -334,6 +334,8 @@ void main() {
     expect(find.text('Second skill', findRichText: true), findsOneWidget);
     expect(find.text('Lv.1'), findsWidgets);
     expect(find.text(_i18n.skillRecovery('attack_recovery')), findsOneWidget);
+    // One level: no display level to pick.
+    expect(find.byKey(const ValueKey('skill-level')), findsNothing);
   });
 
   testWidgets('shows not-found state for unknown operators', (tester) async {
