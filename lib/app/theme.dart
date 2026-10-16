@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../ui/nexus_tokens.dart';
+import '../ui/redesign/rd_tokens.dart';
 
 class NexusTheme {
   const NexusTheme._();
@@ -28,13 +29,19 @@ class NexusTheme {
 
   static ThemeData dark() {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: NexusColors.accent,
+      seedColor: RdColors.accent,
       brightness: Brightness.dark,
-      surface: NexusColors.surface,
+      surface: RdColors.surface2,
     ).copyWith(
-      primary: ElementDark.primary,
-      surface: NexusColors.surface,
-      onSurface: NexusColors.text,
+      primary: RdColors.accent,
+      onPrimary: RdColors.onAccent,
+      secondary: RdColors.accentHover,
+      surface: RdColors.surface2,
+      onSurface: RdColors.text,
+      onSurfaceVariant: RdColors.text2,
+      outline: RdColors.border,
+      outlineVariant: RdColors.hairline,
+      error: RdColors.danger,
     );
 
     return ThemeData(
@@ -51,57 +58,77 @@ class NexusTheme {
       colorScheme: colorScheme,
       fontFamily: NexusText.fontFamily,
       fontFamilyFallback: NexusText.fontFallback,
-      scaffoldBackgroundColor: NexusColors.app,
-      canvasColor: NexusColors.app,
+      scaffoldBackgroundColor: RdColors.bg,
+      canvasColor: RdColors.bg,
       splashFactory: NoSplash.splashFactory,
       highlightColor: Colors.transparent,
-      hoverColor: const Color(0x0FFFFFFF),
-      dividerColor: NexusColors.line,
+      hoverColor: RdColors.white5,
+      focusColor: RdColors.accentSoft,
+      dividerColor: RdColors.hairline,
       textTheme: const TextTheme(
         titleLarge: TextStyle(
-          color: NexusColors.text,
+          color: RdColors.text,
           fontSize: 22,
           fontWeight: FontWeight.w700,
         ),
         titleMedium: TextStyle(
-          color: NexusColors.text,
+          color: RdColors.text,
           fontSize: 16,
           fontWeight: FontWeight.w700,
         ),
         // Chromium's `line-height: normal` for 16px Korean text is 24px
         // (rounded Noto Sans KR ascent 19 + descent 5); Material's 1.43
         // made every default line ~1px shorter than the Tauri app.
-        bodyLarge:
-            TextStyle(color: NexusColors.text, fontSize: 16, height: 1.5),
+        bodyLarge: TextStyle(color: RdColors.text, fontSize: 16, height: 1.5),
         bodyMedium: TextStyle(
-          color: NexusColors.text,
+          color: RdColors.text,
           fontSize: 16,
           height: 1.5,
         ),
-        bodySmall: TextStyle(color: NexusColors.muted, fontSize: 13),
-      ).apply(bodyColor: NexusColors.text, displayColor: NexusColors.text),
+        bodySmall: TextStyle(color: RdColors.text3, fontSize: 13),
+      ).apply(bodyColor: RdColors.text, displayColor: RdColors.text),
       textSelectionTheme: const TextSelectionThemeData(
-        cursorColor: ElementDark.textRegular,
-        selectionColor: Color(0x55409EFF),
+        cursorColor: RdColors.accent,
+        selectionColor: Color(0x597C8CFF), // accent at 35%
+        selectionHandleColor: RdColors.accent,
       ),
       tooltipTheme: TooltipThemeData(
         decoration: BoxDecoration(
-          color: const Color(0xFF303133),
-          borderRadius: BorderRadius.circular(4),
+          color: RdColors.surface3,
+          borderRadius: BorderRadius.circular(RdRadii.chip),
+          border: Border.all(color: RdColors.border),
         ),
-        textStyle: const TextStyle(color: Colors.white, fontSize: 12),
+        textStyle: const TextStyle(color: RdColors.text, fontSize: 12),
       ),
       snackBarTheme: const SnackBarThemeData(
-        backgroundColor: ElementDark.overlay,
-        contentTextStyle: TextStyle(color: ElementDark.textPrimary),
+        backgroundColor: RdColors.surface3,
+        contentTextStyle: TextStyle(color: RdColors.text),
         behavior: SnackBarBehavior.floating,
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: ElementDark.overlay,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        backgroundColor: RdColors.surface2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(RdRadii.sheet),
+        ),
       ),
-      scrollbarTheme: const ScrollbarThemeData(
-        thumbColor: WidgetStatePropertyAll(Color(0x33FFFFFF)),
+      popupMenuTheme: PopupMenuThemeData(
+        color: RdColors.surface3,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(RdRadii.control),
+          side: const BorderSide(color: RdColors.border),
+        ),
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: RdColors.accent,
+      ),
+      scrollbarTheme: ScrollbarThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.dragged) ||
+                  states.contains(WidgetState.hovered)
+              ? RdColors.text3
+              : RdColors.handle,
+        ),
+        radius: const Radius.circular(RdRadii.pill),
       ),
     );
   }

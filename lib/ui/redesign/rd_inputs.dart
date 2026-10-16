@@ -16,7 +16,7 @@ class RdSelectOption<T> {
   final String? shortLabel;
 }
 
-/// Dropdown of the canvas (`#121a2c`, 1px line, radius 10/12).
+/// Dropdown field (surface-3, border, radius 10).
 ///
 /// [label] names the control for screen readers and as its tooltip. Without
 /// [width] the field fills its parent, or wraps its label when [shrinkWrap]
@@ -46,7 +46,7 @@ class RdSelect<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final selected = options.where((o) => o.value == value).firstOrNull;
-    final radius = height >= 44 ? RdRadii.control : RdRadii.small;
+    const radius = RdRadii.control;
     final shown = Text(
       selected?.shortLabel ?? selected?.label ?? '',
       maxLines: 1,
@@ -65,11 +65,11 @@ class RdSelect<T> extends StatelessWidget {
             onChanged(next);
           }
         },
-        color: RdColors.inner,
+        color: RdColors.surface3,
         position: PopupMenuPosition.under,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(RdRadii.small),
-          side: const BorderSide(color: RdColors.line3),
+          borderRadius: BorderRadius.circular(RdRadii.control),
+          side: const BorderSide(color: RdColors.border),
         ),
         constraints: BoxConstraints(minWidth: width ?? 0),
         itemBuilder: (context) => [
@@ -84,8 +84,8 @@ class RdSelect<T> extends StatelessWidget {
                   fontWeight:
                       option.value == value ? FontWeight.w700 : FontWeight.w400,
                   color: option.value == value
-                      ? RdColors.accent
-                      : RdColors.secondary,
+                      ? RdColors.accentText
+                      : RdColors.text2,
                 ),
               ),
             ),
@@ -95,9 +95,9 @@ class RdSelect<T> extends StatelessWidget {
           height: height,
           padding: const EdgeInsets.only(left: 10, right: 6),
           decoration: BoxDecoration(
-            color: RdColors.field,
+            color: RdColors.surface3,
             borderRadius: BorderRadius.circular(radius),
-            border: Border.all(color: RdColors.line3),
+            border: Border.all(color: RdColors.border),
           ),
           child: Row(
             mainAxisSize: shrinkWrap ? MainAxisSize.min : MainAxisSize.max,
@@ -107,7 +107,7 @@ class RdSelect<T> extends StatelessWidget {
               Icon(
                 Icons.expand_more,
                 size: height >= 40 ? 18 : 16,
-                color: RdColors.muted,
+                color: RdColors.text2,
               ),
             ],
           ),
@@ -178,7 +178,7 @@ class _RdStepButtonState extends State<RdStepButton> {
       symbol,
       style: TextStyle(
         fontSize: 18,
-        color: _enabled ? RdColors.secondary : RdColors.placeholder,
+        color: _enabled ? RdColors.text2 : RdColors.text3,
       ),
     );
   }
@@ -197,11 +197,11 @@ class _RdStepButtonState extends State<RdStepButton> {
           child: Material(
             color: Colors.transparent,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(RdRadii.small),
-              side: const BorderSide(color: RdColors.white14),
+              borderRadius: BorderRadius.circular(RdRadii.control),
+              side: const BorderSide(color: RdColors.border),
             ),
             child: InkWell(
-              borderRadius: BorderRadius.circular(RdRadii.small),
+              borderRadius: BorderRadius.circular(RdRadii.control),
               onTap: widget.onPressed,
               child: SizedBox(
                 width: widget.width,
@@ -258,14 +258,10 @@ class _RdStepButtonState extends State<RdStepButton> {
                 height: widget.height,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: highlighted
-                      ? const Color(0x3D4D75BC)
-                      : const Color(0x294D75BC),
-                  borderRadius: BorderRadius.circular(16),
+                  color: highlighted ? RdColors.accentSoft : RdColors.surface3,
+                  borderRadius: BorderRadius.circular(RdRadii.control),
                   border: Border.all(
-                    color: highlighted
-                        ? const Color(0x7A85B6FF)
-                        : RdColors.searchBorder,
+                    color: highlighted ? RdColors.accentLine : RdColors.border,
                   ),
                 ),
                 child: _glyph(),
@@ -287,9 +283,9 @@ class RdNumberField extends StatelessWidget {
     this.enabled = true,
     this.height = 44,
     this.fontSize = 15,
-    this.radius = RdRadii.small,
-    this.color = RdColors.segmentTrack,
-    this.borderColor = RdColors.white14,
+    this.radius = RdRadii.control,
+    this.color = RdColors.surface3,
+    this.borderColor = RdColors.border,
     this.semanticLabel,
     this.inputFormatters = const [],
     this.onChanged,
@@ -328,7 +324,7 @@ class RdNumberField extends StatelessWidget {
               color: color,
               borderRadius: borderRadius,
               border: Border.all(
-                color: focusNode.hasFocus ? RdColors.accent : borderColor,
+                color: focusNode.hasFocus ? RdColors.accentLine : borderColor,
               ),
             ),
             child: Semantics(
@@ -358,7 +354,7 @@ class RdNumberField extends StatelessWidget {
               child: IgnorePointer(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: const Color(0x8C050914),
+                    color: RdColors.disabledVeil,
                     borderRadius: borderRadius,
                   ),
                 ),

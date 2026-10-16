@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'nexus_icons.dart';
+import 'redesign/rd_tokens.dart';
 
 enum NexusMessageType { success, error, info, warning }
 
@@ -81,31 +82,26 @@ class _NexusMessageToastState extends State<_NexusMessageToast>
 
   @override
   Widget build(BuildContext context) {
-    // Element Plus dark: light-9 fill, light-8 border, base colour text.
-    final (Color bg, Color border, Color fg, IconData icon) =
-        switch (widget.type) {
+    // Opaque surface-3 toast; the status shows in the icon and outline.
+    final (Color border, Color fg, IconData icon) = switch (widget.type) {
       NexusMessageType.success => (
-          const Color(0xFF1C2518),
-          const Color(0xFF25371C),
-          const Color(0xFF67C23A),
+          RdColors.success,
+          RdColors.success,
           Icons.check_circle,
         ),
       NexusMessageType.error => (
-          const Color(0xFF2B1D1D),
-          const Color(0xFF412626),
-          const Color(0xFFF56C6C),
+          RdColors.dangerLine,
+          RdColors.dangerText,
           Icons.cancel,
         ),
       NexusMessageType.warning => (
-          const Color(0xFF292218),
-          const Color(0xFF3E301C),
-          const Color(0xFFE6A23C),
+          RdColors.warning,
+          RdColors.warningText,
           Icons.error,
         ),
       NexusMessageType.info => (
-          const Color(0xFF202121),
-          const Color(0xFF2D2D2F),
-          const Color(0xFF909399),
+          RdColors.border,
+          RdColors.text2,
           Icons.info,
         ),
     };
@@ -129,8 +125,8 @@ class _NexusMessageToastState extends State<_NexusMessageToast>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
                   decoration: BoxDecoration(
-                    color: bg,
-                    borderRadius: BorderRadius.circular(4),
+                    color: RdColors.surface3,
+                    borderRadius: BorderRadius.circular(RdRadii.control),
                     border: Border.all(color: border),
                   ),
                   child: Row(
@@ -141,7 +137,11 @@ class _NexusMessageToastState extends State<_NexusMessageToast>
                       Flexible(
                         child: Text(
                           widget.message,
-                          style: TextStyle(fontSize: 14, height: 1, color: fg),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            height: 1,
+                            color: RdColors.text,
+                          ),
                         ),
                       ),
                     ],
