@@ -42,107 +42,16 @@ class OwnedCountEditor extends ConsumerStatefulWidget {
   ConsumerState<OwnedCountEditor> createState() => OwnedCountEditorState();
 }
 
-class OwnedCountEditorState extends ConsumerState<OwnedCountEditor> {
-  late final TextEditingController _draft =
-      TextEditingController(text: '${widget.item.ownedCount}');
-  final _focusNode = FocusNode();
-  Timer? _holdTimeout;
-  Timer? _holdInterval;
-  DateTime _holdStartedAt = DateTime.now();
-  bool _holding = false;
-
-  bool get _saving => widget.savingItemIds.value.contains(widget.item.itemId);
+class OwnedCountEditorState extends ConsumerState<OwnedCountEditor>
+    with OwnedCountDraft<OwnedCountEditor> {
+  @override
+  ItemEntry get draftItem => widget.item;
 
   @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(() {
-      if (!_focusNode.hasFocus) {
-        unawaited(commit());
-      }
-    });
-  }
+  ValueListenable<Set<String>> get draftSavingItemIds => widget.savingItemIds;
 
   @override
-  void dispose() {
-    _stopAdjusting();
-    _draft.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  void _setDraftValue(num value) {
-    final text = '${clampOwnedCount(value)}';
-    _draft.value = TextEditingValue(
-      text: text,
-      selection: TextSelection.collapsed(offset: text.length),
-    );
-  }
-
-  void _adjust(int direction, int step) {
-    final current = int.tryParse(_draft.text.isEmpty ? '0' : _draft.text) ?? 0;
-    _setDraftValue(current + direction * step);
-  }
-
-  void _stopAdjusting() {
-    _holdTimeout?.cancel();
-    _holdTimeout = null;
-    _holdInterval?.cancel();
-    _holdInterval = null;
-  }
-
-  /// `beginAdjustingCount`: one step at once, then every 100ms after 450ms
-  /// with the accelerating [ownedCountHoldStep].
-  void _beginAdjusting(int direction) {
-    if (_saving) {
-      return;
-    }
-    _stopAdjusting();
-    _holding = true;
-    _holdStartedAt = DateTime.now();
-    _adjust(direction, 1);
-    _holdTimeout = Timer(const Duration(milliseconds: 450), () {
-      _holdInterval = Timer.periodic(const Duration(milliseconds: 100), (_) {
-        _adjust(
-          direction,
-          ownedCountHoldStep(DateTime.now().difference(_holdStartedAt)),
-        );
-      });
-    });
-  }
-
-  /// Pointer up / cancel / leave: stop repeating and save what was reached.
-  void _endAdjusting() {
-    _stopAdjusting();
-    if (!_holding) {
-      return;
-    }
-    _holding = false;
-    unawaited(commit());
-  }
-
-  /// Keyboard / assistive activation of a step button: one step, then save.
-  void _stepOnce(int direction) {
-    if (_saving) {
-      return;
-    }
-    _adjust(direction, 1);
-    unawaited(commit());
-  }
-
-  /// `commitOwnedCountDraft`.
-  Future<void> commit() async {
-    _stopAdjusting();
-    _holding = false;
-    if (!mounted) {
-      return;
-    }
-    final normalized = normalizeOwnedCountInput(_draft.text);
-    if (normalized != _draft.text) {
-      _setDraftValue(int.parse(normalized));
-    }
-    await widget.onCommit(int.parse(normalized));
-  }
+  Future<void> Function(int value) get draftOnCommit => widget.onCommit;
 
   @override
   Widget build(BuildContext context) {
@@ -199,15 +108,15 @@ class OwnedCountEditorState extends ConsumerState<OwnedCountEditor> {
                   width: stepSize,
                   height: stepSize,
                   tonal: true,
-                  onPressed: disabled ? null : () => _stepOnce(-1),
-                  onHoldStart: () => _beginAdjusting(-1),
-                  onHoldEnd: _endAdjusting,
+                  onPressed: disabled ? null : () => stepOnce(-1),
+                  onHoldStart: () => beginAdjusting(-1),
+                  onHoldEnd: endAdjusting,
                 ),
                 SizedBox(width: compact ? 10 : 12),
                 Expanded(
                   child: RdNumberField(
-                    controller: _draft,
-                    focusNode: _focusNode,
+                    controller: draft,
+                    focusNode: draftFocusNode,
                     enabled: !disabled,
                     height: stepSize,
                     fontSize: 20,
@@ -226,15 +135,15 @@ class OwnedCountEditorState extends ConsumerState<OwnedCountEditor> {
                   width: stepSize,
                   height: stepSize,
                   tonal: true,
-                  onPressed: disabled ? null : () => _stepOnce(1),
-                  onHoldStart: () => _beginAdjusting(1),
-                  onHoldEnd: _endAdjusting,
+                  onPressed: disabled ? null : () => stepOnce(1),
+                  onHoldStart: () => beginAdjusting(1),
+                  onHoldEnd: endAdjusting,
                 ),
               ],
             ),
             SizedBox(height: compact ? 14 : 16),
             ValueListenableBuilder<TextEditingValue>(
-              valueListenable: _draft,
+              valueListenable: draft,
               builder: (context, value, _) => Semantics(
                 liveRegion: true,
                 child: Text(
@@ -273,6 +182,124 @@ class OwnedCountEditorState extends ConsumerState<OwnedCountEditor> {
         );
       },
     );
+  }
+}
+
+/// Draft state of an owned-count editor (`items.vue`): the text field
+/// value, hold-to-repeat stepping and the commit rules shared by the
+/// count dialog and the inline stepper of the detail page.
+///
+/// The draft is committed (saved through [draftOnCommit]) on button
+/// release, pointer leave while holding, input blur/enter, and keyboard
+/// activation of a step button.
+mixin OwnedCountDraft<T extends StatefulWidget> on State<T> {
+  ItemEntry get draftItem;
+  ValueListenable<Set<String>> get draftSavingItemIds;
+  Future<void> Function(int value) get draftOnCommit;
+
+  late final TextEditingController draft =
+      TextEditingController(text: '${draftItem.ownedCount}');
+  final draftFocusNode = FocusNode();
+  Timer? _holdTimeout;
+  Timer? _holdInterval;
+  DateTime _holdStartedAt = DateTime.now();
+  bool _holding = false;
+
+  bool get draftSaving => draftSavingItemIds.value.contains(draftItem.itemId);
+
+  /// Whether the user is changing the draft (typing or holding a button);
+  /// outside updates of the count must not overwrite it then.
+  bool get draftBusy => _holding || draftFocusNode.hasFocus;
+
+  @override
+  void initState() {
+    super.initState();
+    draftFocusNode.addListener(() {
+      if (!draftFocusNode.hasFocus) {
+        unawaited(commit());
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _stopAdjusting();
+    draft.dispose();
+    draftFocusNode.dispose();
+    super.dispose();
+  }
+
+  void setDraftValue(num value) {
+    final text = '${clampOwnedCount(value)}';
+    draft.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+  }
+
+  void _adjust(int direction, int step) {
+    final current = int.tryParse(draft.text.isEmpty ? '0' : draft.text) ?? 0;
+    setDraftValue(current + direction * step);
+  }
+
+  void _stopAdjusting() {
+    _holdTimeout?.cancel();
+    _holdTimeout = null;
+    _holdInterval?.cancel();
+    _holdInterval = null;
+  }
+
+  /// `beginAdjustingCount`: one step at once, then every 100ms after 450ms
+  /// with the accelerating [ownedCountHoldStep].
+  void beginAdjusting(int direction) {
+    if (draftSaving) {
+      return;
+    }
+    _stopAdjusting();
+    _holding = true;
+    _holdStartedAt = DateTime.now();
+    _adjust(direction, 1);
+    _holdTimeout = Timer(const Duration(milliseconds: 450), () {
+      _holdInterval = Timer.periodic(const Duration(milliseconds: 100), (_) {
+        _adjust(
+          direction,
+          ownedCountHoldStep(DateTime.now().difference(_holdStartedAt)),
+        );
+      });
+    });
+  }
+
+  /// Pointer up / cancel / leave: stop repeating and save what was reached.
+  void endAdjusting() {
+    _stopAdjusting();
+    if (!_holding) {
+      return;
+    }
+    _holding = false;
+    unawaited(commit());
+  }
+
+  /// Keyboard / assistive activation of a step button: one step, then save.
+  void stepOnce(int direction) {
+    if (draftSaving) {
+      return;
+    }
+    _adjust(direction, 1);
+    unawaited(commit());
+  }
+
+  /// `commitOwnedCountDraft`.
+  Future<void> commit() async {
+    _stopAdjusting();
+    _holding = false;
+    if (!mounted) {
+      return;
+    }
+    final normalized = normalizeOwnedCountInput(draft.text);
+    if (normalized != draft.text) {
+      setDraftValue(int.parse(normalized));
+    }
+    await draftOnCommit(int.parse(normalized));
   }
 }
 
@@ -424,6 +451,134 @@ class _OwnedCountFormatter extends TextInputFormatter {
     return TextEditingValue(
       text: text,
       selection: TextSelection.collapsed(offset: text.length),
+    );
+  }
+}
+
+/// Inline owned-count control of the item detail header: `−`, the count
+/// field and `+`, with the hold-to-repeat and commit rules of
+/// [OwnedCountEditor]. A count of 0 is drawn muted.
+class OwnedCountStepper extends ConsumerStatefulWidget {
+  const OwnedCountStepper({
+    required this.item,
+    required this.savingItemIds,
+    required this.onCommit,
+    this.height = 40,
+    this.fieldWidth = 72,
+    super.key,
+  });
+
+  final ItemEntry item;
+  final ValueListenable<Set<String>> savingItemIds;
+  final Future<void> Function(int value) onCommit;
+  final double height;
+  final double fieldWidth;
+
+  @override
+  ConsumerState<OwnedCountStepper> createState() => _OwnedCountStepperState();
+}
+
+class _OwnedCountStepperState extends ConsumerState<OwnedCountStepper>
+    with OwnedCountDraft<OwnedCountStepper> {
+  @override
+  ItemEntry get draftItem => widget.item;
+
+  @override
+  ValueListenable<Set<String>> get draftSavingItemIds => widget.savingItemIds;
+
+  @override
+  Future<void> Function(int value) get draftOnCommit => widget.onCommit;
+
+  @override
+  void didUpdateWidget(OwnedCountStepper oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Saved, rolled back or another item: show the stored count unless the
+    // user is still editing.
+    final count = widget.item.ownedCount;
+    if (!draftBusy && draft.text != '$count') {
+      setDraftValue(count);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final i18n = ref.watch(i18nProvider);
+    final height = widget.height;
+    return ValueListenableBuilder<Set<String>>(
+      valueListenable: widget.savingItemIds,
+      builder: (context, saving, _) {
+        final disabled = saving.contains(widget.item.itemId);
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RdStepButton(
+              increase: false,
+              tooltip: i18n.t('rd.items.decrease'),
+              width: height,
+              height: height,
+              onPressed: disabled ? null : () => stepOnce(-1),
+              onHoldStart: () => beginAdjusting(-1),
+              onHoldEnd: endAdjusting,
+            ),
+            const SizedBox(width: 6),
+            SizedBox(
+              width: widget.fieldWidth,
+              child: ListenableBuilder(
+                listenable: Listenable.merge([draft, draftFocusNode]),
+                builder: (context, _) => Container(
+                  height: height,
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  decoration: BoxDecoration(
+                    color: RdColors.surface3,
+                    borderRadius: BorderRadius.circular(RdRadii.control),
+                    border: Border.all(
+                      color: draftFocusNode.hasFocus
+                          ? RdColors.accentLine
+                          : RdColors.border,
+                    ),
+                  ),
+                  child: Semantics(
+                    label: i18n.t('rd.items.countInput'),
+                    textField: true,
+                    child: TextField(
+                      controller: draft,
+                      focusNode: draftFocusNode,
+                      enabled: !disabled,
+                      keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.done,
+                      textAlign: TextAlign.center,
+                      inputFormatters: const [_OwnedCountFormatter()],
+                      onSubmitted: (_) => unawaited(commit()),
+                      cursorColor: RdColors.accent,
+                      style: RdText.mono(
+                        fontSize: 15,
+                        color: (int.tryParse(draft.text) ?? 0) > 0
+                            ? RdColors.text
+                            : RdColors.text3,
+                      ),
+                      decoration: const InputDecoration(
+                        isCollapsed: true,
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            RdStepButton(
+              increase: true,
+              tooltip: i18n.t('rd.items.increase'),
+              width: height,
+              height: height,
+              onPressed: disabled ? null : () => stepOnce(1),
+              onHoldStart: () => beginAdjusting(1),
+              onHoldEnd: endAdjusting,
+            ),
+          ],
+        );
+      },
     );
   }
 }
