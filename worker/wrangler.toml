@@ -1,0 +1,17 @@
+# Cloudflare Worker that runs the Yostar login for the web build of
+# ArknightsNexus. See README.md for deploying it.
+name = "arknights-nexus-account-proxy"
+main = "src/index.ts"
+compatibility_date = "2025-06-01"
+
+# No KV, D1, Durable Objects or logs of request contents: the Worker keeps
+# nothing between requests.
+[observability]
+enabled = false
+
+[vars]
+# Comma-separated origins allowed to call the Worker. `http://localhost:*`
+# allows any port on localhost (flutter run -d chrome picks one at random).
+# Override per deployment with `wrangler deploy --var ALLOWED_ORIGINS:...`
+# or in the dashboard.
+ALLOWED_ORIGINS = "https://mastercollection.github.io,http://localhost:*,http://127.0.0.1:*"

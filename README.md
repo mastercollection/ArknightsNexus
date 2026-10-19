@@ -20,6 +20,7 @@ rail on wider windows, master-detail operators on PC).
 | `tool/` | `build_snapshots.dart`: builds the published region snapshots |
 | `web/` | Web entry page, manifest and icons |
 | `site/` | Static pages published next to the web app (about, privacy policy, 404 redirect) |
+| `worker/` | Cloudflare Worker that runs the game account login for the web build |
 
 ## Develop
 
@@ -39,6 +40,14 @@ Release builds: `flutter build windows --release`, `flutter build apk --release`
 `lib/i18n/nexus_messages.g.dart` holds the original translations; do not edit
 it by hand. Put new strings in the matching `lib/i18n/extra/<area>.dart` with
 values for all five locales.
+
+The game account import calls the Yostar and game servers directly on
+Windows and Android. The browser cannot (no CORS headers), so the web build
+signs in through the account proxy Worker in `worker/` and has no import
+unless it is built with
+`--dart-define=NEXUS_ACCOUNT_PROXY_URL=https://<worker>.workers.dev/`. The
+Pages workflow passes the repository variable `NEXUS_ACCOUNT_PROXY_URL`;
+see `worker/README.md` for deploying the Worker.
 
 ## Game data flow
 
