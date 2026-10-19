@@ -1,3 +1,4 @@
+import 'extra/account.dart';
 import 'extra/common.dart';
 import 'extra/home.dart';
 import 'extra/items.dart';
@@ -16,4 +17,5 @@ const List<Map<String, Map<String, String>>> nexusExtraMessages = [
   itemsExtraMessages,
   planExtraMessages,
   settingsExtraMessages,
+  accountExtraMessages,
 ];

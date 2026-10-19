@@ -73,6 +73,7 @@ class OperatorFilters {
     this.profession,
     this.baTags = const [],
     this.hideUnreleased = false,
+    this.owned,
   });
 
   final String query;
@@ -85,6 +86,10 @@ class OperatorFilters {
   /// ([OperatorSummary.isUnreleased]); they are listed by default.
   final bool hideUnreleased;
 
+  /// Only owned (true) or only not owned (false) operators of the imported
+  /// account; null lists both.
+  final bool? owned;
+
   /// Any of the drawer filters or the unreleased toggle (the search text is
   /// not one of them).
   bool get hasDimension =>
@@ -92,7 +97,8 @@ class OperatorFilters {
       rarity != null ||
       profession != null ||
       baTags.isNotEmpty ||
-      hideUnreleased;
+      hideUnreleased ||
+      owned != null;
 
   OperatorFilters copyWith({
     String? query,
@@ -101,6 +107,7 @@ class OperatorFilters {
     String? Function()? profession,
     List<String>? baTags,
     bool? hideUnreleased,
+    bool? Function()? owned,
   }) {
     return OperatorFilters(
       query: query ?? this.query,
@@ -109,6 +116,7 @@ class OperatorFilters {
       profession: profession == null ? this.profession : profession(),
       baTags: baTags ?? this.baTags,
       hideUnreleased: hideUnreleased ?? this.hideUnreleased,
+      owned: owned == null ? this.owned : owned(),
     );
   }
 }
@@ -358,11 +366,30 @@ class OperatorsListController extends ChangeNotifier {
       profession: () => null,
       baTags: const [],
       hideUnreleased: false,
+      owned: () => null,
     );
   }
 
   void toggleHideUnreleased() {
     filters = _filters.copyWith(hideUnreleased: !_filters.hideUnreleased);
+  }
+
+  /// Cycles the ownership filter: all → owned → not owned → all.
+  void cycleOwned() {
+    final next = switch (_filters.owned) {
+      null => true,
+      true => false,
+      false => null,
+    };
+    filters = _filters.copyWith(owned: () => next);
+  }
+
+  /// Applies the filters again after the imported account changed.
+  void refilter() {
+    if (!isLoading) {
+      _applyLocalFilters();
+      _notify();
+    }
   }
 
   void toggleBaTag(String tag) {
@@ -495,6 +522,7 @@ class OperatorsListController extends ChangeNotifier {
     final filters = _filters;
     final i18n = _ref.read(i18nProvider);
     final needle = operatorSearchNeedle(filters.query);
+    final account = _ref.read(accountProfileProvider).valueOrNull;
     final matching = _allOperators.where((operator) {
       final matchesQuery = operatorMatchesQuery(operator, needle, i18n);
       final affiliation = filters.affiliation;
@@ -509,6 +537,12 @@ class OperatorsListController extends ChangeNotifier {
       final matchesBaTags =
           filters.baTags.every((tag) => operator.baTags.contains(tag));
       if (filters.hideUnreleased && operator.isUnreleased) {
+        return false;
+      }
+      final owned = filters.owned;
+      if (owned != null &&
+          account != null &&
+          (account.operator(operator.id) != null) != owned) {
         return false;
       }
       return matchesQuery &&
@@ -545,6 +579,8 @@ class OperatorsListController extends ChangeNotifier {
       for (final tag in _filters.baTags)
         '${i18n.t('operatorsList.filters.baTags')}: $tag',
       if (_filters.hideUnreleased) i18n.t('rd.operators.filter.hideUnreleased'),
+      if (_filters.owned != null)
+        i18n.t(_filters.owned! ? 'account.owned' : 'account.notOwned'),
     ];
   }
 
@@ -609,6 +645,11 @@ final operatorsListControllerProvider =
   ref.listen(dataRevisionProvider, (previous, next) {
     if (previous != next) {
       controller.load(reset: true);
+    }
+  });
+  ref.listen(accountProfileProvider, (previous, next) {
+    if (previous?.valueOrNull != next.valueOrNull) {
+      controller.refilter();
     }
   });
   return controller;

@@ -6,6 +6,7 @@ import 'logging_navigator_observer.dart';
 import 'page_transitions.dart';
 import 'providers.dart';
 import 'shell.dart';
+import '../features/account/account_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/items/item_detail_screen.dart';
 import '../features/items/items_screen.dart';
@@ -132,6 +133,14 @@ GoRouter createRouter({List<NavigatorObserver> Function()? observers}) {
               OperatorPlanScreen(
                 operatorId: state.pathParameters['operatorId']!,
               ),
+            ),
+          ),
+          GoRoute(
+            path: '/account',
+            name: AccountScreen.routeName,
+            pageBuilder: (context, state) => page(
+              state,
+              const AccountScreen(),
             ),
           ),
           GoRoute(

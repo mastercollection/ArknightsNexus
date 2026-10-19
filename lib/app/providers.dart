@@ -2,8 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/http/package_http_client.dart';
 import '../core/logging/app_logger.dart';
+import '../domain/account_profile.dart';
 import '../repositories/region_cache_repository.dart';
 import '../repositories/user_data_repository.dart';
+import '../services/account/account_proxy_client.dart';
 import '../services/image_cache_service.dart';
 import '../services/diagnostics_service.dart';
 import '../services/item_service.dart';
@@ -100,3 +102,16 @@ final dataRevisionProvider = StateProvider<int>((ref) => 0);
 final userDataFileServiceProvider = Provider<UserDataFileService>((ref) {
   return platform.createUserDataFileService();
 });
+
+/// The imported game account; reloads with [dataRevisionProvider], which an
+/// import or a user data import bumps.
+final accountProfileProvider = FutureProvider<AccountProfile?>((ref) {
+  ref.watch(dataRevisionProvider);
+  return ref.watch(userDataServiceProvider).getAccount();
+});
+
+/// Whether this build can sign in to game accounts. The game servers send
+/// no CORS headers, so the web build signs in through the account proxy
+/// (`NEXUS_ACCOUNT_PROXY_URL`) and has no import without one.
+const accountImportSupported = !bool.fromEnvironment('dart.library.js_util') ||
+    AccountProxyClient.configured;

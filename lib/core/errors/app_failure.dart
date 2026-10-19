@@ -37,3 +37,12 @@ final class InvalidInputFailure extends AppFailure {
 final class ValidationFailure extends AppFailure {
   const ValidationFailure(super.message);
 }
+
+/// A game account server answered but refused the request (wrong code,
+/// expired session, maintenance, ...).
+final class AccountFailure extends AppFailure {
+  const AccountFailure(super.message, {this.code});
+
+  /// The server's own result code, when it sent one.
+  final Object? code;
+}

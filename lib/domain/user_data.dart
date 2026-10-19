@@ -1,3 +1,5 @@
+import 'account_profile.dart';
+
 class UserData {
   const UserData({
     this.schemaVersion = schemaVersionValue,
@@ -5,15 +7,20 @@ class UserData {
     this.selectedOperatorIds = const [],
     this.operatorPlans = const [],
     this.itemCounts = const {},
+    this.account,
   });
 
-  static const schemaVersionValue = 3;
+  /// 4 added [account].
+  static const schemaVersionValue = 4;
 
   final int schemaVersion;
   final List<String> favorites;
   final List<String> selectedOperatorIds;
   final List<UserPlanOperator> operatorPlans;
   final Map<String, int> itemCounts;
+
+  /// The game account last read with the account login, if any.
+  final AccountProfile? account;
 
   factory UserData.fromJson(Map<String, Object?> json) {
     return UserData(
@@ -25,6 +32,9 @@ class UserData {
         (value) => UserPlanOperator.fromJson(_map(value)),
       ),
       itemCounts: _intMap(json['itemCounts']),
+      account: json['account'] is Map
+          ? AccountProfile.fromJson(_map(json['account']))
+          : null,
     );
   }
 
@@ -35,15 +45,19 @@ class UserData {
       'selectedOperatorIds': selectedOperatorIds,
       'operatorPlans': operatorPlans.map((entry) => entry.toJson()).toList(),
       'itemCounts': itemCounts,
+      if (account != null) 'account': account!.toJson(),
     };
   }
 
+  /// [clearAccount] drops [account] (a null [account] keeps it).
   UserData copyWith({
     int? schemaVersion,
     List<String>? favorites,
     List<String>? selectedOperatorIds,
     List<UserPlanOperator>? operatorPlans,
     Map<String, int>? itemCounts,
+    AccountProfile? account,
+    bool clearAccount = false,
   }) {
     return UserData(
       schemaVersion: schemaVersion ?? this.schemaVersion,
@@ -51,6 +65,7 @@ class UserData {
       selectedOperatorIds: selectedOperatorIds ?? this.selectedOperatorIds,
       operatorPlans: operatorPlans ?? this.operatorPlans,
       itemCounts: itemCounts ?? this.itemCounts,
+      account: clearAccount ? null : account ?? this.account,
     );
   }
 }

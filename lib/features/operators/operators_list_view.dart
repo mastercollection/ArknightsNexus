@@ -2,6 +2,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/providers.dart';
+import '../../domain/account_profile.dart';
 import '../../domain/operator.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../ui/redesign/rd_widgets.dart';
@@ -96,6 +98,7 @@ class _OperatorsGridViewState extends ConsumerState<OperatorsGridView> {
   @override
   Widget build(BuildContext context) {
     final i18n = ref.watch(i18nProvider);
+    final account = ref.watch(accountProfileProvider).valueOrNull;
     final list = ref.watch(operatorsListControllerProvider);
 
     final List<Widget> slivers;
@@ -173,6 +176,9 @@ class _OperatorsGridViewState extends ConsumerState<OperatorsGridView> {
               compact: widget.compact,
               selected: operator.id == widget.selectedId,
               professionLabel: i18n.profession(operator.profession),
+              account: account,
+              ownedLabel: i18n.t('account.owned'),
+              notOwnedLabel: i18n.t('account.notOwned'),
               onTap: () => widget.onSelect(operator),
             );
           },
@@ -244,6 +250,9 @@ class OperatorTile extends StatefulWidget {
     required this.selected,
     required this.professionLabel,
     required this.onTap,
+    this.account,
+    this.ownedLabel = '',
+    this.notOwnedLabel = '',
     super.key,
   });
 
@@ -252,6 +261,12 @@ class OperatorTile extends StatefulWidget {
   final bool selected;
   final String professionLabel;
   final VoidCallback onTap;
+
+  /// The imported account: owned operators show their elite and level in
+  /// place of the profession, the others are faded.
+  final AccountProfile? account;
+  final String ownedLabel;
+  final String notOwnedLabel;
 
   @override
   State<OperatorTile> createState() => _OperatorTileState();
@@ -270,6 +285,9 @@ class _OperatorTileState extends State<OperatorTile> {
         selected || _hovered ? RdColors.accentLine : RdColors.hairline;
     final background = selected ? RdColors.accentSoft : RdColors.surface2;
     final portrait = compact ? 64.0 : 72.0;
+    final account = widget.account;
+    final owned = account?.operator(operator.id);
+    final faded = account != null && owned == null;
 
     Widget line(String text, double size, double lineHeight, TextStyle style) {
       return Text(
@@ -320,12 +338,20 @@ class _OperatorTileState extends State<OperatorTile> {
             const TextStyle(letterSpacing: -0.5, color: RdColors.rarity),
           ),
           const SizedBox(height: 5),
-          line(
-            widget.professionLabel,
-            12,
-            16,
-            const TextStyle(color: RdColors.text3),
-          ),
+          if (owned != null)
+            line(
+              'E${owned.elite} · Lv.${owned.level}',
+              12,
+              16,
+              const TextStyle(color: RdColors.accentText),
+            )
+          else
+            line(
+              widget.professionLabel,
+              12,
+              16,
+              const TextStyle(color: RdColors.text3),
+            ),
         ],
       ),
     );
@@ -333,7 +359,15 @@ class _OperatorTileState extends State<OperatorTile> {
     return Semantics(
       button: true,
       selected: selected,
-      label: [operator.name, stars, widget.professionLabel].join(', '),
+      label: [
+        operator.name,
+        stars,
+        widget.professionLabel,
+        if (owned != null)
+          '${widget.ownedLabel} E${owned.elite} Lv.${owned.level}'
+        else if (faded)
+          widget.notOwnedLabel,
+      ].join(', '),
       excludeSemantics: true,
       child: MouseRegion(
         onEnter: (_) => setState(() => _hovered = true),
@@ -345,7 +379,10 @@ class _OperatorTileState extends State<OperatorTile> {
             side: BorderSide(color: borderColor),
           ),
           clipBehavior: Clip.antiAlias,
-          child: InkWell(onTap: widget.onTap, child: content),
+          child: InkWell(
+            onTap: widget.onTap,
+            child: faded ? Opacity(opacity: 0.45, child: content) : content,
+          ),
         ),
       ),
     );
