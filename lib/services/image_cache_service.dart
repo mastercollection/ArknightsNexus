@@ -64,6 +64,11 @@ class DartImageCacheService implements ImageCacheService {
 
   final Map<String, ResolvedImage> _resolved = {};
 
+  /// Downloads under way, by cache key. Two requests for one image (the
+  /// same icon twice on a page) share one download: each would otherwise
+  /// write and promote the same `.part` file and break the other's.
+  final Map<String, Future<ResolvedImage>> _inFlight = {};
+
   @override
   Future<ResolvedImage> resolve(ImageRequest request) async {
     final descriptor = buildImageDescriptor(request.kind, request.id);
@@ -80,6 +85,26 @@ class DartImageCacheService implements ImageCacheService {
       return _resolved[cacheKey]!;
     }
 
+    final pending = _inFlight[cacheKey];
+    if (pending != null) {
+      return pending;
+    }
+    final download = _download(request, descriptor);
+    _inFlight[cacheKey] = download;
+    try {
+      return await download;
+    } finally {
+      if (identical(_inFlight[cacheKey], download)) {
+        _inFlight.remove(cacheKey);
+      }
+    }
+  }
+
+  Future<ResolvedImage> _download(
+    ImageRequest request,
+    ImageDescriptor descriptor,
+  ) async {
+    final cacheKey = request.cacheKey;
     if (!request.forceRefresh &&
         await _repository.exists(descriptor.relativePath)) {
       final path = await _repository.pathFor(descriptor.relativePath);
