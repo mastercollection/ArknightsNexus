@@ -20,6 +20,7 @@ class RegionSnapshot {
     this.operators = const [],
     this.stages = const [],
     this.enemies = const [],
+    this.termNames = const {},
     this.unreleasedSourceVersions = const {},
   });
 
@@ -36,7 +37,8 @@ class RegionSnapshot {
   /// 5: operators carry their summons (`tokens`).
   /// 6: the region's stages and enemies.
   /// 7: enemy stats carry their skills and talents.
-  static const schemaVersion = 7;
+  /// 8: the names of the battle terms (`termNames`).
+  static const schemaVersion = 8;
 
   final int schemaVersionValue;
   final RegionCode region;
@@ -54,6 +56,11 @@ class RegionSnapshot {
 
   /// Every enemy, with its stats at each level.
   final List<EnemyEntry> enemies;
+
+  /// Name per `ba.*` battle term (`ba.stun` → `기절`): the names
+  /// [OperatorSummary.baTags] lists, which the stage page matches an
+  /// enemy's immunities against.
+  final Map<String, String> termNames;
 
   /// `VersionControl` per source region code of the unreleased operators
   /// merged into this snapshot (see [OperatorDetail.unreleasedSource]);
@@ -89,6 +96,7 @@ class RegionSnapshot {
           _list(json['stages'], (value) => StageSummary.fromJson(_map(value))),
       enemies:
           _list(json['enemies'], (value) => EnemyEntry.fromJson(_map(value))),
+      termNames: _stringMap(json['termNames']),
       unreleasedSourceVersions: _stringMap(json['unreleasedSourceVersions']),
     );
   }
@@ -108,6 +116,7 @@ class RegionSnapshot {
       'operators': operators.map((entry) => entry.toJson()).toList(),
       'stages': stages.map((entry) => entry.toJson()).toList(),
       'enemies': enemies.map((entry) => entry.toJson()).toList(),
+      'termNames': termNames,
     };
   }
 }

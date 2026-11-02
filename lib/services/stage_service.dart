@@ -17,6 +17,9 @@ abstract interface class StageService {
   /// repository on first use, with the region's enemies. Throws
   /// [MissingLevelFailure] for a stage without one.
   Future<StageDetail> stageDetail(RegionCode region, String stageId);
+
+  /// Name per `ba.*` battle term of [region].
+  Future<Map<String, String>> termNames(RegionCode region);
 }
 
 /// Stage list and enemies from the cached region snapshot; level files on
@@ -45,6 +48,11 @@ class CachedStageService implements StageService {
   @override
   Future<List<StageSummary>> listStages(RegionCode region) async {
     return (await _cache.readSnapshot(region))?.stages ?? const [];
+  }
+
+  @override
+  Future<Map<String, String>> termNames(RegionCode region) async {
+    return (await _cache.readSnapshot(region))?.termNames ?? const {};
   }
 
   @override

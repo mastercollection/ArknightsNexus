@@ -43,6 +43,7 @@ class _StageDetailScreenState extends ConsumerState<StageDetailScreen> {
   String _levelError = '';
   Map<String, ItemEntry> _items = const {};
   Map<String, String> _operatorNames = const {};
+  StageImmunityInfo _immunity = const StageImmunityInfo();
   int _loadToken = 0;
 
   @override
@@ -86,7 +87,7 @@ class _StageDetailScreenState extends ConsumerState<StageDetailScreen> {
       if (stage == null) {
         return;
       }
-      unawaited(_loadRewardTargets(token, stage));
+      unawaited(_loadLinks(token));
       try {
         final detail = await service.stageDetail(region, stage.stageId);
         if (mounted && token == _loadToken) {
@@ -118,11 +119,9 @@ class _StageDetailScreenState extends ConsumerState<StageDetailScreen> {
     }
   }
 
-  /// The items and operators the rewards link to.
-  Future<void> _loadRewardTargets(int token, StageSummary stage) async {
-    if (stage.rewards.isEmpty) {
-      return;
-    }
+  /// The items and operators the rewards link to, and the operators tagged
+  /// with each battle term an enemy may be immune to.
+  Future<void> _loadLinks(int token) async {
     final region = ref.read(regionProvider);
     try {
       final items = await ref
@@ -131,18 +130,20 @@ class _StageDetailScreenState extends ConsumerState<StageDetailScreen> {
       final operators = await ref
           .read(operatorServiceProvider)
           .listOperators(OperatorQuery(region: region));
+      final termNames = await ref.read(stageServiceProvider).termNames(region);
       if (mounted && token == _loadToken) {
         setState(() {
           _items = {for (final item in items) item.itemId: item};
           _operatorNames = {
             for (final operator in operators) operator.id: operator.name,
           };
+          _immunity = StageImmunityInfo.build(termNames, operators);
         });
       }
     } catch (error, stackTrace) {
       ref
           .read(appLoggerProvider)
-          .warning('stage reward names load failed', error, stackTrace);
+          .warning('stage links load failed', error, stackTrace);
     }
   }
 
@@ -223,7 +224,12 @@ class _StageDetailScreenState extends ConsumerState<StageDetailScreen> {
     if (detail != null) {
       mapCard = _Section(
         title: i18n.t('stages.map'),
-        child: StagePlayer(detail: detail, code: stage.code, i18n: i18n),
+        child: StagePlayer(
+          detail: detail,
+          code: stage.code,
+          i18n: i18n,
+          immunity: _immunity,
+        ),
       );
     } else if (_missingLevel || stage.levelId == null) {
       mapCard = RdNotice(
@@ -263,7 +269,7 @@ class _StageDetailScreenState extends ConsumerState<StageDetailScreen> {
           );
     final enemies = detail == null || detail.enemies.isEmpty
         ? null
-        : _EnemiesCard(i18n: i18n, detail: detail);
+        : _EnemiesCard(i18n: i18n, detail: detail, immunity: _immunity);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -692,10 +698,15 @@ class _RewardsCard extends StatelessWidget {
 /// The stage's enemies: a table (PC) or cards (phones), and the details of
 /// the chosen one (archive text, abilities, the stats the table leaves out).
 class _EnemiesCard extends StatefulWidget {
-  const _EnemiesCard({required this.i18n, required this.detail});
+  const _EnemiesCard({
+    required this.i18n,
+    required this.detail,
+    required this.immunity,
+  });
 
   final NexusI18n i18n;
   final StageDetail detail;
+  final StageImmunityInfo immunity;
 
   @override
   State<_EnemiesCard> createState() => _EnemiesCardState();
@@ -742,7 +753,11 @@ class _EnemiesCardState extends State<_EnemiesCard> {
                 const SizedBox(height: 8),
                 Text(i18n.t('stages.enemyHint'), style: RdText.caption),
                 const SizedBox(height: 12),
-                StageEnemyDetails(i18n: i18n, enemy: selected),
+                StageEnemyDetails(
+                  i18n: i18n,
+                  enemy: selected,
+                  immunity: widget.immunity,
+                ),
               ],
             ),
     );
@@ -939,6 +954,7 @@ class _EnemiesCardState extends State<_EnemiesCard> {
                         StageEnemyDetails(
                           i18n: i18n,
                           enemy: enemy,
+                          immunity: widget.immunity,
                           inset: false,
                         ),
                       ],

@@ -274,6 +274,7 @@ NormalizedRegion _normalize(
       operators: operators,
       stages: normalizers.stage.summaries(raw.stages, raw.zones),
       enemies: normalizers.stage.enemies(raw.enemyDatabase, raw.enemyHandbook),
+      termNames: baTermNames(raw.constants),
     ),
   );
 }

@@ -119,6 +119,12 @@ class EnsuringStageService implements StageService {
     await _readiness.ensure(region);
     return _inner.stageDetail(region, stageId);
   }
+
+  @override
+  Future<Map<String, String>> termNames(RegionCode region) async {
+    await _readiness.ensure(region);
+    return _inner.termNames(region);
+  }
 }
 
 class EnsuringItemService implements ItemService {

@@ -142,6 +142,7 @@ RegionSnapshot mergeUnreleasedOperators(
     ],
     stages: native.stages,
     enemies: native.enemies,
+    termNames: native.termNames,
     unreleasedSourceVersions: {
       for (final source in sources)
         source.region.value: source.sourceVersion.versionControl,

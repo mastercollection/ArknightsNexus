@@ -18,12 +18,14 @@ class StagePlayer extends StatefulWidget {
     required this.detail,
     required this.code,
     required this.i18n,
+    this.immunity = const StageImmunityInfo(),
     super.key,
   });
 
   final StageDetail detail;
   final String code;
   final NexusI18n i18n;
+  final StageImmunityInfo immunity;
 
   @override
   State<StagePlayer> createState() => _StagePlayerState();
@@ -302,6 +304,7 @@ class _StagePlayerState extends State<StagePlayer>
           StageEnemyDetails(
             i18n: i18n,
             enemy: focused,
+            immunity: widget.immunity,
             onClose: () => setState(() => _focus = null),
           ),
         ],

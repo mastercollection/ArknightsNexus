@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../data_sources/image_source.dart';
+import '../../domain/operator.dart';
 import '../../domain/stage.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../ui/redesign/rd_widgets.dart';
@@ -18,13 +20,60 @@ String formatStageWhole(double value) => value == value.roundToDouble()
     ? value.toStringAsFixed(0)
     : formatStageDecimal(value);
 
+/// The battle term each enemy immunity blocks. Silence and disarming have
+/// no term: no operator text links them.
+const immunityTerms = {
+  'stun': 'ba.stun',
+  'sleep': 'ba.sleep',
+  'frozen': 'ba.frozen',
+  'levitate': 'ba.levitate',
+  'feared': 'ba.fear',
+  'palsy': 'ba.palsy',
+  'attract': 'ba.attract',
+};
+
+/// What the stage page adds to an enemy's immunities: the game's own name
+/// of each, and the operators whose texts link its battle term (the
+/// operators' BA tags), whose effect this enemy ignores.
+class StageImmunityInfo {
+  const StageImmunityInfo({this.labels = const {}, this.operators = const {}});
+
+  /// [termNames] by term key, [operators] with their BA tags (term names).
+  factory StageImmunityInfo.build(
+    Map<String, String> termNames,
+    List<OperatorSummary> operators,
+  ) {
+    final labels = <String, String>{};
+    final tagged = <String, List<OperatorSummary>>{};
+    for (final MapEntry(key: immunity, value: term) in immunityTerms.entries) {
+      final name = termNames[term];
+      if (name == null) {
+        continue;
+      }
+      labels[immunity] = name;
+      tagged[immunity] = [
+        for (final operator in operators)
+          if (operator.baTags.contains(name)) operator,
+      ];
+    }
+    return StageImmunityInfo(labels: labels, operators: tagged);
+  }
+
+  final Map<String, String> labels;
+  final Map<String, List<OperatorSummary>> operators;
+
+  String label(NexusI18n i18n, String immunity) =>
+      labels[immunity] ?? i18n.t('stages.immune.$immunity');
+}
+
 /// Everything the stage knows of one enemy: archive text, the stats the
 /// table leaves out, abilities, skills and talents. The enemy table and the
 /// playback show the same panel, from the same [StageEnemy].
-class StageEnemyDetails extends StatelessWidget {
+class StageEnemyDetails extends StatefulWidget {
   const StageEnemyDetails({
     required this.i18n,
     required this.enemy,
+    this.immunity = const StageImmunityInfo(),
     this.inset = true,
     this.onClose,
     super.key,
@@ -39,9 +88,31 @@ class StageEnemyDetails extends StatelessWidget {
 
   /// Adds a close button to the header.
   final VoidCallback? onClose;
+  final StageImmunityInfo immunity;
+
+  @override
+  State<StageEnemyDetails> createState() => _StageEnemyDetailsState();
+}
+
+class _StageEnemyDetailsState extends State<StageEnemyDetails> {
+  /// The immunity whose operators show.
+  String? _open;
+
+  NexusI18n get i18n => widget.i18n;
+  StageEnemy get enemy => widget.enemy;
+
+  @override
+  void didUpdateWidget(StageEnemyDetails oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.enemy.enemyId != widget.enemy.enemyId) {
+      _open = null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final inset = widget.inset;
+    final onClose = widget.onClose;
     final stats = enemy.stats;
     final description = enemy.description;
     final values = <(String, String)>[
@@ -67,14 +138,6 @@ class StageEnemyDetails extends StatelessWidget {
         stats.hpRecoveryPerSec <= 0
             ? '-'
             : formatStageDecimal(stats.hpRecoveryPerSec),
-      ),
-      (
-        'stages.immune',
-        stats.immunities.isEmpty
-            ? i18n.t('stages.immune.none')
-            : stats.immunities
-                .map((name) => i18n.t('stages.immune.$name'))
-                .join(' · '),
       ),
     ];
     final body = Column(
@@ -132,6 +195,8 @@ class StageEnemyDetails extends StatelessWidget {
             for (final (key, value) in values) _Value(i18n.t(key), value),
           ],
         ),
+        const SizedBox(height: 12),
+        _immunities(context),
         const SizedBox(height: 14),
         Text(i18n.t('stages.abilities'), style: RdText.small),
         const SizedBox(height: 4),
@@ -172,6 +237,105 @@ class StageEnemyDetails extends StatelessWidget {
       return body;
     }
     return RdInset(padding: const EdgeInsets.all(16), child: body);
+  }
+
+  /// The immunities as chips; one with tagged operators opens their list.
+  Widget _immunities(BuildContext context) {
+    final immunities = enemy.stats.immunities;
+    final info = widget.immunity;
+    final open = _open;
+    final operators = open == null ? null : info.operators[open];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(i18n.t('stages.immune'), style: RdText.small),
+        const SizedBox(height: 6),
+        if (immunities.isEmpty)
+          Text(i18n.t('stages.immune.none'), style: RdText.muted)
+        else
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final name in immunities)
+                RdChip(
+                  label: info.label(i18n, name),
+                  height: 32,
+                  selected: open == name,
+                  trailing: info.operators[name] == null
+                      ? null
+                      : Text(
+                          '${info.operators[name]!.length}',
+                          style: RdText.mono(
+                            fontSize: 12,
+                            color: RdColors.muted,
+                          ),
+                        ),
+                  onPressed: (info.operators[name] ?? const []).isEmpty
+                      ? null
+                      : () => setState(
+                            () => _open = open == name ? null : name,
+                          ),
+                ),
+            ],
+          ),
+        if (immunities.any(
+          (name) => info.operators[name]?.isNotEmpty ?? false,
+        ))
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(i18n.t('stages.immune.hint'), style: RdText.caption),
+          ),
+        if (open != null && operators != null) ...[
+          const SizedBox(height: 10),
+          Text(
+            i18n.t('stages.immune.operators', {
+              'tag': info.label(i18n, open),
+              'count': operators.length,
+            }),
+            style: RdText.small,
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final operator in operators)
+                Material(
+                  color: RdColors.surface2,
+                  borderRadius: BorderRadius.circular(RdRadii.chip),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(RdRadii.chip),
+                    onTap: () => context.push('/operators/${operator.id}'),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 4, 10, 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          RdPortrait(
+                            charId: operator.id,
+                            name: operator.name,
+                            size: 28,
+                            radius: 6,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            operator.name,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: RdColors.link,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ],
+    );
   }
 }
 
