@@ -6,11 +6,15 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/providers.dart';
 import '../../core/errors/app_failure.dart';
+import '../../domain/item.dart';
 import '../../domain/stage.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../services/item_service.dart';
 import '../../services/operator_service.dart';
+import '../../data_sources/image_source.dart';
+import '../../ui/nexus_ui.dart' show ItemIcon;
 import '../../ui/redesign/rd_widgets.dart';
+import '../../widgets/cached_image.dart';
 import '../shared/number_format.dart';
 import 'stage_format.dart';
 import 'stage_player.dart';
@@ -38,7 +42,8 @@ class _StageDetailScreenState extends ConsumerState<StageDetailScreen> {
   String _errorMessage = '';
   bool _missingLevel = false;
   String _levelError = '';
-  Map<String, String> _names = const {};
+  Map<String, ItemEntry> _items = const {};
+  Map<String, String> _operatorNames = const {};
   int _loadToken = 0;
 
   @override
@@ -82,7 +87,7 @@ class _StageDetailScreenState extends ConsumerState<StageDetailScreen> {
       if (stage == null) {
         return;
       }
-      unawaited(_loadNames(token, stage));
+      unawaited(_loadRewardTargets(token, stage));
       try {
         final detail = await service.stageDetail(region, stage.stageId);
         if (mounted && token == _loadToken) {
@@ -114,8 +119,8 @@ class _StageDetailScreenState extends ConsumerState<StageDetailScreen> {
     }
   }
 
-  /// Item and operator names of the rewards.
-  Future<void> _loadNames(int token, StageSummary stage) async {
+  /// The items and operators the rewards link to.
+  Future<void> _loadRewardTargets(int token, StageSummary stage) async {
     if (stage.rewards.isEmpty) {
       return;
     }
@@ -129,8 +134,8 @@ class _StageDetailScreenState extends ConsumerState<StageDetailScreen> {
           .listOperators(OperatorQuery(region: region));
       if (mounted && token == _loadToken) {
         setState(() {
-          _names = {
-            for (final item in items) item.itemId: item.name,
+          _items = {for (final item in items) item.itemId: item};
+          _operatorNames = {
             for (final operator in operators) operator.id: operator.name,
           };
         });
@@ -222,7 +227,11 @@ class _StageDetailScreenState extends ConsumerState<StageDetailScreen> {
         child: StagePlayer(detail: detail, code: stage.code, i18n: i18n),
       );
     } else if (_missingLevel || stage.levelId == null) {
-      mapCard = RdNotice(text: i18n.t('stages.noLevel'));
+      mapCard = RdNotice(
+        text: i18n.t(
+          stage.levelId == null ? 'stages.storyOnly' : 'stages.noLevel',
+        ),
+      );
     } else if (_levelError.isNotEmpty) {
       mapCard = RdStatePanel(
         kind: RdStateKind.error,
@@ -247,7 +256,12 @@ class _StageDetailScreenState extends ConsumerState<StageDetailScreen> {
     final info = _InfoCard(i18n: i18n, stage: stage, detail: detail);
     final rewards = stage.rewards.isEmpty
         ? null
-        : _RewardsCard(i18n: i18n, rewards: stage.rewards, names: _names);
+        : _RewardsCard(
+            i18n: i18n,
+            rewards: stage.rewards,
+            items: _items,
+            operatorNames: _operatorNames,
+          );
     final enemies = detail == null || detail.enemies.isEmpty
         ? null
         : _EnemiesCard(i18n: i18n, detail: detail);
@@ -350,11 +364,17 @@ class _Header extends StatelessWidget {
       textBaseline: TextBaseline.alphabetic,
       children: [
         if (stage != null) ...[
-          Text(
-            stage.code,
-            style: RdText.mono(
-              fontSize: compact ? 20 : 26,
-              fontWeight: FontWeight.w700,
+          // Codes like `MN-EX-1` are long: they shrink with the name rather
+          // than push it out.
+          Flexible(
+            child: Text(
+              stage.code,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: RdText.mono(
+                fontSize: compact ? 20 : 24,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -408,12 +428,12 @@ class _Header extends StatelessWidget {
                     const SizedBox(height: 10),
                     Padding(
                       padding: const EdgeInsets.only(left: 12),
-                      child: Row(
+                      child: Wrap(
+                        spacing: 6,
+                        runSpacing: 8,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          ...chips.expand(
-                            (chip) => [chip, const SizedBox(width: 6)],
-                          ),
-                          const Spacer(),
+                          ...chips,
                           if (variantSwitch != null) variantSwitch,
                         ],
                       ),
@@ -429,23 +449,38 @@ class _Header extends StatelessWidget {
                     onPressed: onBack,
                   ),
                   const SizedBox(width: 14),
-                  Flexible(
+                  // The chips go under the title, so a long code or name
+                  // only shortens the title.
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         title,
-                        if (stage?.zoneName != null) ...[
-                          const SizedBox(height: 2),
-                          Text(stage!.zoneName!, style: RdText.muted),
-                        ],
+                        const SizedBox(height: 4),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            if (stage?.zoneName != null)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 4),
+                                child: Text(
+                                  stage!.zoneName!,
+                                  style: RdText.muted,
+                                ),
+                              ),
+                            ...chips,
+                          ],
+                        ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  ...chips.expand((chip) => [chip, const SizedBox(width: 6)]),
-                  const Spacer(),
-                  if (variantSwitch != null) variantSwitch,
+                  if (variantSwitch != null) ...[
+                    const SizedBox(width: 16),
+                    variantSwitch,
+                  ],
                 ],
               ),
       ),
@@ -565,68 +600,131 @@ class _RewardsCard extends StatelessWidget {
   const _RewardsCard({
     required this.i18n,
     required this.rewards,
-    required this.names,
+    required this.items,
+    required this.operatorNames,
   });
 
   final NexusI18n i18n;
   final List<StageReward> rewards;
-  final Map<String, String> names;
+  final Map<String, ItemEntry> items;
+  final Map<String, String> operatorNames;
+
+  String _label(StageReward reward) {
+    final drop = i18n.t('stages.drop.${reward.dropType}');
+    return reward.occPercent == 'ALWAYS' || reward.dropType == 'ONCE'
+        ? drop
+        : '$drop · ${i18n.t('stages.occ.${reward.occPercent}')}';
+  }
 
   @override
   Widget build(BuildContext context) {
-    String label(StageReward reward) {
-      final drop = i18n.t('stages.drop.${reward.dropType}');
-      return reward.occPercent == 'ALWAYS' || reward.dropType == 'ONCE'
-          ? drop
-          : '$drop · ${i18n.t('stages.occ.${reward.occPercent}')}';
-    }
-
     return _Section(
       title: i18n.t('stages.rewards'),
       child: Wrap(
         spacing: 8,
         runSpacing: 8,
         children: [
-          for (final reward in rewards)
-            RdInset(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    names[reward.id] ?? reward.id,
-                    style: const TextStyle(fontSize: 13, color: RdColors.text),
-                  ),
-                  const SizedBox(width: 8),
-                  RdPill(label: label(reward)),
-                ],
-              ),
-            ),
+          for (final reward in rewards) _reward(context, reward),
         ],
+      ),
+    );
+  }
+
+  Widget _reward(BuildContext context, StageReward reward) {
+    final item = items[reward.id];
+    final operatorName =
+        reward.type == 'CHAR' ? operatorNames[reward.id] : null;
+    final name = item?.name ?? operatorName ?? reward.id;
+    final String? target = item != null
+        ? '/items/${reward.id}'
+        : operatorName != null
+            ? '/operators/${reward.id}'
+            : null;
+    final icon = operatorName != null
+        ? RdPortrait(charId: reward.id, name: name, size: 36, radius: 8)
+        : ItemIcon(
+            itemId: reward.id,
+            iconId: item?.iconId,
+            name: name,
+            size: 36,
+          );
+    final content = Padding(
+      padding: const EdgeInsets.fromLTRB(6, 6, 10, 6),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          icon,
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                name,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: target == null ? RdColors.text : RdColors.link,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(_label(reward), style: RdText.small),
+            ],
+          ),
+        ],
+      ),
+    );
+    return Semantics(
+      button: target != null,
+      label:
+          target == null ? null : i18n.t('stages.openReward', {'name': name}),
+      child: Material(
+        color: RdColors.surface3,
+        borderRadius: BorderRadius.circular(RdRadii.control),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(RdRadii.control),
+          onTap: target == null ? null : () => context.push(target),
+          child: content,
+        ),
       ),
     );
   }
 }
 
-class _EnemiesCard extends StatelessWidget {
+/// The stage's enemies: a table (PC) or cards (phones), and the details of
+/// the chosen one (archive text, abilities, the stats the table leaves out).
+class _EnemiesCard extends StatefulWidget {
   const _EnemiesCard({required this.i18n, required this.detail});
 
   final NexusI18n i18n;
   final StageDetail detail;
 
+  @override
+  State<_EnemiesCard> createState() => _EnemiesCardState();
+}
+
+class _EnemiesCardState extends State<_EnemiesCard> {
+  /// The enemy whose details show; on phones an empty id folds them all.
+  String? _selected;
+
+  NexusI18n get i18n => widget.i18n;
+
+  List<StageEnemy> get _enemies =>
+      [...widget.detail.enemies]..sort((a, b) => b.count.compareTo(a.count));
+
   String _range(EnemyStats stats) => stats.rangeRadius <= 0
       ? i18n.t('stages.melee')
       : _decimal(stats.rangeRadius);
 
-  String _decimal(double value) =>
-      value == value.roundToDouble() ? value.toStringAsFixed(1) : '$value';
-
   @override
   Widget build(BuildContext context) {
-    final enemies = [...detail.enemies]
-      ..sort((a, b) => b.count.compareTo(a.count));
+    final enemies = _enemies;
     final total = enemies.fold(0, (sum, enemy) => sum + enemy.count);
     final compact = context.rdLayout == RdLayout.compact;
+    final selectedId = _selected ?? enemies.first.enemyId;
+    final selected = enemies.firstWhere(
+      (enemy) => enemy.enemyId == selectedId,
+      orElse: () => enemies.first,
+    );
     return _Section(
       title: i18n.t('stages.enemies'),
       trailing: Text(
@@ -636,30 +734,46 @@ class _EnemiesCard extends StatelessWidget {
         }),
         style: RdText.small,
       ),
-      child: compact ? _cards(enemies) : _table(enemies),
+      child: compact
+          ? _cards(enemies)
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _table(enemies, selected),
+                const SizedBox(height: 8),
+                Text(i18n.t('stages.enemyHint'), style: RdText.caption),
+                const SizedBox(height: 12),
+                _EnemyDetails(i18n: i18n, enemy: selected),
+              ],
+            ),
     );
   }
 
-  Widget _table(List<StageEnemy> enemies) {
+  void _select(StageEnemy enemy) => setState(() => _selected = enemy.enemyId);
+
+  Widget _table(List<StageEnemy> enemies, StageEnemy selected) {
     const numeric = TextAlign.right;
-    TextStyle mono = RdText.mono(fontSize: 13);
+    final mono = RdText.mono(fontSize: 13);
     Widget head(String key, {TextAlign align = TextAlign.left}) => Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           child: Text(i18n.t(key), textAlign: align, style: RdText.small),
         );
-    Widget cell(Widget child) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          child: child,
+    Widget cell(StageEnemy enemy, Widget child) => TableRowInkWell(
+          onTap: () => _select(enemy),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: child,
+          ),
         );
-    Widget number(String text) =>
-        cell(Text(text, textAlign: numeric, style: mono));
+    Widget number(StageEnemy enemy, String text) =>
+        cell(enemy, Text(text, textAlign: numeric, style: mono));
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minWidth: 900),
+        constraints: const BoxConstraints(minWidth: 960),
         child: Table(
           defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-          columnWidths: const {1: FlexColumnWidth(2.4)},
+          columnWidths: const {1: FlexColumnWidth(2.6)},
           children: [
             TableRow(
               decoration: const BoxDecoration(
@@ -681,33 +795,47 @@ class _EnemiesCard extends StatelessWidget {
             ),
             for (final enemy in enemies)
               TableRow(
-                decoration: const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: RdColors.hairline)),
+                decoration: BoxDecoration(
+                  color: enemy.enemyId == selected.enemyId
+                      ? RdColors.accentSoft
+                      : null,
+                  border: const Border(
+                    bottom: BorderSide(color: RdColors.hairline),
+                  ),
                 ),
                 children: [
                   cell(
+                    enemy,
                     Align(
                       alignment: Alignment.centerLeft,
                       child: RdPill(label: enemy.enemyIndex ?? '-'),
                     ),
                   ),
-                  cell(Text(enemy.name, style: RdText.body)),
                   cell(
+                    enemy,
+                    Row(
+                      children: [
+                        _EnemyIcon(enemy: enemy, size: 32),
+                        const SizedBox(width: 10),
+                        Flexible(child: Text(enemy.name, style: RdText.body)),
+                      ],
+                    ),
+                  ),
+                  cell(
+                    enemy,
                     Align(
                       alignment: Alignment.centerLeft,
                       child: _LevelPill(i18n: i18n, levelType: enemy.levelType),
                     ),
                   ),
-                  number('${enemy.count}'),
-                  number(formatWholeNumber(enemy.stats.maxHp)),
-                  number(formatWholeNumber(enemy.stats.atk)),
-                  number(formatWholeNumber(enemy.stats.def)),
-                  number(
-                    _decimal(enemy.stats.magicResistance).replaceAll('.0', ''),
-                  ),
-                  number('${enemy.stats.blockCnt}'),
-                  number(_decimal(enemy.stats.moveSpeed)),
-                  number(_range(enemy.stats)),
+                  number(enemy, '${enemy.count}'),
+                  number(enemy, formatWholeNumber(enemy.stats.maxHp)),
+                  number(enemy, formatWholeNumber(enemy.stats.atk)),
+                  number(enemy, formatWholeNumber(enemy.stats.def)),
+                  number(enemy, _whole(enemy.stats.magicResistance)),
+                  number(enemy, '${enemy.stats.blockCnt}'),
+                  number(enemy, _decimal(enemy.stats.moveSpeed)),
+                  number(enemy, _range(enemy.stats)),
                 ],
               ),
           ],
@@ -723,75 +851,260 @@ class _EnemiesCard extends StatelessWidget {
             Text(value, style: RdText.mono(fontSize: 12)),
           ],
         );
+    final open = _selected ?? '';
     return Column(
       children: [
         for (final enemy in enemies)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: RdInset(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
+            child: Material(
+              color: RdColors.surface3,
+              borderRadius: BorderRadius.circular(RdRadii.inner),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(RdRadii.inner),
+                onTap: () => setState(
+                  () => _selected = open == enemy.enemyId ? '' : enemy.enemyId,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (enemy.enemyIndex != null) ...[
-                        RdPill(label: enemy.enemyIndex!),
-                        const SizedBox(width: 8),
-                      ],
-                      Expanded(
-                        child: Text(
-                          enemy.name,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: RdColors.text,
+                      Row(
+                        children: [
+                          _EnemyIcon(enemy: enemy, size: 36),
+                          const SizedBox(width: 10),
+                          if (enemy.enemyIndex != null) ...[
+                            RdPill(label: enemy.enemyIndex!),
+                            const SizedBox(width: 8),
+                          ],
+                          Expanded(
+                            child: Text(
+                              enemy.name,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: RdColors.text,
+                              ),
+                            ),
                           ),
-                        ),
+                          if (enemy.levelType != 'NORMAL') ...[
+                            _LevelPill(i18n: i18n, levelType: enemy.levelType),
+                            const SizedBox(width: 8),
+                          ],
+                          Text(
+                            '×${enemy.count}',
+                            style: RdText.mono(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
-                      if (enemy.levelType != 'NORMAL') ...[
-                        _LevelPill(i18n: i18n, levelType: enemy.levelType),
-                        const SizedBox(width: 8),
+                      const SizedBox(height: 10),
+                      RdAutoGrid(
+                        columns: 3,
+                        gap: 6,
+                        children: [
+                          stat(
+                            'stages.col.hp',
+                            formatWholeNumber(enemy.stats.maxHp),
+                          ),
+                          stat(
+                            'stages.col.atk',
+                            formatWholeNumber(enemy.stats.atk),
+                          ),
+                          stat(
+                            'stages.col.def',
+                            formatWholeNumber(enemy.stats.def),
+                          ),
+                          stat(
+                            'stages.col.res',
+                            _whole(enemy.stats.magicResistance),
+                          ),
+                          stat(
+                            'stages.col.speed',
+                            _decimal(enemy.stats.moveSpeed),
+                          ),
+                          stat('stages.col.range', _range(enemy.stats)),
+                        ],
+                      ),
+                      if (open == enemy.enemyId) ...[
+                        const SizedBox(height: 12),
+                        _EnemyDetails(i18n: i18n, enemy: enemy, inset: false),
                       ],
-                      Text(
-                        '×${enemy.count}',
-                        style: RdText.mono(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  RdAutoGrid(
-                    columns: 3,
-                    gap: 6,
-                    children: [
-                      stat(
-                        'stages.col.hp',
-                        formatWholeNumber(enemy.stats.maxHp),
-                      ),
-                      stat(
-                        'stages.col.atk',
-                        formatWholeNumber(enemy.stats.atk),
-                      ),
-                      stat(
-                        'stages.col.def',
-                        formatWholeNumber(enemy.stats.def),
-                      ),
-                      stat(
-                        'stages.col.res',
-                        _decimal(enemy.stats.magicResistance)
-                            .replaceAll('.0', ''),
-                      ),
-                      stat('stages.col.speed', _decimal(enemy.stats.moveSpeed)),
-                      stat('stages.col.range', _range(enemy.stats)),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
           ),
       ],
+    );
+  }
+}
+
+String _decimal(double value) => value == value.roundToDouble()
+    ? value.toStringAsFixed(1)
+    : '${(value * 100).round() / 100}';
+
+String _whole(double value) =>
+    value == value.roundToDouble() ? value.toStringAsFixed(0) : _decimal(value);
+
+/// What the table leaves out: archive text, abilities and the rest of the
+/// stats.
+class _EnemyDetails extends StatelessWidget {
+  const _EnemyDetails({
+    required this.i18n,
+    required this.enemy,
+    this.inset = true,
+  });
+
+  final NexusI18n i18n;
+  final StageEnemy enemy;
+
+  /// Draws its own surface and header (the PC panel); a phone card already
+  /// has both.
+  final bool inset;
+
+  @override
+  Widget build(BuildContext context) {
+    final stats = enemy.stats;
+    final description = enemy.description;
+    final values = <(String, String)>[
+      (
+        'stages.damage',
+        enemy.damageType.isEmpty
+            ? '-'
+            : enemy.damageType
+                .map((type) => i18n.t('stages.damage.$type'))
+                .join(' · '),
+      ),
+      ('stages.col.motion', i18n.t('stages.motion.${stats.motion}')),
+      (
+        'stages.col.interval',
+        i18n.t('stages.seconds', {'value': _decimal(stats.baseAttackTime)}),
+      ),
+      ('stages.col.weight', '${stats.massLevel}'),
+      ('stages.col.lifeReduce', '${stats.lifePointReduce}'),
+      (
+        'stages.col.hpRegen',
+        stats.hpRecoveryPerSec <= 0 ? '-' : _decimal(stats.hpRecoveryPerSec),
+      ),
+      (
+        'stages.immune',
+        stats.immunities.isEmpty
+            ? i18n.t('stages.immune.none')
+            : stats.immunities
+                .map((name) => i18n.t('stages.immune.$name'))
+                .join(' · '),
+      ),
+    ];
+    final body = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (inset) ...[
+          Row(
+            children: [
+              _EnemyIcon(enemy: enemy, size: 48),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(enemy.name, style: RdText.sectionTitle),
+                    const SizedBox(height: 2),
+                    Text(
+                      [
+                        if (enemy.enemyIndex != null) enemy.enemyIndex!,
+                        i18n.t('stages.levelType.${enemy.levelType}'),
+                      ].join(' · '),
+                      style: RdText.small,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+        ],
+        if (description != null && description.trim().isNotEmpty) ...[
+          Text(
+            plainStageText(description),
+            style: RdText.secondary.copyWith(fontSize: 13, height: 1.5),
+          ),
+          const SizedBox(height: 12),
+        ],
+        Wrap(
+          spacing: 18,
+          runSpacing: 8,
+          children: [
+            for (final (key, value) in values)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(i18n.t(key), style: RdText.small),
+                  const SizedBox(height: 2),
+                  Text(value, style: RdText.mono(fontSize: 13)),
+                ],
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(i18n.t('stages.abilities'), style: RdText.small),
+        const SizedBox(height: 4),
+        if (enemy.abilities.isEmpty)
+          Text(i18n.t('stages.noAbilities'), style: RdText.muted)
+        else
+          for (final ability in enemy.abilities)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                '· ${plainStageText(ability)}',
+                style: RdText.body.copyWith(fontSize: 13, height: 1.45),
+              ),
+            ),
+      ],
+    );
+    if (!inset) {
+      return body;
+    }
+    return RdInset(padding: const EdgeInsets.all(16), child: body);
+  }
+}
+
+class _EnemyIcon extends StatelessWidget {
+  const _EnemyIcon({required this.enemy, required this.size});
+
+  final StageEnemy enemy;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final fallback = Center(
+      child: Text(
+        enemy.enemyIndex ?? '',
+        style: RdText.mono(fontSize: size * 0.3, color: RdColors.text2),
+      ),
+    );
+    return Container(
+      width: size,
+      height: size,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: RdColors.portrait,
+        borderRadius: BorderRadius.circular(size * 0.2),
+      ),
+      child: CachedImage(
+        kind: CachedImageKind.enemyIcon,
+        id: enemy.enemyId,
+        size: size,
+        shape: BoxShape.rectangle,
+        borderRadius: BorderRadius.zero,
+        fit: BoxFit.contain,
+        placeholder: fallback,
+      ),
     );
   }
 }

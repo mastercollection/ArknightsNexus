@@ -14,6 +14,7 @@ enum CachedImageKind {
   moduleType,
   skillIcon,
   itemIcon,
+  enemyIcon,
 }
 
 /// A request to resolve a cached image.
@@ -113,6 +114,13 @@ ImageDescriptor? buildImageDescriptor(CachedImageKind kind, String id) {
         relativePath: 'images/items/${_imageFileName(normalizedId)}',
         partRelativePath: 'images/items/${_imageFileName(normalizedId)}.part',
         candidateUrls: ['$imageRemoteBaseUrl/items/$normalizedId.png'],
+      );
+    case CachedImageKind.enemyIcon:
+      return ImageDescriptor(
+        parentRelativePath: 'images/enemies',
+        relativePath: 'images/enemies/${_imageFileName(normalizedId)}',
+        partRelativePath: 'images/enemies/${_imageFileName(normalizedId)}.part',
+        candidateUrls: ['$imageRemoteBaseUrl/enemy/$normalizedId.png'],
       );
     case CachedImageKind.moduleType:
       final uppercaseId = normalizedId.toUpperCase();

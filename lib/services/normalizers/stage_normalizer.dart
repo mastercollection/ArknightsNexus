@@ -297,6 +297,7 @@ class StageNormalizer {
       stats: stats,
       damageType: entry?.damageType ?? const [],
       abilities: entry?.abilities ?? const [],
+      description: entry?.description,
     );
   }
 

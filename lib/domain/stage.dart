@@ -612,6 +612,7 @@ class StageEnemy {
     required this.stats,
     this.damageType = const [],
     this.abilities = const [],
+    this.description,
   });
 
   final String enemyId;
@@ -630,6 +631,9 @@ class StageEnemy {
   final List<String> damageType;
   final List<String> abilities;
 
+  /// The archive's description, with the game's `<@...>` markup.
+  final String? description;
+
   factory StageEnemy.fromJson(Map<String, Object?> json) {
     return StageEnemy(
       enemyId: json['enemyId'] as String,
@@ -640,6 +644,7 @@ class StageEnemy {
       stats: EnemyStats.fromJson(_map(json['stats'])),
       damageType: _list(json['damageType'], (value) => value! as String),
       abilities: _list(json['abilities'], (value) => value! as String),
+      description: json['description'] as String?,
     );
   }
 
@@ -653,6 +658,7 @@ class StageEnemy {
       'stats': stats.toJson(),
       'damageType': damageType,
       'abilities': abilities,
+      if (description != null) 'description': description,
     };
   }
 }
