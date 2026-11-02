@@ -2,8 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/http/package_http_client.dart';
 import '../core/logging/app_logger.dart';
+import '../domain/account_profile.dart';
 import '../repositories/region_cache_repository.dart';
 import '../repositories/user_data_repository.dart';
+import '../services/account/account_proxy_client.dart';
 import '../services/image_cache_service.dart';
 import '../services/diagnostics_service.dart';
 import '../services/item_service.dart';
@@ -13,6 +15,7 @@ import '../services/plan_cost_service.dart';
 import '../services/published_snapshot_sync_service.dart';
 import '../services/region_readiness.dart';
 import '../services/region_sync_service.dart';
+import '../services/stage_service.dart';
 import '../services/user_data_file_service.dart';
 import '../services/user_data_service.dart';
 import 'platform_providers_web.dart'
@@ -49,6 +52,15 @@ final itemServiceProvider = Provider<ItemService>((ref) {
       ref.watch(regionCacheRepositoryProvider),
       userDataRepository: ref.watch(userDataRepositoryProvider),
     ),
+    ref.watch(regionReadinessProvider),
+  );
+});
+
+final stageServiceProvider = Provider<StageService>((ref) {
+  final httpClient = PackageHttpClient();
+  ref.onDispose(httpClient.close);
+  return EnsuringStageService(
+    CachedStageService(ref.watch(regionCacheRepositoryProvider), httpClient),
     ref.watch(regionReadinessProvider),
   );
 });
@@ -100,3 +112,16 @@ final dataRevisionProvider = StateProvider<int>((ref) => 0);
 final userDataFileServiceProvider = Provider<UserDataFileService>((ref) {
   return platform.createUserDataFileService();
 });
+
+/// The imported game account; reloads with [dataRevisionProvider], which an
+/// import or a user data import bumps.
+final accountProfileProvider = FutureProvider<AccountProfile?>((ref) {
+  ref.watch(dataRevisionProvider);
+  return ref.watch(userDataServiceProvider).getAccount();
+});
+
+/// Whether this build can sign in to game accounts. The game servers send
+/// no CORS headers, so the web build signs in through the account proxy
+/// (`NEXUS_ACCOUNT_PROXY_URL`) and has no import without one.
+const accountImportSupported = !bool.fromEnvironment('dart.library.js_util') ||
+    AccountProxyClient.configured;

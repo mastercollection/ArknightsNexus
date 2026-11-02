@@ -6,6 +6,7 @@ import 'logging_navigator_observer.dart';
 import 'page_transitions.dart';
 import 'providers.dart';
 import 'shell.dart';
+import '../features/account/account_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/items/item_detail_screen.dart';
 import '../features/items/items_screen.dart';
@@ -15,6 +16,8 @@ import '../features/operators/operators_workspace.dart';
 import '../features/plan/operator_plan_screen.dart';
 import '../features/plan/plan_screen.dart';
 import '../features/settings/settings_screen.dart';
+import '../features/stages/stage_detail_screen.dart';
+import '../features/stages/stages_screen.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'rootNavigator',
@@ -132,6 +135,32 @@ GoRouter createRouter({List<NavigatorObserver> Function()? observers}) {
               OperatorPlanScreen(
                 operatorId: state.pathParameters['operatorId']!,
               ),
+            ),
+          ),
+          GoRoute(
+            path: '/stages',
+            name: StagesScreen.routeName,
+            pageBuilder: (context, state) => page(
+              state,
+              const StagesScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/stages/:stageId',
+            name: StageDetailScreen.routeName,
+            pageBuilder: (context, state) => page(
+              state,
+              StageDetailScreen(
+                stageId: state.pathParameters['stageId']!,
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/account',
+            name: AccountScreen.routeName,
+            pageBuilder: (context, state) => page(
+              state,
+              const AccountScreen(),
             ),
           ),
           GoRoute(

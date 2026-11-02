@@ -9,6 +9,7 @@ class OperatorSummary {
     this.nations = const [],
     this.groups = const [],
     this.baTags = const [],
+    this.baApplied = const [],
     required this.thumbnailHue,
     this.releaseOrder = 0,
     this.unreleasedSource,
@@ -23,6 +24,11 @@ class OperatorSummary {
   final List<String> nations;
   final List<String> groups;
   final List<String> baTags;
+
+  /// The `ba.*` terms the operator applies (stuns, puts to sleep, ...), by
+  /// term key; [baTags] also has the ones it only reacts to or protects
+  /// from. See `appliedBaTermIds`.
+  final List<String> baApplied;
   final int thumbnailHue;
 
   /// Position of the operator in the region's `handbook_info_table`
@@ -52,6 +58,7 @@ class OperatorSummary {
       nations: _strings(json['nations']),
       groups: _strings(json['groups']),
       baTags: _strings(json['baTags']),
+      baApplied: _strings(json['baApplied']),
       thumbnailHue: _int(json['thumbnailHue']),
       releaseOrder: _optionalInt(json['releaseOrder']),
       unreleasedSource: json['unreleasedSource'] as String?,
@@ -69,6 +76,7 @@ class OperatorSummary {
       'nations': nations,
       'groups': groups,
       'baTags': baTags,
+      'baApplied': baApplied,
       'thumbnailHue': thumbnailHue,
       'releaseOrder': releaseOrder,
       if (unreleasedSource != null) 'unreleasedSource': unreleasedSource,
@@ -88,6 +96,7 @@ class OperatorDetail {
     this.nations = const [],
     this.groups = const [],
     this.baTags = const [],
+    this.baApplied = const [],
     required this.thumbnailHue,
     this.releaseOrder = 0,
     this.unreleasedSource,
@@ -119,6 +128,11 @@ class OperatorDetail {
   final List<String> nations;
   final List<String> groups;
   final List<String> baTags;
+
+  /// The `ba.*` terms the operator applies (stuns, puts to sleep, ...), by
+  /// term key; [baTags] also has the ones it only reacts to or protects
+  /// from. See `appliedBaTermIds`.
+  final List<String> baApplied;
   final int thumbnailHue;
 
   /// Release position; see [OperatorSummary.releaseOrder].
@@ -163,6 +177,7 @@ class OperatorDetail {
       nations: nations,
       groups: groups,
       baTags: baTags,
+      baApplied: baApplied,
       thumbnailHue: thumbnailHue,
       releaseOrder: releaseOrder,
       unreleasedSource: source,
@@ -197,6 +212,7 @@ class OperatorDetail {
       nations: _strings(json['nations']),
       groups: _strings(json['groups']),
       baTags: _strings(json['baTags']),
+      baApplied: _strings(json['baApplied']),
       thumbnailHue: _int(json['thumbnailHue']),
       releaseOrder: _optionalInt(json['releaseOrder']),
       unreleasedSource: json['unreleasedSource'] as String?,
@@ -252,6 +268,7 @@ class OperatorDetail {
       'nations': nations,
       'groups': groups,
       'baTags': baTags,
+      'baApplied': baApplied,
       'thumbnailHue': thumbnailHue,
       'releaseOrder': releaseOrder,
       if (unreleasedSource != null) 'unreleasedSource': unreleasedSource,

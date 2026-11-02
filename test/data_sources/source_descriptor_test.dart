@@ -19,13 +19,27 @@ void main() {
       final descriptor = RegionCode.kr.descriptor;
 
       for (final fileName in ArknightsDataSource.requiredTableFiles) {
+        final folder = fileName == ArknightsDataSource.enemyDatabaseFile
+            ? 'levels/enemydata'
+            : 'excel';
         expect(
           descriptor.tableUri(fileName).toString(),
           'https://raw.githubusercontent.com/'
           'ArknightsAssets/ArknightsGamedata/'
-          'refs/heads/master/kr/gamedata/excel/$fileName',
+          'refs/heads/master/kr/gamedata/$folder/$fileName',
         );
       }
+    });
+
+    test('builds level file URLs from level ids', () {
+      expect(
+        RegionCode.kr.descriptor
+            .levelUri('Obt/Main/level_main_01-07')
+            .toString(),
+        'https://raw.githubusercontent.com/'
+        'ArknightsAssets/ArknightsGamedata/'
+        'refs/heads/master/kr/gamedata/levels/obt/main/level_main_01-07.json',
+      );
     });
 
     test('uses the current upstream repository and branch', () {

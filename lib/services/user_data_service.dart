@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'dart:convert';
 
 import '../core/errors/app_failure.dart';
+import '../domain/account_profile.dart';
 import '../domain/user_data.dart';
 import '../repositories/user_data_repository.dart';
 
@@ -236,6 +237,61 @@ class UserDataService {
     return imported.length;
   }
 
+  Future<AccountProfile?> getAccount() =>
+      _serialized(() async => (await _repository.read()).account);
+
+  /// Stores [profile] and copies the account into the user data: the depot
+  /// replaces every item count, and planned operators the account owns get
+  /// their current training from it (their targets are raised to at least
+  /// that). The previous data is backed up first.
+  Future<AccountApplyResult> saveAccount(
+    AccountProfile profile,
+    Map<String, int> itemCounts,
+  ) =>
+      _serialized(() => _saveAccount(profile, itemCounts));
+
+  Future<AccountApplyResult> _saveAccount(
+    AccountProfile profile,
+    Map<String, int> itemCounts,
+  ) async {
+    final data = await _repository.read();
+    var updatedPlans = 0;
+    final plans = <UserPlanOperator>[];
+    for (final plan in data.operatorPlans) {
+      final owned = profile.operator(plan.operatorId);
+      if (owned == null) {
+        plans.add(plan);
+        continue;
+      }
+      plans.add(_validatePlan(applyAccountOperator(plan, owned)));
+      updatedPlans++;
+    }
+    await _repository.backup();
+    await _repository.write(
+      data.copyWith(
+        schemaVersion: UserData.schemaVersionValue,
+        itemCounts: _sanitizeItemCounts(itemCounts),
+        operatorPlans: plans,
+        account: profile,
+      ),
+    );
+    return AccountApplyResult(
+      itemKinds: itemCounts.length,
+      updatedPlans: updatedPlans,
+    );
+  }
+
+  /// Forgets the account; item counts and plans stay as they are.
+  Future<void> clearAccount() => _serialized(() async {
+        final data = await _repository.read();
+        await _repository.write(
+          data.copyWith(
+            schemaVersion: UserData.schemaVersionValue,
+            clearAccount: true,
+          ),
+        );
+      });
+
   String _validateImportContent(String content) {
     final trimmed = content.trim();
     if (trimmed.isEmpty ||
@@ -266,6 +322,7 @@ class UserDataService {
       selectedOperatorIds: _sanitizeIds(data.selectedOperatorIds),
       operatorPlans: plansByOperatorId.values.toList(),
       itemCounts: _sanitizeItemCounts(data.itemCounts),
+      account: data.account,
     );
   }
 
@@ -347,3 +404,79 @@ class UserDataService {
     return normalized;
   }
 }
+
+class AccountApplyResult {
+  const AccountApplyResult({
+    required this.itemKinds,
+    required this.updatedPlans,
+  });
+
+  final int itemKinds;
+  final int updatedPlans;
+}
+
+/// [plan] with the current state taken from [owned]; the target keeps its
+/// values where they are above the new current state.
+UserPlanOperator applyAccountOperator(
+  UserPlanOperator plan,
+  AccountOperator owned,
+) {
+  final skillCount = [
+    plan.current.skillLevels.length,
+    plan.target.skillLevels.length,
+    owned.skillLevels.length,
+  ].reduce((a, b) => a > b ? a : b);
+  final currentSkills = [
+    for (var index = 0; index < skillCount; index++)
+      owned.skillLevels.elementAtOrNull(index) ??
+          owned.skillLevels.firstOrNull?.clamp(1, 7) ??
+          1,
+  ];
+  final current = UserPlanOperatorState(
+    elite: owned.elite,
+    level: owned.level,
+    skillLevels: currentSkills,
+    modules: [
+      for (final module in plan.current.modules)
+        UserPlanModule(
+          moduleId: module.moduleId,
+          currentStage: owned.modules[module.moduleId] ?? 0,
+          targetStage: module.targetStage,
+        ),
+    ],
+  );
+
+  final target = plan.target;
+  final targetAhead = target.elite > current.elite ||
+      (target.elite == current.elite && target.level >= current.level);
+  final targetModules = {
+    for (final module in target.modules) module.moduleId: module,
+  };
+  return plan.copyWith(
+    current: current,
+    target: UserPlanOperatorState(
+      elite: targetAhead ? target.elite : current.elite,
+      level: targetAhead ? target.level : current.level,
+      skillLevels: [
+        for (var index = 0; index < skillCount; index++)
+          _max(
+            target.skillLevels.elementAtOrNull(index) ?? 1,
+            currentSkills[index],
+          ),
+      ],
+      modules: [
+        for (final module in current.modules)
+          UserPlanModule(
+            moduleId: module.moduleId,
+            currentStage: module.currentStage,
+            targetStage: _max(
+              targetModules[module.moduleId]?.targetStage ?? 0,
+              module.currentStage,
+            ),
+          ),
+      ],
+    ),
+  );
+}
+
+int _max(int a, int b) => a > b ? a : b;

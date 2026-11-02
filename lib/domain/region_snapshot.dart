@@ -4,6 +4,7 @@ import '../data_sources/region_code.dart';
 import 'building_formula.dart';
 import 'item.dart';
 import 'operator.dart';
+import 'stage.dart';
 
 class RegionSnapshot {
   const RegionSnapshot({
@@ -17,6 +18,9 @@ class RegionSnapshot {
     this.items = const [],
     this.buildingFormulas = const BuildingFormulaBundle(),
     this.operators = const [],
+    this.stages = const [],
+    this.enemies = const [],
+    this.termNames = const {},
     this.unreleasedSourceVersions = const {},
   });
 
@@ -31,7 +35,11 @@ class RegionSnapshot {
   /// 4: published snapshots add operators (and the items and terms they
   /// need) the region has not released yet, marked `unreleasedSource`.
   /// 5: operators carry their summons (`tokens`).
-  static const schemaVersion = 5;
+  /// 6: the region's stages and enemies.
+  /// 7: enemy stats carry their skills and talents.
+  /// 8: the names of the battle terms (`termNames`).
+  /// 9: operators carry the battle terms they apply (`baApplied`).
+  static const schemaVersion = 9;
 
   final int schemaVersionValue;
   final RegionCode region;
@@ -43,6 +51,17 @@ class RegionSnapshot {
   final List<ItemEntry> items;
   final BuildingFormulaBundle buildingFormulas;
   final List<OperatorDetail> operators;
+
+  /// Every stage with a code; their maps are read on demand.
+  final List<StageSummary> stages;
+
+  /// Every enemy, with its stats at each level.
+  final List<EnemyEntry> enemies;
+
+  /// Name per `ba.*` battle term (`ba.stun` → `기절`): the names
+  /// [OperatorSummary.baTags] lists, which the stage page matches an
+  /// enemy's immunities against.
+  final Map<String, String> termNames;
 
   /// `VersionControl` per source region code of the unreleased operators
   /// merged into this snapshot (see [OperatorDetail.unreleasedSource]);
@@ -74,6 +93,11 @@ class RegionSnapshot {
         json['operators'],
         (value) => OperatorDetail.fromJson(_map(value)),
       ),
+      stages:
+          _list(json['stages'], (value) => StageSummary.fromJson(_map(value))),
+      enemies:
+          _list(json['enemies'], (value) => EnemyEntry.fromJson(_map(value))),
+      termNames: _stringMap(json['termNames']),
       unreleasedSourceVersions: _stringMap(json['unreleasedSourceVersions']),
     );
   }
@@ -91,6 +115,9 @@ class RegionSnapshot {
       'items': items.map((entry) => entry.toJson()).toList(),
       'buildingFormulas': buildingFormulas.toJson(),
       'operators': operators.map((entry) => entry.toJson()).toList(),
+      'stages': stages.map((entry) => entry.toJson()).toList(),
+      'enemies': enemies.map((entry) => entry.toJson()).toList(),
+      'termNames': termNames,
     };
   }
 }

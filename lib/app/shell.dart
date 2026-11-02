@@ -29,6 +29,18 @@ enum NexusSection {
     'shell.nav.items',
     'shell.nav.items',
   ),
+  stages(
+    '/stages',
+    Icons.terrain_outlined,
+    'shell.nav.stages',
+    'shell.nav.stages',
+  ),
+  account(
+    '/account',
+    Icons.person_outline,
+    'shell.nav.account',
+    'shell.nav.account',
+  ),
   settings(
     '/settings',
     Icons.settings_outlined,

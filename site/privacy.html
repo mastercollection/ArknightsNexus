@@ -24,10 +24,10 @@
 
   <main class="wrap policy">
     <h1>개인정보처리방침</h1>
-    <p class="muted">시행일: 2026년 10월 15일</p>
+    <p class="muted">시행일: 2026년 10월 17일</p>
     <p class="lang-switch"><a href="#en">English version below</a></p>
 
-    <p>ArknightsNexus(이하 "앱")는 명일방주 플레이어를 위한 비공식 팬 메이드 앱으로, Windows·Android 앱과 이 사이트에서 실행되는 웹 버전이 있습니다. 앱에는 회원 가입이나 로그인이 없고, 개발자가 운영하는 서버도 없습니다(이 사이트는 GitHub Pages가 제공하는 정적 파일입니다). 이 방침은 앱이 어떤 데이터를 어디에 저장하고, 어떤 외부 서비스와 통신하는지 설명합니다.</p>
+    <p>ArknightsNexus(이하 "앱")는 명일방주 플레이어를 위한 비공식 팬 메이드 앱으로, Windows·Android 앱과 이 사이트에서 실행되는 웹 버전이 있습니다. 앱에는 회원 가입이나 로그인이 없고, 개발자가 운영하는 서버는 웹 버전의 게임 계정 가져오기에 쓰는 프록시(2절) 하나뿐입니다(이 사이트는 GitHub Pages가 제공하는 정적 파일입니다). 이 방침은 앱이 어떤 데이터를 어디에 저장하고, 어떤 외부 서비스와 통신하는지 설명합니다.</p>
 
     <section>
       <h2>1. 기기에 저장되는 데이터</h2>
@@ -38,7 +38,7 @@
             <tr><th>데이터</th><th>내용</th></tr>
           </thead>
           <tbody>
-            <tr><td><code>user_data.json</code></td><td>육성 계획(선택한 오퍼레이터와 목표 단계), 즐겨찾기, 아이템 보유 수량</td></tr>
+            <tr><td><code>user_data.json</code></td><td>육성 계획(선택한 오퍼레이터와 목표 단계), 즐겨찾기, 아이템 보유 수량, 가져온 게임 계정 정보(닉네임, 보유 오퍼레이터와 육성 상태)</td></tr>
             <tr><td>서버별 데이터 캐시</td><td>내려받은 게임 데이터(오퍼레이터, 아이템, 스테이지 등)</td></tr>
             <tr><td>이미지 캐시</td><td>내려받은 오퍼레이터·아이템 이미지</td></tr>
             <tr><td>로그</td><td>오류와 데이터 동기화 기록(문제 해결용)</td></tr>
@@ -63,6 +63,7 @@
         <li><strong>Google Fonts</strong> (<code>fonts.gstatic.com</code>): 화면을 그리는 Flutter 엔진이 기본 글꼴(Roboto)과 한국어·중국어·일본어 등을 표시할 Noto 글꼴을 이 서버에서 내려받습니다.</li>
       </ul>
       <p>관련 정책: <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub 개인정보 처리방침</a>, <a href="https://penguin-stats.io/">Penguin Stats</a>, <a href="https://developers.google.com/fonts/faq/privacy">Google Fonts 개인정보 FAQ</a>.</p>
+      <p><strong>게임 계정 가져오기</strong>(선택 기능): 사용자가 요스타 계정 이메일과 인증코드로 로그인하면, 앱은 요스타 로그인 서버(<code>*.yostarplat.com</code>)와 명일방주 게임 서버(<code>*.arknights.kr</code>, <code>*.arknights.global</code>, <code>*.arknights.jp</code>, <code>*.yo-star.com</code>)에서 계정 데이터를 읽어 기기에만 저장합니다. Windows·Android 앱은 이 서버들에 직접 접속합니다. <strong>웹 버전</strong>은 브라우저가 게임 서버에 직접 접속할 수 없어 개발자가 Cloudflare Workers에 둔 프록시를 거칩니다. 이메일, 인증코드, 로그인 토큰과 계정 데이터가 이 프록시를 지나가지만, 프록시는 로그인을 대신 수행해 결과를 그대로 돌려줄 뿐 아무것도 저장하거나 기록하지 않습니다. Cloudflare는 IP 주소 등 통신 정보를 <a href="https://www.cloudflare.com/privacypolicy/">자체 정책</a>에 따라 처리할 수 있습니다.</p>
     </section>
 
     <section>
@@ -70,7 +71,7 @@
       <ul>
         <li>분석(애널리틱스), 사용 통계, 크래시 리포트 도구를 사용하지 않습니다.</li>
         <li>광고를 표시하지 않으며 광고 식별자를 사용하지 않습니다.</li>
-        <li>개발자가 운영하는 서버가 없고, 개인정보를 판매하거나 제3자에게 제공하지 않습니다.</li>
+        <li>웹 버전의 계정 가져오기 프록시 외에는 개발자가 운영하는 서버가 없고, 개인정보를 판매하거나 제3자에게 제공하지 않습니다.</li>
       </ul>
     </section>
 
@@ -103,9 +104,9 @@
 
     <section id="en" lang="en">
       <h1>Privacy Policy</h1>
-      <p class="muted">Effective date: October 15, 2026</p>
+      <p class="muted">Effective date: October 17, 2026</p>
 
-      <p>ArknightsNexus ("the app") is an unofficial, fan-made app for Arknights players, available as Windows and Android apps and as a web version that runs on this site. It has no sign-up or login, and the developer runs no servers (this site is static files served by GitHub Pages). This policy explains what data the app stores, where, and which external services it contacts.</p>
+      <p>ArknightsNexus ("the app") is an unofficial, fan-made app for Arknights players, available as Windows and Android apps and as a web version that runs on this site. It has no sign-up or login, and the only developer-run server is the proxy for the web version's game account import (section 2; this site is static files served by GitHub Pages). This policy explains what data the app stores, where, and which external services it contacts.</p>
 
       <h2>1. Data stored on your device</h2>
       <p>Everything the app works with is stored only on your device and is never sent to the developer.</p>
@@ -115,7 +116,7 @@
             <tr><th>Data</th><th>Contents</th></tr>
           </thead>
           <tbody>
-            <tr><td><code>user_data.json</code></td><td>Promotion plans (selected operators and target levels), favorites, owned item counts</td></tr>
+            <tr><td><code>user_data.json</code></td><td>Promotion plans (selected operators and target levels), favorites, owned item counts, the imported game account (nickname, owned operators and their training)</td></tr>
             <tr><td>Region data cache</td><td>Downloaded game data (operators, items, stages, etc.)</td></tr>
             <tr><td>Image cache</td><td>Downloaded operator and item images</td></tr>
             <tr><td>Logs</td><td>Error and data sync records, for troubleshooting</td></tr>
@@ -138,12 +139,13 @@
         <li><strong>Google Fonts</strong> (<code>fonts.gstatic.com</code>): the Flutter engine that draws the page downloads its default font (Roboto) and the Noto fonts for Korean, Chinese, Japanese and other scripts from this server.</li>
       </ul>
       <p>See the <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub General Privacy Statement</a>, <a href="https://penguin-stats.io/">Penguin Stats</a> and the <a href="https://developers.google.com/fonts/faq/privacy">Google Fonts privacy FAQ</a>.</p>
+      <p><strong>Game account import</strong> (optional): when you sign in with your Yostar account email and a mailed code, the app reads your account from the Yostar login servers (<code>*.yostarplat.com</code>) and the Arknights game servers (<code>*.arknights.kr</code>, <code>*.arknights.global</code>, <code>*.arknights.jp</code>, <code>*.yo-star.com</code>) and stores it only on your device. The Windows and Android apps connect to these servers directly. The <strong>web version</strong> cannot reach the game servers from the browser, so it goes through a proxy the developer runs on Cloudflare Workers. Your email, the code, the login tokens and the account data pass through this proxy, which only performs the login and passes the result back; it stores and logs none of them. Cloudflare may process connection data such as your IP address under <a href="https://www.cloudflare.com/privacypolicy/">its own policy</a>.</p>
 
       <h2>3. What the app does not do</h2>
       <ul>
         <li>No analytics, usage statistics or crash reporting tools.</li>
         <li>No ads and no advertising identifiers.</li>
-        <li>No developer-run servers; personal data is never sold or shared with third parties.</li>
+        <li>No developer-run servers other than the web version's account import proxy; personal data is never sold or shared with third parties.</li>
       </ul>
 
       <h2>4. Google Drive sync (optional, upcoming)</h2>

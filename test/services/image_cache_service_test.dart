@@ -76,6 +76,23 @@ void main() {
       expect(result.isReady, isTrue);
     });
 
+    test('shares one download between concurrent requests', () async {
+      const id = 'enemy_1007_slime_2';
+      final url = Uri.parse('$imageRemoteBaseUrl/enemy/$id.png');
+      httpClient.registerBytes(url, [5, 5]);
+      const request = ImageRequest(kind: CachedImageKind.enemyIcon, id: id);
+
+      final results = await Future.wait([
+        service.resolve(request),
+        service.resolve(request),
+        service.resolve(request),
+      ]);
+
+      expect(results.every((result) => result.isReady), isTrue);
+      expect(httpClient.requestedUris.where((uri) => uri == url), hasLength(1));
+      expect(await File(results.first.filePath!).readAsBytes(), [5, 5]);
+    });
+
     test('falls back to the next candidate url on failure', () async {
       const id = 'cmd-y';
       final upper = Uri.parse('$imageRemoteBaseUrl/equipt/CMD-Y.png');

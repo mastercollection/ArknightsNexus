@@ -1,3 +1,5 @@
 tags:
   network:
     skip: "Hits live Arknights/Penguin endpoints; run with --tags network"
+  full-data:
+    skip: "Reads build/gamedata (dart run tool/fetch_gamedata.dart); run with --tags full-data --run-skipped"

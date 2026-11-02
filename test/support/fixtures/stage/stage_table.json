@@ -1,0 +1,254 @@
+{
+ "stages": {
+  "main_01-07": {
+   "stageType": "MAIN",
+   "difficulty": "NORMAL",
+   "performanceStageFlag": "NORMAL_STAGE",
+   "diffGroup": "NONE",
+   "unlockCondition": [
+    {
+     "stageId": "tr_09",
+     "completeState": "PASS"
+    }
+   ],
+   "stageId": "main_01-07",
+   "levelId": "Obt/Main/level_main_01-07",
+   "zoneId": "main_1",
+   "code": "1-7",
+   "name": "The Tyrant",
+   "description": "Please combine your Operators' firepower with the Stun Generator on the battlefield to stop the enemy attack.\n<@lv.item><Stun Generator></> Pay a cost to activate it, damaging and stunning nearby enemies.",
+   "hardStagedId": "main_01-07#f#",
+   "sixStarStageId": null,
+   "dangerLevel": "LV.10",
+   "dangerPoint": -1.0,
+   "loadingPicId": "loading1",
+   "canPractice": true,
+   "canBattleReplay": true,
+   "apCost": 6,
+   "apFailReturn": 6,
+   "maxSlot": -1,
+   "etItemId": null,
+   "etCost": -1,
+   "etFailReturn": -1,
+   "etButtonStyle": null,
+   "apProtectTimes": 0,
+   "diamondOnceDrop": 1,
+   "practiceTicketCost": 1,
+   "dailyStageDifficulty": -1,
+   "expGain": 60,
+   "goldGain": 60,
+   "loseExpGain": 0,
+   "loseGoldGain": 0,
+   "passFavor": 6,
+   "completeFavor": 6,
+   "slProgress": 27,
+   "displayMainItem": "30012",
+   "hilightMark": false,
+   "bossMark": false,
+   "isPredefined": false,
+   "isHardPredefined": false,
+   "isSkillSelectablePredefined": false,
+   "isStoryOnly": false,
+   "appearanceStyle": "MAIN_NORMAL",
+   "stageDropInfo": {
+    "firstPassRewards": null,
+    "firstCompleteRewards": null,
+    "passRewards": null,
+    "completeRewards": null,
+    "displayRewards": [
+     {
+      "type": "CHAR",
+      "id": "char_278_orchid",
+      "dropType": "ONCE"
+     },
+     {
+      "type": "MATERIAL",
+      "id": "30012",
+      "dropType": "NORMAL"
+     },
+     {
+      "type": "DIAMOND",
+      "id": "4002",
+      "dropType": "COMPLETE"
+     }
+    ],
+    "displayDetailRewards": [
+     {
+      "occPercent": "ALWAYS",
+      "type": "CHAR",
+      "id": "char_278_orchid",
+      "dropType": "ONCE"
+     },
+     {
+      "occPercent": "ALWAYS",
+      "type": "MATERIAL",
+      "id": "30012",
+      "dropType": "NORMAL"
+     },
+     {
+      "occPercent": "SOMETIMES",
+      "type": "MATERIAL",
+      "id": "30011",
+      "dropType": "ADDITIONAL"
+     },
+     {
+      "occPercent": "SOMETIMES",
+      "type": "MATERIAL",
+      "id": "30021",
+      "dropType": "ADDITIONAL"
+     },
+     {
+      "occPercent": "SOMETIMES",
+      "type": "MATERIAL",
+      "id": "30031",
+      "dropType": "ADDITIONAL"
+     },
+     {
+      "occPercent": "SOMETIMES",
+      "type": "MATERIAL",
+      "id": "30041",
+      "dropType": "ADDITIONAL"
+     },
+     {
+      "occPercent": "SOMETIMES",
+      "type": "MATERIAL",
+      "id": "30051",
+      "dropType": "ADDITIONAL"
+     },
+     {
+      "occPercent": "SOMETIMES",
+      "type": "MATERIAL",
+      "id": "30061",
+      "dropType": "ADDITIONAL"
+     },
+     {
+      "occPercent": "SOMETIMES",
+      "type": "MATERIAL",
+      "id": "3003",
+      "dropType": "ADDITIONAL"
+     },
+     {
+      "occPercent": "ALWAYS",
+      "type": "CARD_EXP",
+      "id": "2001",
+      "dropType": "ADDITIONAL"
+     },
+     {
+      "occPercent": "ALWAYS",
+      "type": "DIAMOND",
+      "id": "4002",
+      "dropType": "COMPLETE"
+     }
+    ]
+   },
+   "canUseCharm": false,
+   "canUseTech": false,
+   "canUseTrapTool": false,
+   "canUseBattlePerformance": false,
+   "canUseFirework": false,
+   "canMultipleBattle": true,
+   "startButtonOverrideId": null,
+   "isStagePatch": false,
+   "mainStageId": "main_01-07",
+   "extraCondition": null,
+   "extraInfo": null,
+   "sixStarBaseDesc": null,
+   "sixStarDisplayRewardList": null,
+   "advancedRuneIdList1": {},
+   "advancedRuneIdList2": {},
+   "useSpecialSizeMapPreview": false
+  },
+  "main_01-07#f#": {
+   "stageType": "MAIN",
+   "difficulty": "FOUR_STAR",
+   "performanceStageFlag": "NORMAL_STAGE",
+   "diffGroup": "NONE",
+   "unlockCondition": [
+    {
+     "stageId": "main_02-08",
+     "completeState": "PASS"
+    },
+    {
+     "stageId": "main_01-07",
+     "completeState": "COMPLETE"
+    }
+   ],
+   "stageId": "main_01-07#f#",
+   "levelId": "Obt/Main/level_main_01-07",
+   "zoneId": "main_1",
+   "code": "1-7",
+   "name": "The Tyrant",
+   "description": "<@lv.fs>Condition:</>\nDeployment Points recover at half the normal rate.",
+   "hardStagedId": null,
+   "sixStarStageId": null,
+   "dangerLevel": "-",
+   "dangerPoint": -1.0,
+   "loadingPicId": "loading1",
+   "canPractice": true,
+   "canBattleReplay": false,
+   "apCost": 6,
+   "apFailReturn": 6,
+   "maxSlot": -1,
+   "etItemId": null,
+   "etCost": -1,
+   "etFailReturn": -1,
+   "etButtonStyle": null,
+   "apProtectTimes": 0,
+   "diamondOnceDrop": 1,
+   "practiceTicketCost": 3,
+   "dailyStageDifficulty": -1,
+   "expGain": 60,
+   "goldGain": 60,
+   "loseExpGain": 0,
+   "loseGoldGain": 0,
+   "passFavor": 6,
+   "completeFavor": 6,
+   "slProgress": 0,
+   "displayMainItem": "",
+   "hilightMark": false,
+   "bossMark": false,
+   "isPredefined": false,
+   "isHardPredefined": false,
+   "isSkillSelectablePredefined": false,
+   "isStoryOnly": false,
+   "appearanceStyle": "MAIN_NORMAL",
+   "stageDropInfo": {
+    "firstPassRewards": null,
+    "firstCompleteRewards": null,
+    "passRewards": null,
+    "completeRewards": null,
+    "displayRewards": [
+     {
+      "type": "DIAMOND",
+      "id": "4002",
+      "dropType": "COMPLETE"
+     }
+    ],
+    "displayDetailRewards": [
+     {
+      "occPercent": "ALWAYS",
+      "type": "DIAMOND",
+      "id": "4002",
+      "dropType": "COMPLETE"
+     }
+    ]
+   },
+   "canUseCharm": false,
+   "canUseTech": false,
+   "canUseTrapTool": false,
+   "canUseBattlePerformance": false,
+   "canUseFirework": false,
+   "canMultipleBattle": false,
+   "startButtonOverrideId": null,
+   "isStagePatch": false,
+   "mainStageId": "main_01-07#f#",
+   "extraCondition": null,
+   "extraInfo": null,
+   "sixStarBaseDesc": null,
+   "sixStarDisplayRewardList": null,
+   "advancedRuneIdList1": {},
+   "advancedRuneIdList2": {},
+   "useSpecialSizeMapPreview": false
+  }
+ }
+}

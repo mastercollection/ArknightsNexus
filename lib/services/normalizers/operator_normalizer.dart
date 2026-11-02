@@ -165,6 +165,15 @@ class OperatorNormalizer {
         modules: modules,
       ),
     );
+    final baApplied = appliedBaTermIds(
+      baTagUnits(
+        characterTexts: [character.description, character.itemDesc],
+        traits: traits,
+        talents: talents,
+        skills: normalizedSkills,
+        modules: modules,
+      ),
+    );
 
     return OperatorDetail(
       id: id,
@@ -180,6 +189,7 @@ class OperatorNormalizer {
       nations: nations,
       groups: groups,
       baTags: baTags,
+      baApplied: baApplied,
       thumbnailHue: generateHue(id),
       releaseOrder: releaseOrder,
       quote: character.itemDesc ?? character.description ?? '',
@@ -728,6 +738,118 @@ Iterable<String> baTagTexts({
       }
     }
   }
+}
+
+/// [baTagTexts] with the blackboard keys of each text (none for the
+/// character descriptions).
+Iterable<(String, List<String>)> baTagUnits({
+  required List<String?> characterTexts,
+  required List<OperatorTrait> traits,
+  required List<OperatorTalent> talents,
+  required List<OperatorSkill> skills,
+  required List<OperatorModule> modules,
+}) sync* {
+  List<String> keys(List<OperatorBlackboardEntry> blackboard) =>
+      [for (final entry in blackboard) entry.key];
+  for (final text in characterTexts) {
+    if (text != null) {
+      yield (text, const []);
+    }
+  }
+  for (final trait in traits) {
+    yield (trait.description, keys(trait.blackboard));
+  }
+  for (final talent in talents) {
+    yield (talent.description, keys(talent.blackboard));
+  }
+  for (final skill in skills) {
+    yield (skill.description, const []);
+    for (final level in skill.levels) {
+      yield (level.description, keys(level.blackboard));
+    }
+  }
+  for (final module in modules) {
+    yield (module.uniEquipDesc, const []);
+    for (final phase in module.battlePhases) {
+      for (final part in phase.parts) {
+        for (final candidate in part.traitCandidates) {
+          yield (candidate.description, keys(candidate.blackboard));
+        }
+        for (final candidate in part.talentCandidates) {
+          yield (candidate.description, keys(candidate.blackboard));
+        }
+      }
+    }
+  }
+}
+
+/// Words of a blackboard key that apply a term, where they are not simply
+/// the term's own name (`ba.stun` → `stun`, `attack@s2_stun`).
+const _appliedTermKeys = {
+  'ba.frozen': 'freez|frozen|cold',
+  'ba.levitate': 'levitat',
+};
+
+/// What follows a linked term when the text only reacts to that state
+/// (`against Stunned enemies`, `기절 상태의 적`).
+final _reactsToTerm = RegExp(
+  r'^\s*(상태(인|의|에\s*있는)|된\s*적|[의인]\s*적|状態|狀態|状态|的敌人|的敵人|中の)'
+  r'|^\s+(enem|target|unit)',
+  caseSensitive: false,
+);
+
+/// Words near a linked term when the text protects from it ("빙결 상태
+/// 면역", "negates the next Stun").
+final _protectsFromTerm = RegExp(
+  r'면역|상쇄|저항|免疫|抵抗|无效|無效|無効|耐性|immun|resist|negat|nullif',
+  caseSensitive: false,
+);
+
+final _termLink = RegExp(r'<\$(ba\.[^>]+)>([^<]*)</>');
+
+/// The `ba.*` terms [units] apply, in order of first appearance. A text
+/// applies a term it links when its blackboard has a key for the effect
+/// (`stun`, `attack@sleep`, `levitate_duration`, `cold` for Freeze), or
+/// when the linked word is neither followed by a state phrase (it only
+/// reacts to enemies in that state) nor next to a protection word (it
+/// makes someone immune). The phrases cover the five data languages.
+List<String> appliedBaTermIds(Iterable<(String, List<String>)> units) {
+  final result = <String>[];
+  for (final (text, keys) in units) {
+    final lowerKeys = [for (final key in keys) key.toLowerCase()];
+    for (final match in _termLink.allMatches(text)) {
+      final termId = match.group(1)!;
+      if (result.contains(termId)) {
+        continue;
+      }
+      final keyWords = RegExp(
+        _appliedTermKeys[termId] ?? RegExp.escape(termId.substring(3)),
+      );
+      if (lowerKeys.any(keyWords.hasMatch)) {
+        result.add(termId);
+        continue;
+      }
+      final after = text.substring(match.end).split('<').first;
+      final around = [
+        text
+            .substring(0, match.start)
+            .replaceAll(RegExp(r'<[^>]*>'), '')
+            .split('')
+            .reversed
+            .take(20)
+            .toList()
+            .reversed
+            .join(),
+        match.group(2)!,
+        after.length > 20 ? after.substring(0, 20) : after,
+      ].join();
+      if (_protectsFromTerm.hasMatch(around) || _reactsToTerm.hasMatch(after)) {
+        continue;
+      }
+      result.add(termId);
+    }
+  }
+  return result;
 }
 
 /// The names in [termNames] of the BA terms [texts] link, in order of first

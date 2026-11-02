@@ -53,6 +53,7 @@ class PackageHttpClient implements NexusHttpClient {
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw NetworkFailure(
           'GET $uri failed with HTTP ${response.statusCode}',
+          statusCode: response.statusCode,
         );
       }
 

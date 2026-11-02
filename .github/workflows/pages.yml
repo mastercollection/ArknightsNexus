@@ -133,11 +133,18 @@ jobs:
       - name: Build web app
         env:
           REPO: ${{ github.event.repository.name }}
+          # The account proxy Worker (worker/); the web account import stays
+          # off until the repository variable NEXUS_ACCOUNT_PROXY_URL is set.
+          ACCOUNT_PROXY_URL: ${{ vars.NEXUS_ACCOUNT_PROXY_URL }}
         # CanvasKit is served from this site rather than Google's CDN; no
         # service worker, so a reload always picks up a new deploy.
         run: |
+          defines=()
+          if [ -n "$ACCOUNT_PROXY_URL" ]; then
+            defines+=(--dart-define=NEXUS_ACCOUNT_PROXY_URL="$ACCOUNT_PROXY_URL")
+          fi
           flutter build web --release --base-href "/$REPO/" \
-            --no-web-resources-cdn --pwa-strategy=none
+            --no-web-resources-cdn --pwa-strategy=none "${defines[@]}"
 
       - name: Assemble site
         # The app at the root, data/ from the step above, then the static

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show precisionErrorTolerance;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/providers.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../ui/redesign/rd_widgets.dart';
 import '../shared/number_format.dart';
@@ -422,6 +423,10 @@ class _OperatorsFilterSidebarState
                       value: !filters.hideUnreleased,
                       onChanged: list.toggleHideUnreleased,
                     ),
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(8, 12, 8, 0),
+                    child: OperatorOwnedFilter(),
+                  ),
                 ],
               ),
             ),
@@ -677,6 +682,7 @@ class OperatorsFilterChipRow extends ConsumerWidget {
     final list = ref.watch(operatorsListControllerProvider);
     final filters = list.filters;
     final query = filters.query.trim();
+    final hasAccount = ref.watch(accountProfileProvider).valueOrNull != null;
     // Board chips are 30-32px; phones keep 40px touch targets.
     final chipHeight = context.rdLayout == RdLayout.compact ? 40.0 : 32.0;
 
@@ -761,6 +767,20 @@ class OperatorsFilterChipRow extends ConsumerWidget {
               },
             ),
           ],
+          if (hasAccount) ...[
+            const SizedBox(width: 6),
+            pill(
+              key: const Key('operators-filter-owned'),
+              label: switch (filters.owned) {
+                null => i18n.t('account.ownedFilter'),
+                true => i18n.t('account.owned'),
+                false => i18n.t('account.notOwned'),
+              },
+              on: filters.owned != null,
+              mark: filters.owned == false ? '✕' : '▾',
+              onTap: list.cycleOwned,
+            ),
+          ],
           if (list.options.hasUnreleased) ...[
             const SizedBox(width: 6),
             pill(
@@ -795,6 +815,7 @@ class _AllFiltersSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final i18n = ref.watch(i18nProvider);
     final list = ref.watch(operatorsListControllerProvider);
+    final hasAccount = ref.watch(accountProfileProvider).valueOrNull != null;
     return RdSheetFrame(
       semanticLabel: i18n.t('operatorsList.filters.title'),
       scrollable: false,
@@ -810,6 +831,10 @@ class _AllFiltersSheet extends ConsumerWidget {
                 color: RdColors.text,
               ),
             ),
+            if (hasAccount) ...[
+              const SizedBox(height: 12),
+              const OperatorOwnedFilter(),
+            ],
             for (final dimension in OperatorFilterDimension.values) ...[
               const SizedBox(height: 12),
               Builder(
@@ -1042,6 +1067,49 @@ class _DimensionSheetState extends ConsumerState<_DimensionSheet> {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// All / owned / not owned of the imported account; nothing without one.
+class OperatorOwnedFilter extends ConsumerWidget {
+  const OperatorOwnedFilter({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (ref.watch(accountProfileProvider).valueOrNull == null) {
+      return const SizedBox.shrink();
+    }
+    final i18n = ref.watch(i18nProvider);
+    final list = ref.watch(operatorsListControllerProvider);
+    final owned = list.filters.owned;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          i18n.t('account.ownedFilter'),
+          style: const TextStyle(fontSize: 12, color: RdColors.text3),
+        ),
+        const SizedBox(height: 6),
+        RdSegmented<int>(
+          key: const Key('operators-filter-owned-segments'),
+          semanticLabel: i18n.t('account.ownedFilter'),
+          height: 36,
+          selected: owned == null ? 0 : (owned ? 1 : 2),
+          segments: [
+            RdSegment(0, i18n.t('account.ownedFilter.all')),
+            RdSegment(1, i18n.t('account.owned')),
+            RdSegment(2, i18n.t('account.notOwned')),
+          ],
+          onChanged: (value) => list.filters = list.filters.copyWith(
+            owned: () => switch (value) {
+              1 => true,
+              2 => false,
+              _ => null,
+            },
+          ),
+        ),
+      ],
     );
   }
 }

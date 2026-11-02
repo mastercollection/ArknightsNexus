@@ -27,7 +27,10 @@ class FakeHttpClient implements NexusHttpClient {
 
     final response = _textResponses[uri];
     if (response == null) {
-      throw NetworkFailure('No fake text response registered for $uri');
+      throw NetworkFailure(
+        'No fake text response registered for $uri',
+        statusCode: 404,
+      );
     }
 
     return response;

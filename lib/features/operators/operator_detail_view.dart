@@ -509,10 +509,31 @@ class _OperatorDetailViewState extends ConsumerState<OperatorDetailView> {
       filled: !_compact,
       onPressed: _toggleFavorite,
     );
+    final owned = ref
+        .watch(accountProfileProvider)
+        .valueOrNull
+        ?.operator(operator.id);
     final hero = _HeroCard(
       operator: operator,
       i18n: i18n,
       compact: _compact,
+      owned: owned == null
+          ? null
+          : [
+              i18n.t('account.owned'),
+              'E${owned.elite} Lv.${owned.level}',
+              i18n.t('account.operator.potential', {
+                'value': owned.potential + 1,
+              }),
+              if (owned.maxMastery > 0)
+                i18n.t('account.operator.mastery', {
+                  'value': owned.maxMastery,
+                })
+              else if (owned.skillLevels.isNotEmpty)
+                i18n.t('account.operator.skill', {
+                  'value': owned.skillLevels.first,
+                }),
+            ].join(' · '),
       // Phones keep the favorite in the app bar; the pane has no bar, so
       // its hero carries the favorite and the button closing the pane.
       trailing: _compact
@@ -1054,11 +1075,15 @@ class _HeroCard extends StatelessWidget {
     required this.i18n,
     required this.compact,
     this.trailing,
+    this.owned,
   });
 
   final OperatorDetail operator;
   final NexusI18n i18n;
   final bool compact;
+
+  /// The imported account's training of the operator, if it is owned.
+  final String? owned;
 
   /// Buttons at the end of the name row (pane: favorite and close).
   final List<Widget>? trailing;
@@ -1117,6 +1142,13 @@ class _HeroCard extends StatelessWidget {
             color: RdColors.rarity,
           ),
         ),
+        if (owned != null)
+          RdPill(
+            key: const Key('operator-detail-owned'),
+            label: owned!,
+            color: RdColors.accentSoft,
+            textColor: RdColors.accentText,
+          ),
         Wrap(
           spacing: 6,
           runSpacing: 6,
