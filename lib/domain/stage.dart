@@ -680,6 +680,8 @@ class EnemyStats {
     required this.applyWay,
     required this.motion,
     this.immunities = const [],
+    this.skills = const [],
+    this.talents = const [],
   });
 
   final int maxHp;
@@ -715,6 +717,12 @@ class EnemyStats {
   /// `levitate`, ...
   final List<String> immunities;
 
+  /// In the order the game tries them (by priority).
+  final List<EnemySkill> skills;
+
+  /// The talent values; the data has no talent names.
+  final List<EnemyValue> talents;
+
   factory EnemyStats.fromJson(Map<String, Object?> json) {
     return EnemyStats(
       maxHp: (json['maxHp'] as num).toInt(),
@@ -732,6 +740,10 @@ class EnemyStats {
       applyWay: json['applyWay'] as String,
       motion: json['motion'] as String,
       immunities: _list(json['immunities'], (value) => value! as String),
+      skills:
+          _list(json['skills'], (value) => EnemySkill.fromJson(_map(value))),
+      talents:
+          _list(json['talents'], (value) => EnemyValue.fromJson(_map(value))),
     );
   }
 
@@ -752,6 +764,80 @@ class EnemyStats {
       'applyWay': applyWay,
       'motion': motion,
       'immunities': immunities,
+      if (skills.isNotEmpty)
+        'skills': skills.map((entry) => entry.toJson()).toList(),
+      if (talents.isNotEmpty)
+        'talents': talents.map((entry) => entry.toJson()).toList(),
+    };
+  }
+}
+
+/// An enemy skill, known only by its internal name ([key], such as
+/// `ArcticBlast`) and its values; the archive's ability text says what it
+/// does.
+class EnemySkill {
+  const EnemySkill({
+    required this.key,
+    required this.cooldown,
+    required this.initCooldown,
+    this.spCost = 0,
+    this.values = const [],
+  });
+
+  final String key;
+
+  /// Seconds between uses.
+  final double cooldown;
+
+  /// Seconds before the first use.
+  final double initCooldown;
+  final int spCost;
+  final List<EnemyValue> values;
+
+  factory EnemySkill.fromJson(Map<String, Object?> json) {
+    return EnemySkill(
+      key: json['key'] as String,
+      cooldown: (json['cooldown'] as num).toDouble(),
+      initCooldown: (json['initCooldown'] as num).toDouble(),
+      spCost: (json['spCost'] as num?)?.toInt() ?? 0,
+      values:
+          _list(json['values'], (value) => EnemyValue.fromJson(_map(value))),
+    );
+  }
+
+  Map<String, Object?> toJson() {
+    return {
+      'key': key,
+      'cooldown': cooldown,
+      'initCooldown': initCooldown,
+      if (spCost != 0) 'spCost': spCost,
+      if (values.isNotEmpty)
+        'values': values.map((entry) => entry.toJson()).toList(),
+    };
+  }
+}
+
+/// One `blackboard` entry: a number or, for a few, a text.
+class EnemyValue {
+  const EnemyValue({required this.key, this.value, this.text});
+
+  final String key;
+  final double? value;
+  final String? text;
+
+  factory EnemyValue.fromJson(Map<String, Object?> json) {
+    return EnemyValue(
+      key: json['key'] as String,
+      value: (json['value'] as num?)?.toDouble(),
+      text: json['text'] as String?,
+    );
+  }
+
+  Map<String, Object?> toJson() {
+    return {
+      'key': key,
+      if (value != null) 'value': value,
+      if (text != null) 'text': text,
     };
   }
 }

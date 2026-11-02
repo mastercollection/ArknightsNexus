@@ -11,11 +11,10 @@ import '../../domain/stage.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../services/item_service.dart';
 import '../../services/operator_service.dart';
-import '../../data_sources/image_source.dart';
 import '../../ui/nexus_ui.dart' show ItemIcon;
 import '../../ui/redesign/rd_widgets.dart';
-import '../../widgets/cached_image.dart';
 import '../shared/number_format.dart';
+import 'stage_enemy_view.dart';
 import 'stage_format.dart';
 import 'stage_player.dart';
 import 'stages_screen.dart';
@@ -713,7 +712,7 @@ class _EnemiesCardState extends State<_EnemiesCard> {
 
   String _range(EnemyStats stats) => stats.rangeRadius <= 0
       ? i18n.t('stages.melee')
-      : _decimal(stats.rangeRadius);
+      : formatStageDecimal(stats.rangeRadius);
 
   @override
   Widget build(BuildContext context) {
@@ -743,7 +742,7 @@ class _EnemiesCardState extends State<_EnemiesCard> {
                 const SizedBox(height: 8),
                 Text(i18n.t('stages.enemyHint'), style: RdText.caption),
                 const SizedBox(height: 12),
-                _EnemyDetails(i18n: i18n, enemy: selected),
+                StageEnemyDetails(i18n: i18n, enemy: selected),
               ],
             ),
     );
@@ -815,7 +814,7 @@ class _EnemiesCardState extends State<_EnemiesCard> {
                     enemy,
                     Row(
                       children: [
-                        _EnemyIcon(enemy: enemy, size: 32),
+                        StageEnemyIcon(enemy: enemy, size: 32),
                         const SizedBox(width: 10),
                         Flexible(child: Text(enemy.name, style: RdText.body)),
                       ],
@@ -825,16 +824,19 @@ class _EnemiesCardState extends State<_EnemiesCard> {
                     enemy,
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: _LevelPill(i18n: i18n, levelType: enemy.levelType),
+                      child: StageLevelPill(
+                        i18n: i18n,
+                        levelType: enemy.levelType,
+                      ),
                     ),
                   ),
                   number(enemy, '${enemy.count}'),
                   number(enemy, formatWholeNumber(enemy.stats.maxHp)),
                   number(enemy, formatWholeNumber(enemy.stats.atk)),
                   number(enemy, formatWholeNumber(enemy.stats.def)),
-                  number(enemy, _whole(enemy.stats.magicResistance)),
+                  number(enemy, formatStageWhole(enemy.stats.magicResistance)),
                   number(enemy, '${enemy.stats.blockCnt}'),
-                  number(enemy, _decimal(enemy.stats.moveSpeed)),
+                  number(enemy, formatStageDecimal(enemy.stats.moveSpeed)),
                   number(enemy, _range(enemy.stats)),
                 ],
               ),
@@ -872,7 +874,7 @@ class _EnemiesCardState extends State<_EnemiesCard> {
                     children: [
                       Row(
                         children: [
-                          _EnemyIcon(enemy: enemy, size: 36),
+                          StageEnemyIcon(enemy: enemy, size: 36),
                           const SizedBox(width: 10),
                           if (enemy.enemyIndex != null) ...[
                             RdPill(label: enemy.enemyIndex!),
@@ -889,7 +891,10 @@ class _EnemiesCardState extends State<_EnemiesCard> {
                             ),
                           ),
                           if (enemy.levelType != 'NORMAL') ...[
-                            _LevelPill(i18n: i18n, levelType: enemy.levelType),
+                            StageLevelPill(
+                              i18n: i18n,
+                              levelType: enemy.levelType,
+                            ),
                             const SizedBox(width: 8),
                           ],
                           Text(
@@ -920,18 +925,22 @@ class _EnemiesCardState extends State<_EnemiesCard> {
                           ),
                           stat(
                             'stages.col.res',
-                            _whole(enemy.stats.magicResistance),
+                            formatStageWhole(enemy.stats.magicResistance),
                           ),
                           stat(
                             'stages.col.speed',
-                            _decimal(enemy.stats.moveSpeed),
+                            formatStageDecimal(enemy.stats.moveSpeed),
                           ),
                           stat('stages.col.range', _range(enemy.stats)),
                         ],
                       ),
                       if (open == enemy.enemyId) ...[
                         const SizedBox(height: 12),
-                        _EnemyDetails(i18n: i18n, enemy: enemy, inset: false),
+                        StageEnemyDetails(
+                          i18n: i18n,
+                          enemy: enemy,
+                          inset: false,
+                        ),
                       ],
                     ],
                   ),
@@ -940,192 +949,6 @@ class _EnemiesCardState extends State<_EnemiesCard> {
             ),
           ),
       ],
-    );
-  }
-}
-
-String _decimal(double value) => value == value.roundToDouble()
-    ? value.toStringAsFixed(1)
-    : '${(value * 100).round() / 100}';
-
-String _whole(double value) =>
-    value == value.roundToDouble() ? value.toStringAsFixed(0) : _decimal(value);
-
-/// What the table leaves out: archive text, abilities and the rest of the
-/// stats.
-class _EnemyDetails extends StatelessWidget {
-  const _EnemyDetails({
-    required this.i18n,
-    required this.enemy,
-    this.inset = true,
-  });
-
-  final NexusI18n i18n;
-  final StageEnemy enemy;
-
-  /// Draws its own surface and header (the PC panel); a phone card already
-  /// has both.
-  final bool inset;
-
-  @override
-  Widget build(BuildContext context) {
-    final stats = enemy.stats;
-    final description = enemy.description;
-    final values = <(String, String)>[
-      (
-        'stages.damage',
-        enemy.damageType.isEmpty
-            ? '-'
-            : enemy.damageType
-                .map((type) => i18n.t('stages.damage.$type'))
-                .join(' · '),
-      ),
-      ('stages.col.motion', i18n.t('stages.motion.${stats.motion}')),
-      (
-        'stages.col.interval',
-        i18n.t('stages.seconds', {'value': _decimal(stats.baseAttackTime)}),
-      ),
-      ('stages.col.weight', '${stats.massLevel}'),
-      ('stages.col.lifeReduce', '${stats.lifePointReduce}'),
-      (
-        'stages.col.hpRegen',
-        stats.hpRecoveryPerSec <= 0 ? '-' : _decimal(stats.hpRecoveryPerSec),
-      ),
-      (
-        'stages.immune',
-        stats.immunities.isEmpty
-            ? i18n.t('stages.immune.none')
-            : stats.immunities
-                .map((name) => i18n.t('stages.immune.$name'))
-                .join(' · '),
-      ),
-    ];
-    final body = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (inset) ...[
-          Row(
-            children: [
-              _EnemyIcon(enemy: enemy, size: 48),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(enemy.name, style: RdText.sectionTitle),
-                    const SizedBox(height: 2),
-                    Text(
-                      [
-                        if (enemy.enemyIndex != null) enemy.enemyIndex!,
-                        i18n.t('stages.levelType.${enemy.levelType}'),
-                      ].join(' · '),
-                      style: RdText.small,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-        ],
-        if (description != null && description.trim().isNotEmpty) ...[
-          Text(
-            plainStageText(description),
-            style: RdText.secondary.copyWith(fontSize: 13, height: 1.5),
-          ),
-          const SizedBox(height: 12),
-        ],
-        Wrap(
-          spacing: 18,
-          runSpacing: 8,
-          children: [
-            for (final (key, value) in values)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(i18n.t(key), style: RdText.small),
-                  const SizedBox(height: 2),
-                  Text(value, style: RdText.mono(fontSize: 13)),
-                ],
-              ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Text(i18n.t('stages.abilities'), style: RdText.small),
-        const SizedBox(height: 4),
-        if (enemy.abilities.isEmpty)
-          Text(i18n.t('stages.noAbilities'), style: RdText.muted)
-        else
-          for (final ability in enemy.abilities)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text(
-                '· ${plainStageText(ability)}',
-                style: RdText.body.copyWith(fontSize: 13, height: 1.45),
-              ),
-            ),
-      ],
-    );
-    if (!inset) {
-      return body;
-    }
-    return RdInset(padding: const EdgeInsets.all(16), child: body);
-  }
-}
-
-class _EnemyIcon extends StatelessWidget {
-  const _EnemyIcon({required this.enemy, required this.size});
-
-  final StageEnemy enemy;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final fallback = Center(
-      child: Text(
-        enemy.enemyIndex ?? '',
-        style: RdText.mono(fontSize: size * 0.3, color: RdColors.text2),
-      ),
-    );
-    return Container(
-      width: size,
-      height: size,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: RdColors.portrait,
-        borderRadius: BorderRadius.circular(size * 0.2),
-      ),
-      child: CachedImage(
-        kind: CachedImageKind.enemyIcon,
-        id: enemy.enemyId,
-        size: size,
-        shape: BoxShape.rectangle,
-        borderRadius: BorderRadius.zero,
-        fit: BoxFit.contain,
-        placeholder: fallback,
-      ),
-    );
-  }
-}
-
-class _LevelPill extends StatelessWidget {
-  const _LevelPill({required this.i18n, required this.levelType});
-
-  final NexusI18n i18n;
-  final String levelType;
-
-  @override
-  Widget build(BuildContext context) {
-    final (color, text) = switch (levelType) {
-      'BOSS' => (RdColors.dangerFill, RdColors.dangerText),
-      'ELITE' => (RdColors.warningFill, RdColors.warningText),
-      _ => (RdColors.surface3, RdColors.text2),
-    };
-    return RdPill(
-      label: i18n.t('stages.levelType.$levelType'),
-      color: color,
-      textColor: text,
     );
   }
 }

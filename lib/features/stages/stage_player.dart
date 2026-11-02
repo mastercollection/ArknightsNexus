@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import '../../domain/stage.dart';
 import '../../i18n/nexus_i18n.dart';
 import '../../ui/redesign/rd_widgets.dart';
+import 'stage_enemy_view.dart';
 import 'stage_format.dart';
 import 'stage_playback.dart';
 
@@ -44,6 +45,10 @@ class _StagePlayerState extends State<StagePlayer>
   /// Index into [StageDetail.lanes]; null shows every lane.
   int? _lane;
 
+  /// The enemy whose details show under the playback, picked on the map
+  /// or in the next spawns.
+  String? _focus;
+
   @override
   void initState() {
     super.initState();
@@ -58,6 +63,7 @@ class _StagePlayerState extends State<StagePlayer>
       _pause();
       _time = 0;
       _lane = null;
+      _focus = null;
       _setDetail();
     }
   }
@@ -174,17 +180,44 @@ class _StagePlayerState extends State<StagePlayer>
               final cell = map.width == 0
                   ? 0.0
                   : math.min(56.0, (constraints.maxWidth - 4) / map.width);
+              // A tap picks the enemy nearest to it, within a tile.
+              void pick(Offset local) {
+                if (cell <= 0) {
+                  return;
+                }
+                final col = (local.dx - 2) / cell - 0.5;
+                final row = map.height - 1 - ((local.dy - 2) / cell - 0.5);
+                EnemyOnMap? nearest;
+                var best = 0.8;
+                for (final enemy in enemies) {
+                  final distance = math.sqrt(
+                    math.pow(enemy.row - row, 2) + math.pow(enemy.col - col, 2),
+                  );
+                  if (distance < best) {
+                    best = distance;
+                    nearest = enemy;
+                  }
+                }
+                if (nearest != null) {
+                  setState(() => _focus = nearest!.spawn.enemyId);
+                }
+              }
+
               return Align(
                 alignment: Alignment.centerLeft,
-                child: SizedBox(
-                  width: cell * map.width + 4,
-                  height: cell * map.height + 4,
-                  child: CustomPaint(
-                    painter: StageMapPainter(
-                      detail: detail,
-                      enemies: enemies,
-                      lane: _lane,
-                      laneNumbers: numbers,
+                child: GestureDetector(
+                  onTapUp: (details) => pick(details.localPosition),
+                  child: SizedBox(
+                    width: cell * map.width + 4,
+                    height: cell * map.height + 4,
+                    child: CustomPaint(
+                      painter: StageMapPainter(
+                        detail: detail,
+                        enemies: enemies,
+                        lane: _lane,
+                        laneNumbers: numbers,
+                        focus: _focus,
+                      ),
                     ),
                   ),
                 ),
@@ -251,6 +284,8 @@ class _StagePlayerState extends State<StagePlayer>
             Padding(
               padding: const EdgeInsets.only(bottom: 6),
               child: _NextSpawn(
+                onTap: () => setState(() => _focus = spawn.enemyId),
+                selected: spawn.enemyId == _focus,
                 time: formatStageTime(spawn.time),
                 enemy: enemyById[spawn.enemyId],
                 enemyId: spawn.enemyId,
@@ -262,8 +297,18 @@ class _StagePlayerState extends State<StagePlayer>
                 ),
               ),
             ),
+        if (enemyById[_focus] case final focused?) ...[
+          const SizedBox(height: 6),
+          StageEnemyDetails(
+            i18n: i18n,
+            enemy: focused,
+            onClose: () => setState(() => _focus = null),
+          ),
+        ],
         const SizedBox(height: 10),
         _Legend(i18n: i18n),
+        const SizedBox(height: 6),
+        Text(i18n.t('stages.mapHint'), style: RdText.caption),
         const SizedBox(height: 8),
         Text(i18n.t('stages.estimate'), style: RdText.caption),
         if (detail.hasVariableSpawns) ...[
@@ -291,6 +336,8 @@ class _Count extends StatelessWidget {
 
 class _NextSpawn extends StatelessWidget {
   const _NextSpawn({
+    required this.onTap,
+    required this.selected,
     required this.time,
     required this.enemy,
     required this.enemyId,
@@ -303,39 +350,45 @@ class _NextSpawn extends StatelessWidget {
   final String enemyId;
   final int count;
   final String lane;
+  final VoidCallback onTap;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: RdColors.surface3,
+    return Material(
+      color: selected ? RdColors.accentSoft : RdColors.surface3,
+      borderRadius: BorderRadius.circular(RdRadii.control),
+      child: InkWell(
         borderRadius: BorderRadius.circular(RdRadii.control),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 40,
-            child: Text(
-              time,
-              style: RdText.mono(fontSize: 12, color: RdColors.secondary),
-            ),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 40,
+                child: Text(
+                  time,
+                  style: RdText.mono(fontSize: 12, color: RdColors.secondary),
+                ),
+              ),
+              if (enemy != null) ...[
+                StageEnemyIcon(enemy: enemy!, size: 28),
+                const SizedBox(width: 8),
+              ],
+              Expanded(
+                child: Text(
+                  '${enemy?.name ?? enemyId} ×$count',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 13, color: RdColors.text),
+                ),
+              ),
+              const SizedBox(width: 8),
+              RdPill(label: lane),
+            ],
           ),
-          if (enemy?.enemyIndex != null) ...[
-            RdPill(label: enemy!.enemyIndex!),
-            const SizedBox(width: 8),
-          ],
-          Expanded(
-            child: Text(
-              '${enemy?.name ?? enemyId} ×$count',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 13, color: RdColors.text),
-            ),
-          ),
-          const SizedBox(width: 8),
-          RdPill(label: lane),
-        ],
+        ),
       ),
     );
   }
@@ -557,6 +610,7 @@ class StageMapPainter extends CustomPainter {
     required this.enemies,
     required this.lane,
     required this.laneNumbers,
+    this.focus,
   });
 
   static const ground = Color(0xFF2A303B);
@@ -571,6 +625,9 @@ class StageMapPainter extends CustomPainter {
   final List<EnemyOnMap> enemies;
   final int? lane;
   final Map<int, int> laneNumbers;
+
+  /// The picked enemy, whose tokens get a thicker ring.
+  final String? focus;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -702,14 +759,22 @@ class StageMapPainter extends CustomPainter {
         'ELITE' => RdColors.accentHover,
         _ => RdColors.warning,
       };
+      final focused = enemy.spawn.enemyId == focus;
+      if (focused) {
+        canvas.drawCircle(
+          point,
+          radius + 4,
+          Paint()..color = RdColors.accentLine,
+        );
+      }
       canvas.drawCircle(point, radius, Paint()..color = RdColors.surface2);
       canvas.drawCircle(
         point,
         radius - 1,
         Paint()
-          ..color = color
+          ..color = focused ? RdColors.text : color
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 2,
+          ..strokeWidth = focused ? 3 : 2,
       );
       final label = enemy.enemy?.enemyIndex ?? '';
       if (label.isNotEmpty && radius >= 10) {
@@ -748,5 +813,6 @@ class StageMapPainter extends CustomPainter {
       oldDelegate.detail != detail ||
       oldDelegate.enemies != enemies ||
       oldDelegate.lane != lane ||
-      oldDelegate.laneNumbers != laneNumbers;
+      oldDelegate.laneNumbers != laneNumbers ||
+      oldDelegate.focus != focus;
 }

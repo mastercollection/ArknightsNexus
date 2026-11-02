@@ -93,6 +93,8 @@ class RawEnemyData {
     this.rangeRadius = const RawDefined(0, defined: false),
     this.enemyTags = const RawDefined([], defined: false),
     this.attributes = const RawEnemyAttributes(),
+    this.skills,
+    this.talents,
   });
 
   final RawDefined<String?> name;
@@ -113,6 +115,13 @@ class RawEnemyData {
   final RawDefined<List<String>> enemyTags;
   final RawEnemyAttributes attributes;
 
+  /// Null when the entry leaves the skills alone (a patch keeps the ones
+  /// below); a list replaces them whole.
+  final List<RawEnemySkill>? skills;
+
+  /// The talent values (`talentBlackboard`); null as for [skills].
+  final List<RawBlackboard>? talents;
+
   RawEnemyData overlay(RawEnemyData patch) {
     return RawEnemyData(
       name: name.overlay(patch.name),
@@ -124,6 +133,8 @@ class RawEnemyData {
       rangeRadius: rangeRadius.overlay(patch.rangeRadius),
       enemyTags: enemyTags.overlay(patch.enemyTags),
       attributes: attributes.overlay(patch.attributes),
+      skills: patch.skills ?? skills,
+      talents: patch.talents ?? talents,
     );
   }
 
@@ -138,6 +149,43 @@ class RawEnemyData {
       rangeRadius: RawDefined.parse(json['rangeRadius'], _double),
       enemyTags: RawDefined.parse(json['enemyTags'], rawStringList),
       attributes: RawEnemyAttributes.fromJson(rawMap(json['attributes'])),
+      skills: rawOptListOf(json['skills'], RawEnemySkill.fromJson),
+      talents: rawOptListOf(json['talentBlackboard'], RawBlackboard.fromJson),
+    );
+  }
+}
+
+/// A skill of an enemy. The data names it only by its [prefabKey]
+/// (`ArcticBlast`); what it does is the archive's ability text.
+class RawEnemySkill {
+  const RawEnemySkill({
+    required this.prefabKey,
+    required this.priority,
+    required this.cooldown,
+    required this.initCooldown,
+    required this.spCost,
+    this.blackboard = const [],
+  });
+
+  final String prefabKey;
+  final int priority;
+
+  /// Seconds between uses.
+  final double cooldown;
+
+  /// Seconds before the first use.
+  final double initCooldown;
+  final int spCost;
+  final List<RawBlackboard> blackboard;
+
+  factory RawEnemySkill.fromJson(Map<String, Object?> json) {
+    return RawEnemySkill(
+      prefabKey: rawString(json, 'prefabKey'),
+      priority: rawInt(json, 'priority'),
+      cooldown: rawDouble(json, 'cooldown'),
+      initCooldown: rawDouble(json, 'initCooldown'),
+      spCost: rawInt(json, 'spCost'),
+      blackboard: rawListOf(json['blackboard'], RawBlackboard.fromJson),
     );
   }
 }

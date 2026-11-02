@@ -182,6 +182,83 @@ void main() {
     expect(database.resolve('enemy_missing', 0), isNull);
   });
 
+  test('carries skills and talents through levels and stage overrides',
+      () async {
+    Map<String, Object?> skill(String key, double cooldown) => {
+          'prefabKey': key,
+          'priority': 1,
+          'cooldown': cooldown,
+          'initCooldown': cooldown,
+          'spCost': 0,
+          'blackboard': [
+            {'key': 'atk_scale', 'value': 1.5, 'valueStr': null},
+          ],
+        };
+    Map<String, Object?> defined(Object? value) =>
+        {'m_defined': true, 'm_value': value};
+    final database = RawEnemyDatabase.fromJson({
+      'enemy_test': [
+        {
+          'level': 0,
+          'enemyData': {
+            'name': defined('Test'),
+            'attributes': {'maxHp': defined(1000)},
+            'skills': [skill('ArcticBlast', 8.5)],
+            'talentBlackboard': [
+              {'key': 'reborn.duration', 'value': 5.0, 'valueStr': null},
+            ],
+          },
+        },
+        {
+          'level': 1,
+          'enemyData': {
+            'attributes': {'maxHp': defined(2000)},
+            'skills': [skill('IceShield', 30)],
+            'talentBlackboard': null,
+          },
+        },
+      ],
+    });
+    final enemy =
+        normalizer.enemies(database, const RawEnemyHandbookTable()).single;
+
+    expect(enemy.levels[0]!.skills.single.key, 'ArcticBlast');
+    expect(enemy.levels[0]!.skills.single.values.single.value, 1.5);
+    expect(enemy.levels[0]!.talents.single.key, 'reborn.duration');
+    // Level 1 replaces the skills and keeps the talents it leaves out.
+    expect(enemy.levels[1]!.skills.single.key, 'IceShield');
+    expect(enemy.levels[1]!.talents.single.value, 5);
+
+    // A stage's own skills replace the level's; its stats patch them.
+    final level = await _fixture('level_main_01-07.json');
+    final refs = (level['enemyDbRefs']! as List)
+        .map((ref) => Map<String, Object?>.from(ref as Map))
+        .toList();
+    refs.first
+      ..['id'] = 'enemy_test'
+      ..['overwrittenData'] = {
+        'skills': [skill('Override', 4)],
+      };
+    level['enemyDbRefs'] = refs;
+    final detail = normalizer.detail(
+      'main_01-07',
+      RawLevelData.fromJson(level),
+      {enemy.enemyId: enemy},
+    );
+    final stats = detail.enemies.first.stats;
+    expect(stats.skills.single.key, 'Override');
+    expect(stats.talents.single.key, 'reborn.duration');
+    expect(stats.maxHp, 1000);
+    expect(
+      EnemyStats.fromJson(
+        Map<String, Object?>.from(
+          jsonDecode(jsonEncode(stats.toJson())) as Map,
+        ),
+      ).skills.single.values.single.key,
+      'atk_scale',
+    );
+  });
+
   test('reads the flattened map grid of newer levels', () {
     final map = RawMapData.fromJson({
       'map': {

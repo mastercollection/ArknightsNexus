@@ -4,6 +4,7 @@ import '../../domain/stage.dart';
 import '../../raw_models/enemy_database.dart';
 import '../../raw_models/enemy_handbook.dart';
 import '../../raw_models/level_data.dart';
+import '../../raw_models/raw_helpers.dart';
 import '../../raw_models/stage_table.dart';
 import '../../raw_models/zone_table.dart';
 import 'stage_path_finder.dart';
@@ -325,8 +326,30 @@ class StageNormalizer {
         for (final entry in attributes.immunities.entries)
           if (entry.value.value) entry.key,
       ],
+      skills: _skills(data.skills ?? const []),
+      talents: _values(data.talents ?? const []),
     );
   }
+
+  List<EnemySkill> _skills(List<RawEnemySkill> skills) {
+    final sorted = [...skills]
+      ..sort((a, b) => a.priority.compareTo(b.priority));
+    return [
+      for (final skill in sorted)
+        EnemySkill(
+          key: skill.prefabKey,
+          cooldown: skill.cooldown,
+          initCooldown: skill.initCooldown,
+          spCost: skill.spCost,
+          values: _values(skill.blackboard),
+        ),
+    ];
+  }
+
+  List<EnemyValue> _values(List<RawBlackboard> blackboard) => [
+        for (final entry in blackboard)
+          EnemyValue(key: entry.key, value: entry.value, text: entry.valueStr),
+      ];
 
   /// [base] with the fields [patch] defines replaced.
   EnemyStats _patch(EnemyStats base, RawEnemyData patch) {
@@ -361,6 +384,8 @@ class StageNormalizer {
       applyWay: pick<String?>(patch.applyWay, base.applyWay) ?? base.applyWay,
       motion: pick<String?>(patch.motion, base.motion) ?? base.motion,
       immunities: immunities,
+      skills: patch.skills == null ? base.skills : _skills(patch.skills!),
+      talents: patch.talents == null ? base.talents : _values(patch.talents!),
     );
   }
 
