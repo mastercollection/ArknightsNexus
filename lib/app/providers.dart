@@ -15,6 +15,7 @@ import '../services/plan_cost_service.dart';
 import '../services/published_snapshot_sync_service.dart';
 import '../services/region_readiness.dart';
 import '../services/region_sync_service.dart';
+import '../services/stage_service.dart';
 import '../services/user_data_file_service.dart';
 import '../services/user_data_service.dart';
 import 'platform_providers_web.dart'
@@ -51,6 +52,15 @@ final itemServiceProvider = Provider<ItemService>((ref) {
       ref.watch(regionCacheRepositoryProvider),
       userDataRepository: ref.watch(userDataRepositoryProvider),
     ),
+    ref.watch(regionReadinessProvider),
+  );
+});
+
+final stageServiceProvider = Provider<StageService>((ref) {
+  final httpClient = PackageHttpClient();
+  ref.onDispose(httpClient.close);
+  return EnsuringStageService(
+    CachedStageService(ref.watch(regionCacheRepositoryProvider), httpClient),
     ref.watch(regionReadinessProvider),
   );
 });

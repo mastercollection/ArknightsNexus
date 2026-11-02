@@ -3,10 +3,12 @@ import '../data_sources/region_code.dart';
 import '../domain/building_formula.dart';
 import '../domain/item.dart';
 import '../domain/operator.dart';
+import '../domain/stage.dart';
 import '../repositories/region_cache_repository.dart';
 import 'item_service.dart';
 import 'operator_service.dart';
 import 'region_sync_service.dart';
+import 'stage_service.dart';
 
 /// Port of `ensureRegionReady` from `src/services/operators.ts`: data getters
 /// first run the backend's `ensure_region_fresh` (remote version check,
@@ -97,6 +99,25 @@ class EnsuringOperatorService implements OperatorService {
   ) async {
     await _readiness.ensure(region);
     return _inner.getOperatorDetail(region, operatorId);
+  }
+}
+
+class EnsuringStageService implements StageService {
+  const EnsuringStageService(this._inner, this._readiness);
+
+  final StageService _inner;
+  final RegionReadiness _readiness;
+
+  @override
+  Future<List<StageSummary>> listStages(RegionCode region) async {
+    await _readiness.ensure(region);
+    return _inner.listStages(region);
+  }
+
+  @override
+  Future<StageDetail> stageDetail(RegionCode region, String stageId) async {
+    await _readiness.ensure(region);
+    return _inner.stageDetail(region, stageId);
   }
 }
 

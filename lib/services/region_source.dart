@@ -11,6 +11,8 @@ import '../domain/sync_status.dart';
 import '../raw_models/battle_equip.dart';
 import '../raw_models/building_data.dart';
 import '../raw_models/character.dart';
+import '../raw_models/enemy_database.dart';
+import '../raw_models/enemy_handbook.dart';
 import '../raw_models/favor_table.dart';
 import '../raw_models/gamedata_const.dart';
 import '../raw_models/handbook_info.dart';
@@ -20,9 +22,11 @@ import '../raw_models/range_table.dart';
 import '../raw_models/skill.dart';
 import '../raw_models/stage_table.dart';
 import '../raw_models/uniequip.dart';
+import '../raw_models/zone_table.dart';
 import 'normalizers/building_formula_normalizer.dart';
 import 'normalizers/item_normalizer.dart';
 import 'normalizers/operator_normalizer.dart';
+import 'normalizers/stage_normalizer.dart';
 
 /// Fetches a region's raw upstream tables and normalizes them into a
 /// [RegionSnapshot], without touching any cache.
@@ -42,15 +46,18 @@ class RegionSource {
     BuildingFormulaNormalizer buildingFormulaNormalizer =
         const BuildingFormulaNormalizer(),
     OperatorNormalizer operatorNormalizer = const OperatorNormalizer(),
+    StageNormalizer stageNormalizer = const StageNormalizer(),
   })  : _httpClient = httpClient,
         _itemNormalizer = itemNormalizer,
         _buildingFormulaNormalizer = buildingFormulaNormalizer,
-        _operatorNormalizer = operatorNormalizer;
+        _operatorNormalizer = operatorNormalizer,
+        _stageNormalizer = stageNormalizer;
 
   final NexusHttpClient _httpClient;
   final ItemNormalizer _itemNormalizer;
   final BuildingFormulaNormalizer _buildingFormulaNormalizer;
   final OperatorNormalizer _operatorNormalizer;
+  final StageNormalizer _stageNormalizer;
 
   Future<DataVersion> fetchDataVersion(RegionCode region) async {
     final body = await _httpClient.getText(region.descriptor.dataVersionUri);
@@ -91,7 +98,7 @@ class RegionSource {
   }
 
   /// Decodes and normalizes on a background isolate: the tables are about
-  /// 80 MB of JSON, which would otherwise freeze the UI for seconds.
+  /// 100 MB of JSON, which would otherwise freeze the UI for seconds.
   Future<NormalizedRegion> normalizeInBackground(
     RegionCode region,
     DataVersion version,
@@ -106,6 +113,7 @@ class RegionSource {
           item: _itemNormalizer,
           buildingFormula: _buildingFormulaNormalizer,
           operator: _operatorNormalizer,
+          stage: _stageNormalizer,
         ),
       ),
     );
@@ -204,11 +212,13 @@ class _Normalizers {
     required this.item,
     required this.buildingFormula,
     required this.operator,
+    required this.stage,
   });
 
   final ItemNormalizer item;
   final BuildingFormulaNormalizer buildingFormula;
   final OperatorNormalizer operator;
+  final StageNormalizer stage;
 }
 
 // Top-level so the closure handed to [runInBackground] captures only the job,
@@ -262,6 +272,8 @@ NormalizedRegion _normalize(
       items: items,
       buildingFormulas: buildingFormulas,
       operators: operators,
+      stages: normalizers.stage.summaries(raw.stages, raw.zones),
+      enemies: normalizers.stage.enemies(raw.enemyDatabase, raw.enemyHandbook),
     ),
   );
 }
@@ -313,6 +325,9 @@ class _RawTables {
     required this.battleEquip,
     required this.favor,
     required this.handbookInfo,
+    required this.zones,
+    required this.enemyHandbook,
+    required this.enemyDatabase,
   });
 
   factory _RawTables.decode(DownloadedTables downloaded) {
@@ -347,6 +362,13 @@ class _RawTables {
       handbookInfo: RawHandbookInfoTable.fromJson(
         table(ArknightsDataSource.handbookInfoTableFile),
       ),
+      zones: RawZoneTable.fromJson(table(ArknightsDataSource.zoneTableFile)),
+      enemyHandbook: RawEnemyHandbookTable.fromJson(
+        table(ArknightsDataSource.enemyHandbookTableFile),
+      ),
+      enemyDatabase: RawEnemyDatabase.fromJson(
+        table(ArknightsDataSource.enemyDatabaseFile),
+      ),
     );
   }
 
@@ -364,4 +386,7 @@ class _RawTables {
   final RawBattleEquipTable battleEquip;
   final RawFavorTable favor;
   final RawHandbookInfoTable handbookInfo;
+  final RawZoneTable zones;
+  final RawEnemyHandbookTable enemyHandbook;
+  final RawEnemyDatabase enemyDatabase;
 }

@@ -140,6 +140,8 @@ RegionSnapshot mergeUnreleasedOperators(
       for (final operator in borrowed) _withItemsOf(operator, itemsById),
       ...native.operators,
     ],
+    stages: native.stages,
+    enemies: native.enemies,
     unreleasedSourceVersions: {
       for (final source in sources)
         source.region.value: source.sourceVersion.versionControl,

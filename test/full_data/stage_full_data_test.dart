@@ -20,10 +20,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 const _root = 'build/gamedata';
 
-/// Issues of the upstream repository rather than of the models: reported
-/// but not failing. It lacks the level files of some older events and of
-/// the Story Mode (`easy_*`) stages.
-const _upstreamGaps = {'missing level file'};
+/// Issues of the upstream data rather than of the models: reported but not
+/// failing. The repository lacks the level files of some older events and
+/// of the Story Mode (`easy_*`) stages, and a few walking routes have a
+/// checkpoint on a tile no walking way reaches (special event tiles).
+const _upstreamGaps = {'missing level file', 'walking path without a way'};
 
 void main() {
   for (final region in RegionCode.values) {
@@ -56,6 +57,10 @@ Future<void> _checkRegion(String region, String dir) async {
     _read('$dir/levels/enemydata/enemy_database.json'),
   );
 
+  final enemies = {
+    for (final enemy in normalizer.enemies(database, handbook))
+      enemy.enemyId: enemy,
+  };
   final summaries = normalizer.summaries(stageTable, zoneTable);
   final issues = <String, List<String>>{};
   void issue(String kind, String detail) => (issues[kind] ??= []).add(detail);
@@ -79,7 +84,7 @@ Future<void> _checkRegion(String region, String dir) async {
     final StageDetail detail;
     try {
       level = RawLevelData.fromJson(_read(file.path));
-      detail = normalizer.detail(stage.stageId, level, database, handbook);
+      detail = normalizer.detail(stage.stageId, level, enemies);
     } catch (error) {
       issue('failed to normalize', '${stage.stageId}: $error');
       continue;
@@ -130,18 +135,42 @@ void _checkDetail(
       position.col >= 0 &&
       position.col < map.width;
 
-  for (final (index, route) in detail.routes.indexed) {
-    if (route.isPlaceholder) {
+  for (final (index, path) in detail.paths.indexed) {
+    final off = path.steps.where((step) => !inside(step.position));
+    if (off.isNotEmpty) {
+      final position = off.first.position;
+      issue(
+        'path off the map',
+        '$stageId path $index (${position.row}, ${position.col})',
+      );
+    }
+    if (path.motionMode != 'WALK') {
       continue;
     }
-    for (final position in [route.start, route.end, ...route.waypoints]) {
-      if (!inside(position)) {
+    // A walking step that is not next to the one before (and not a jump)
+    // is where no way was found and the path falls back to a line.
+    for (final (i, step) in path.steps.indexed.skip(1)) {
+      final before = path.steps[i - 1].position;
+      final far = (step.position.row - before.row).abs() > 1 ||
+          (step.position.col - before.col).abs() > 1;
+      if (far && !step.jump) {
         issue(
-          'route off the map',
-          '$stageId route $index (${position.row}, ${position.col})',
+          'walking path without a way',
+          '$stageId path $index (${before.row}, ${before.col}) → '
+              '(${step.position.row}, ${step.position.col})',
         );
         break;
       }
+    }
+  }
+  for (final spawn in detail.spawns) {
+    if (spawn.pathIndex < 0 || spawn.pathIndex >= detail.paths.length) {
+      issue('spawn on unknown path', '$stageId ${spawn.enemyId}');
+    }
+  }
+  for (final (index, lane) in detail.lanes.indexed) {
+    if (lane.pathIndexes.any((i) => detail.paths[i].laneIndex != index)) {
+      issue('lane and path disagree', '$stageId lane $index');
     }
   }
 
@@ -159,7 +188,7 @@ void _checkDetail(
         }
         if (action.isSpawn &&
             (action.routeIndex < 0 ||
-                action.routeIndex >= detail.routes.length)) {
+                action.routeIndex >= level.routes.length)) {
           issue('spawn on unknown route', '$stageId ${action.key}');
         }
       }

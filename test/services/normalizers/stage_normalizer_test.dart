@@ -43,13 +43,16 @@ void main() {
     late StageDetail detail;
 
     setUpAll(() async {
-      detail = normalizer.detail(
-        'main_01-07',
-        RawLevelData.fromJson(await _fixture('level_main_01-07.json')),
+      final enemies = normalizer.enemies(
         RawEnemyDatabase.fromJson(await _fixture('enemy_database.json')),
         RawEnemyHandbookTable.fromJson(
           await _fixture('enemy_handbook_table.json'),
         ),
+      );
+      detail = normalizer.detail(
+        'main_01-07',
+        RawLevelData.fromJson(await _fixture('level_main_01-07.json')),
+        {for (final enemy in enemies) enemy.enemyId: enemy},
       );
     });
 
@@ -60,13 +63,6 @@ void main() {
       expect(detail.map.width, 11);
       expect(detail.map.height, 7);
       expect(detail.map.tiles, hasLength(77));
-
-      final route = detail.routes[1];
-      expect(route.start, const GridPosition(row: 5, col: 10));
-      expect(detail.map.tileAt(route.start).tileKey, 'tile_start');
-      expect(detail.map.tileAt(route.end).tileKey, 'tile_end');
-      expect(route.waypoints.first, const GridPosition(row: 5, col: 4));
-      expect(detail.routes.first.isPlaceholder, isTrue);
 
       expect(detail.devices.single.characterKey, 'trap_002_emp');
       expect(
@@ -108,6 +104,55 @@ void main() {
       final missing = detail.enemies.last;
       expect(missing.enemyIndex, isNull);
       expect(missing.name, isNotEmpty);
+    });
+
+    test('groups the routes into lanes and paths', () {
+      GridPosition at(int row, int col) => GridPosition(row: row, col: col);
+
+      // Three gates on the right, one goal on the left; the middle gate's
+      // enemies go round the device above or below it.
+      expect(detail.lanes.map((lane) => lane.start), [
+        at(5, 10),
+        at(1, 10),
+        at(3, 10),
+      ]);
+      expect(detail.lanes.every((lane) => lane.end == at(3, 0)), isTrue);
+      expect(detail.lanes.every((lane) => lane.fromGate), isTrue);
+      expect(detail.lanes.map((lane) => lane.pathIndexes.length), [1, 1, 2]);
+      final enemyCount =
+          detail.lanes.fold<int>(0, (sum, lane) => sum + lane.enemyCount);
+      expect(enemyCount, 41);
+      expect(detail.paths, hasLength(4));
+
+      // Tile by tile through the checkpoints (5,4), (4,4), (4,2), (3,2).
+      expect(detail.paths.first.steps.map((step) => step.position), [
+        at(5, 10),
+        at(5, 9),
+        at(5, 8),
+        at(5, 7),
+        at(5, 6),
+        at(5, 5),
+        at(5, 4),
+        at(4, 4),
+        at(4, 3),
+        at(4, 2),
+        at(3, 2),
+        at(3, 1),
+        at(3, 0),
+      ]);
+    });
+
+    test('schedules the spawns as PRTS.Map lists them', () {
+      expect(detail.spawns, hasLength(24));
+      const times = [6, 12, 18, 19, 32, 35, 50, 50, 53, 56, 65, 65, 71, 71];
+      const laterTimes = [75, 76, 86, 87, 94, 94, 99, 107, 108, 116];
+      expect(
+        detail.spawns.map((spawn) => spawn.time),
+        [...times, ...laterTimes],
+      );
+      expect(detail.lastSpawnTime, 118);
+      expect(detail.spawns.first.enemyId, 'enemy_1007_slime_2');
+      expect(detail.paths[detail.spawns.first.pathIndex].previewed, isTrue);
     });
 
     test('round-trips through JSON', () {

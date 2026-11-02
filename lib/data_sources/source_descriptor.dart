@@ -25,26 +25,38 @@ class SourceDescriptor {
   factory SourceDescriptor.forRegion(RegionCode region) {
     final tableUris = <String, Uri>{};
     for (final fileName in ArknightsDataSource.requiredTableFiles) {
-      tableUris[fileName] = _rawUri(region, fileName);
+      tableUris[fileName] =
+          _rawUri(region, ArknightsDataSource.tablePath(fileName));
     }
 
     return SourceDescriptor(
       region: region,
       repositoryUri: Uri.parse(repository),
       branch: defaultBranch,
-      dataVersionUri: _rawUri(region, ArknightsDataSource.dataVersionFile),
+      dataVersionUri: _rawUri(
+        region,
+        ArknightsDataSource.tablePath(ArknightsDataSource.dataVersionFile),
+      ),
       tableUris: Map.unmodifiable(tableUris),
     );
   }
 
   Uri tableUri(String fileName) {
-    return tableUris[fileName] ?? _rawUri(region, fileName);
+    return tableUris[fileName] ??
+        _rawUri(region, ArknightsDataSource.tablePath(fileName));
   }
 
-  static Uri _rawUri(RegionCode region, String fileName) {
+  /// The level file of a stage's `levelId` (`Obt/Main/level_main_01-07`):
+  /// the upstream folders are lower case while the ids are not.
+  Uri levelUri(String levelId) {
+    return _rawUri(region, 'levels/${levelId.toLowerCase()}.json');
+  }
+
+  /// [path] under the region's `gamedata/`.
+  static Uri _rawUri(RegionCode region, String path) {
     return Uri.parse(
       '$rawRepository/refs/heads/$defaultBranch/'
-      '${region.value}/gamedata/excel/$fileName',
+      '${region.value}/gamedata/$path',
     );
   }
 }

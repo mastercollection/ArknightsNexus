@@ -55,6 +55,7 @@ class RawLevelOptions {
     required this.initialCost,
     required this.maxCost,
     required this.costIncreaseTime,
+    this.moveMultiplier = 1,
   });
 
   final int characterLimit;
@@ -65,6 +66,9 @@ class RawLevelOptions {
   /// Seconds per DP.
   final double costIncreaseTime;
 
+  /// 0.5 in every level.
+  final double moveMultiplier;
+
   factory RawLevelOptions.fromJson(Map<String, Object?> json) {
     return RawLevelOptions(
       characterLimit: rawInt(json, 'characterLimit'),
@@ -72,6 +76,7 @@ class RawLevelOptions {
       initialCost: rawInt(json, 'initialCost'),
       maxCost: rawInt(json, 'maxCost'),
       costIncreaseTime: rawDouble(json, 'costIncreaseTime'),
+      moveMultiplier: rawDouble(json, 'moveMultiplier', defaultValue: 1),
     );
   }
 }
@@ -136,7 +141,7 @@ class RawTile {
   /// `MELEE`, `RANGED`, `ALL` or `NONE`.
   final String buildableType;
 
-  /// `ALL`, `FLY_ONLY` or `NONE`.
+  /// `ALL`, `WALK_ONLY`, `FLY_ONLY` or `NONE`.
   final String passableMask;
 
   factory RawTile.fromJson(Map<String, Object?> json) {
@@ -167,6 +172,8 @@ class RawLevelRoute {
     required this.startPosition,
     required this.endPosition,
     this.checkpoints = const [],
+    this.allowDiagonalMove = true,
+    this.visitEveryCheckPoint = false,
   });
 
   /// `WALK` or `FLY`; `E_NUM` marks an unused placeholder route (such as
@@ -175,6 +182,10 @@ class RawLevelRoute {
   final RawGridPosition startPosition;
   final RawGridPosition endPosition;
   final List<RawCheckpoint> checkpoints;
+  final bool allowDiagonalMove;
+
+  /// Lets a walking enemy pass holes (`tile_hole`) on its way.
+  final bool visitEveryCheckPoint;
 
   factory RawLevelRoute.fromJson(Map<String, Object?> json) {
     return RawLevelRoute(
@@ -182,6 +193,8 @@ class RawLevelRoute {
       startPosition: RawGridPosition.fromJson(rawMap(json['startPosition'])),
       endPosition: RawGridPosition.fromJson(rawMap(json['endPosition'])),
       checkpoints: rawListOf(json['checkpoints'], RawCheckpoint.fromJson),
+      allowDiagonalMove: rawBool(json, 'allowDiagonalMove', defaultValue: true),
+      visitEveryCheckPoint: rawBool(json, 'visitEveryCheckPoint'),
     );
   }
 }
@@ -193,9 +206,12 @@ class RawCheckpoint {
     required this.time,
   });
 
-  /// `MOVE`, `WAIT_FOR_SECONDS`, `WAIT_CURRENT_WAVE_TIME`, ...
+  /// `MOVE`, `PATROL_MOVE`, `WAIT_FOR_SECONDS`, `WAIT_CURRENT_FRAGMENT_TIME`,
+  /// `WAIT_CURRENT_WAVE_TIME`, `DISAPPEAR`, `APPEAR_AT_POS`, ...
   final String type;
   final RawGridPosition position;
+
+  /// Seconds, for the waits.
   final double time;
 
   factory RawCheckpoint.fromJson(Map<String, Object?> json) {
@@ -240,14 +256,20 @@ class RawEnemyDbRef {
 }
 
 class RawLevelWave {
-  const RawLevelWave({required this.preDelay, this.fragments = const []});
+  const RawLevelWave({
+    required this.preDelay,
+    this.postDelay = 0,
+    this.fragments = const [],
+  });
 
   final double preDelay;
+  final double postDelay;
   final List<RawWaveFragment> fragments;
 
   factory RawLevelWave.fromJson(Map<String, Object?> json) {
     return RawLevelWave(
       preDelay: rawDouble(json, 'preDelay'),
+      postDelay: rawDouble(json, 'postDelay'),
       fragments: rawListOf(json['fragments'], RawWaveFragment.fromJson),
     );
   }
@@ -277,6 +299,7 @@ class RawWaveAction {
     required this.routeIndex,
     this.hiddenGroup,
     this.randomSpawnGroupKey,
+    this.autoPreviewRoute = false,
   });
 
   /// `SPAWN` (its [key] is an enemy id), `STORY`, `PREVIEW_CURSOR`,
@@ -294,6 +317,9 @@ class RawWaveAction {
   /// Set on actions of which only one of the group spawns.
   final String? randomSpawnGroupKey;
 
+  /// Whether the game shows the route before this spawn.
+  final bool autoPreviewRoute;
+
   bool get isSpawn => actionType == 'SPAWN';
 
   factory RawWaveAction.fromJson(Map<String, Object?> json) {
@@ -306,6 +332,7 @@ class RawWaveAction {
       routeIndex: rawInt(json, 'routeIndex'),
       hiddenGroup: rawOptString(json, 'hiddenGroup'),
       randomSpawnGroupKey: rawOptString(json, 'randomSpawnGroupKey'),
+      autoPreviewRoute: rawBool(json, 'autoPreviewRoute'),
     );
   }
 }

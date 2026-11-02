@@ -16,6 +16,9 @@ class ArknightsDataSource {
     battleEquipTableFile,
     favorTableFile,
     handbookInfoTableFile,
+    zoneTableFile,
+    enemyHandbookTableFile,
+    enemyDatabaseFile,
   ];
 
   static const characterTableFile = 'character_table.json';
@@ -32,4 +35,14 @@ class ArknightsDataSource {
 
   /// Only the key order of its `handbookDict` is used: the release order.
   static const handbookInfoTableFile = 'handbook_info_table.json';
+  static const zoneTableFile = 'zone_table.json';
+  static const enemyHandbookTableFile = 'enemy_handbook_table.json';
+
+  /// Every enemy's stats; the one table outside `excel/`.
+  static const enemyDatabaseFile = 'enemy_database.json';
+
+  /// Where [fileName] sits under a region's `gamedata/`.
+  static String tablePath(String fileName) => fileName == enemyDatabaseFile
+      ? 'levels/enemydata/$fileName'
+      : 'excel/$fileName';
 }

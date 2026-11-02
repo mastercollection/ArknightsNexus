@@ -52,15 +52,15 @@ see `worker/README.md` for deploying the Worker.
 ## Game data flow
 
 The app needs one normalized `RegionSnapshot` per region (operators, items,
-building formulas, terms, stage codes). It gets it in this order:
+building formulas, terms, stages, enemies). It gets it in this order:
 
 1. **Published snapshot (default).** `.github/workflows/pages.yml` runs
    `tool/build_snapshots.dart`, which fetches the raw tables and normalizes
    them with the app's own code (`lib/services/region_source.dart`), and
    publishes the result on GitHub Pages:
    `https://mastercollection.github.io/ArknightsNexus/data/manifest.json` plus
-   `data/v{schemaVersion}/{region}/snapshot.json` (about 15 MB of JSON per
-   region, about 2 MB as served gzipped). `PublishedSnapshotSyncService`
+   `data/v{schemaVersion}/{region}/snapshot.json` (about 21 MB of JSON per
+   region, about 3 MB as served gzipped). `PublishedSnapshotSyncService`
    reads the manifest, skips the download when the cached snapshot already
    has the published `VersionControl`, otherwise downloads the snapshot,
    checks its size and SHA-256, decodes it on a background isolate and
@@ -69,9 +69,18 @@ building formulas, terms, stage codes). It gets it in this order:
    be fetched or verified, the region or this app's
    `RegionSnapshot.schemaVersion` is not published, or the published copy is
    older than the cached snapshot, the app logs the reason and falls back to
-   `DartRegionSyncService`: about 80 MB of tables from
+   `DartRegionSyncService`: about 100 MB of tables from
    `raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata`, normalized
    on the device.
+
+A stage's map and spawn schedule are not in the snapshot: `StageService`
+fetches the stage's level file (tens of kilobytes) from the same upstream
+repository when its page opens, on every platform, and keeps the last few
+for the session. The upstream repository lacks the level files of some
+older events and of the Story Mode stages; those pages show no map.
+`dart run tool/fetch_gamedata.dart` downloads every region's level files
+for `flutter test --tags full-data --run-skipped`, which normalizes every
+stage.
 
 The freshness check runs once per region per app session; the manual sync
 buttons use the same order. Pages can lag upstream by up to the hourly
