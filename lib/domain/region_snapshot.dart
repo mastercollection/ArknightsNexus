@@ -35,7 +35,8 @@ class RegionSnapshot {
   /// need) the region has not released yet, marked `unreleasedSource`.
   /// 5: operators carry their summons (`tokens`).
   /// 6: the region's stages and enemies.
-  static const schemaVersion = 6;
+  /// 7: enemy stats carry their skills and talents.
+  static const schemaVersion = 7;
 
   final int schemaVersionValue;
   final RegionCode region;
