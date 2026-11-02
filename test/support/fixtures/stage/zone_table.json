@@ -1,0 +1,22 @@
+{
+ "zones": {
+  "main_1": {
+   "zoneID": "main_1",
+   "zoneIndex": 1,
+   "type": "MAINLINE",
+   "zoneNameFirst": "Episode 1",
+   "zoneNameSecond": "Evil Time Part 2",
+   "zoneNameTitleCurrent": "01",
+   "zoneNameTitleUnCurrent": "01",
+   "zoneNameTitleEx": "EPISODE",
+   "zoneNameThird": "EPISODE 01",
+   "lockedText": "Clear the previous chapter to unlock",
+   "antiSpoilerId": null,
+   "canPreview": true,
+   "hasAdditionalPanel": false,
+   "sixStarMilestoneGroupId": null,
+   "bindMainlineZoneId": null,
+   "bindMainlineRetroZoneId": null
+  }
+ }
+}

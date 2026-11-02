@@ -1,0 +1,146 @@
+{
+ "levelInfoList": [
+  {
+   "classLevel": "SS",
+   "attack": {
+    "min": 5000.0,
+    "max": -1.0
+   },
+   "def": {
+    "min": 5000.0,
+    "max": -1.0
+   },
+   "magicRes": {
+    "min": 90.0,
+    "max": -1.0
+   },
+   "maxHP": {
+    "min": 500000.0,
+    "max": -1.0
+   },
+   "moveSpeed": {
+    "min": 2.0,
+    "max": -1.0
+   },
+   "attackSpeed": {
+    "min": 0.0,
+    "max": 0.5
+   },
+   "enemyDamageRes": {
+    "min": 90.0,
+    "max": -1.0
+   },
+   "enemyRes": {
+    "min": 90.0,
+    "max": -1.0
+   }
+  }
+ ],
+ "enemyData": {
+  "enemy_1027_mob": {
+   "enemyId": "enemy_1027_mob",
+   "enemyIndex": "17",
+   "enemyTags": null,
+   "sortId": 53,
+   "name": "Rioter",
+   "enemyLevel": "NORMAL",
+   "description": "An enemy combatant of unknown identity. They are often found wherever there is turmoil and unrest. They wear a face mask to conceal their identity and use haphazardly-made weapons to engage in melee combat.",
+   "attackType": null,
+   "ability": null,
+   "isInvalidKilled": false,
+   "overrideKillCntInfos": {},
+   "hideInHandbook": false,
+   "hideInStage": true,
+   "abilityList": {},
+   "linkEnemies": {},
+   "damageType": [
+    "PHYSIC"
+   ],
+   "invisibleDetail": false
+  },
+  "enemy_1028_mocock": {
+   "enemyId": "enemy_1028_mocock",
+   "enemyIndex": "A9",
+   "enemyTags": null,
+   "sortId": 55,
+   "name": "Cocktail Thrower",
+   "enemyLevel": "NORMAL",
+   "description": "An enemy combatant of unknown identity. They wear a face mask to conceal their identity, and use Molotov cocktails to deal damage within a range. These weapons are usually associated with riots.",
+   "attackType": null,
+   "ability": null,
+   "isInvalidKilled": false,
+   "overrideKillCntInfos": {},
+   "hideInHandbook": false,
+   "hideInStage": true,
+   "abilityList": {},
+   "linkEnemies": {},
+   "damageType": [
+    "PHYSIC"
+   ],
+   "invisibleDetail": false
+  },
+  "enemy_1002_nsabr": {
+   "enemyId": "enemy_1002_nsabr",
+   "enemyIndex": "1",
+   "enemyTags": null,
+   "sortId": 11,
+   "name": "Soldier",
+   "enemyLevel": "NORMAL",
+   "description": "One of Reunion's basic melee soldiers. Equipped with illegally obtained weapons and armor, they wear masks to conceal their identities during operations.",
+   "attackType": null,
+   "ability": null,
+   "isInvalidKilled": false,
+   "overrideKillCntInfos": {},
+   "hideInHandbook": false,
+   "hideInStage": true,
+   "abilityList": {},
+   "linkEnemies": {},
+   "damageType": [
+    "PHYSIC"
+   ],
+   "invisibleDetail": false
+  },
+  "enemy_1029_shdsbr": {
+   "enemyId": "enemy_1029_shdsbr",
+   "enemyIndex": "19",
+   "enemyTags": null,
+   "sortId": 57,
+   "name": "Shielded Soldier",
+   "enemyLevel": "NORMAL",
+   "description": "One of Reunion's melee soldiers. Equipped with illegally obtained weapons and armor, they additionally bear a shield. They are slightly harder to take down than a regular Reunion foot soldier.",
+   "attackType": null,
+   "ability": null,
+   "isInvalidKilled": false,
+   "overrideKillCntInfos": {},
+   "hideInHandbook": false,
+   "hideInStage": true,
+   "abilityList": {},
+   "linkEnemies": {},
+   "damageType": [
+    "PHYSIC"
+   ],
+   "invisibleDetail": false
+  },
+  "enemy_1007_slime_2": {
+   "enemyId": "enemy_1007_slime_2",
+   "enemyIndex": "B2",
+   "enemyTags": null,
+   "sortId": 2,
+   "name": "Originium Slug α",
+   "enemyLevel": "NORMAL",
+   "description": "An infected wild creature that is more dangerous than a normal Originium Slug. Due to their low intelligence, they are easily controlled by enemy casters for use as cannon fodder during invasions.",
+   "attackType": null,
+   "ability": null,
+   "isInvalidKilled": false,
+   "overrideKillCntInfos": {},
+   "hideInHandbook": false,
+   "hideInStage": true,
+   "abilityList": {},
+   "linkEnemies": {},
+   "damageType": [
+    "PHYSIC"
+   ],
+   "invisibleDetail": false
+  }
+ }
+}
