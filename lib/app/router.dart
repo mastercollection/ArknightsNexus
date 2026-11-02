@@ -16,6 +16,8 @@ import '../features/operators/operators_workspace.dart';
 import '../features/plan/operator_plan_screen.dart';
 import '../features/plan/plan_screen.dart';
 import '../features/settings/settings_screen.dart';
+import '../features/stages/stage_detail_screen.dart';
+import '../features/stages/stages_screen.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'rootNavigator',
@@ -132,6 +134,24 @@ GoRouter createRouter({List<NavigatorObserver> Function()? observers}) {
               state,
               OperatorPlanScreen(
                 operatorId: state.pathParameters['operatorId']!,
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/stages',
+            name: StagesScreen.routeName,
+            pageBuilder: (context, state) => page(
+              state,
+              const StagesScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/stages/:stageId',
+            name: StageDetailScreen.routeName,
+            pageBuilder: (context, state) => page(
+              state,
+              StageDetailScreen(
+                stageId: state.pathParameters['stageId']!,
               ),
             ),
           ),

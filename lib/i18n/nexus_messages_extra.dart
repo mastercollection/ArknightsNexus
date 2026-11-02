@@ -6,6 +6,7 @@ import 'extra/operators.dart';
 import 'extra/plan.dart';
 import 'extra/settings.dart';
 import 'extra/shell.dart';
+import 'extra/stages.dart';
 
 /// Strings added by the redesign, per area, consulted after the generated
 /// `nexusMessages` (so the original copy always wins for shared keys).
@@ -18,4 +19,5 @@ const List<Map<String, Map<String, String>>> nexusExtraMessages = [
   planExtraMessages,
   settingsExtraMessages,
   accountExtraMessages,
+  stagesExtraMessages,
 ];
