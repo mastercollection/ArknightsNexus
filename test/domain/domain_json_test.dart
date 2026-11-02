@@ -483,7 +483,7 @@ void main() {
           ),
         ],
       );
-      expect(RegionSnapshot.schemaVersion, 8);
+      expect(RegionSnapshot.schemaVersion, 9);
       final json =
           jsonDecode(jsonEncode(snapshot.toJson())) as Map<String, Object?>;
       final decoded = RegionSnapshot.fromJson(json).operators.single.tokens;

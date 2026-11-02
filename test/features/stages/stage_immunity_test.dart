@@ -5,7 +5,7 @@ import 'package:arknight_nexus/i18n/nexus_i18n.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  OperatorSummary operator(String id, List<String> baTags) => OperatorSummary(
+  OperatorSummary operator(String id, List<String> applied) => OperatorSummary(
         id: id,
         name: id,
         rarity: 6,
@@ -14,17 +14,17 @@ void main() {
         teams: const [],
         nations: const [],
         groups: const [],
-        baTags: baTags,
+        baApplied: applied,
         thumbnailHue: 0,
       );
 
-  test('matches immunities to operators by their battle term names', () {
+  test('lists the operators that apply the term of each immunity', () {
     final info = StageImmunityInfo.build(
       {'ba.stun': '기절', 'ba.sleep': '수면', 'ba.palsy': '마비'},
       [
-        operator('char_stun', ['기절', '정지']),
-        operator('char_sleep', ['수면']),
-        operator('char_both', ['수면', '기절']),
+        operator('char_stun', ['ba.stun', 'ba.sluggish']),
+        operator('char_sleep', ['ba.sleep']),
+        operator('char_both', ['ba.sleep', 'ba.stun']),
       ],
     );
 

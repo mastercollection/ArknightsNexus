@@ -38,7 +38,8 @@ class RegionSnapshot {
   /// 6: the region's stages and enemies.
   /// 7: enemy stats carry their skills and talents.
   /// 8: the names of the battle terms (`termNames`).
-  static const schemaVersion = 8;
+  /// 9: operators carry the battle terms they apply (`baApplied`).
+  static const schemaVersion = 9;
 
   final int schemaVersionValue;
   final RegionCode region;

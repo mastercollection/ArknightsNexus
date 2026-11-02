@@ -290,6 +290,7 @@ OperatorSummary _summary(OperatorDetail detail) {
     nations: detail.nations,
     groups: detail.groups,
     baTags: detail.baTags,
+    baApplied: detail.baApplied,
     thumbnailHue: detail.thumbnailHue,
     releaseOrder: detail.releaseOrder,
     unreleasedSource: detail.unreleasedSource,

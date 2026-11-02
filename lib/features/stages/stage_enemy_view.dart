@@ -33,12 +33,14 @@ const immunityTerms = {
 };
 
 /// What the stage page adds to an enemy's immunities: the game's own name
-/// of each, and the operators whose texts link its battle term (the
-/// operators' BA tags), whose effect this enemy ignores.
+/// of each, and the operators that apply its battle term
+/// ([OperatorSummary.baApplied]), whose effect this enemy ignores.
+/// Operators that only react to the state or protect from it are not
+/// listed.
 class StageImmunityInfo {
   const StageImmunityInfo({this.labels = const {}, this.operators = const {}});
 
-  /// [termNames] by term key, [operators] with their BA tags (term names).
+  /// [termNames] by term key for the labels.
   factory StageImmunityInfo.build(
     Map<String, String> termNames,
     List<OperatorSummary> operators,
@@ -47,13 +49,12 @@ class StageImmunityInfo {
     final tagged = <String, List<OperatorSummary>>{};
     for (final MapEntry(key: immunity, value: term) in immunityTerms.entries) {
       final name = termNames[term];
-      if (name == null) {
-        continue;
+      if (name != null) {
+        labels[immunity] = name;
       }
-      labels[immunity] = name;
       tagged[immunity] = [
         for (final operator in operators)
-          if (operator.baTags.contains(name)) operator,
+          if (operator.baApplied.contains(term)) operator,
       ];
     }
     return StageImmunityInfo(labels: labels, operators: tagged);
